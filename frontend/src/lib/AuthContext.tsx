@@ -23,18 +23,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<User | null>(null);
     const router = useRouter();
 
-    useEffect(() => {
-        // Check local storage for persisted session
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-    }, []);
-
     const login = async (email: string, password: string): Promise<User | null> => {
         try {
             console.log('Attempting login for:', email);
-            const response = await fetch('http://localhost:8000/api/v1/auth/login', {
+            // Use relative path '/api/...' which works for both:
+            // 1. Production (handled by Nginx proxy)
+            // 2. Local Dev (handled by Next.js rewrites)
+            const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+            const response = await fetch(`${baseUrl}/api/v1/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -64,6 +60,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('user');
         router.push('/login');
     };
+
+    useEffect(() => {
+        // Check local storage for persisted session
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+    }, []); // Empty dependency array means this effect runs once on mount
 
     return (
         <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
