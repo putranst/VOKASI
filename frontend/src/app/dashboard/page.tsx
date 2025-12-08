@@ -259,7 +259,7 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                         ) : (
-                            <DigitalWallet credentials={data?.credentials || []} />
+                            <DigitalWallet userId={user?.id || 0} />
                         )}
                     </PageTransition>
                 </main>

@@ -15,7 +15,7 @@ interface KnowledgeGraphProps {
 }
 
 export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ width = 600, height = 400 }) => {
-    const fgRef = useRef<any>();
+    const fgRef = useRef<any>(null);
     const [data, setData] = useState({ nodes: [], links: [] });
 
     useEffect(() => {
