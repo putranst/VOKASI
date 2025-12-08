@@ -14,7 +14,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "UID Expert Panel",
             org: "United in Diversity",
             rating: 4.8,
-            students: "12k",
+            students_count: "12k",
             image: "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&w=600&q=80",
             tag: "Bestseller",
             level: "Beginner"
@@ -25,7 +25,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Prof. Lin",
             org: "Tsinghua SEA",
             rating: 4.9,
-            students: "8.5k",
+            students_count: "8.5k",
             image: "https://images.unsplash.com/photo-1582967788606-a171f1080ca8?auto=format&fit=crop&w=600&q=80",
             tag: "New",
             level: "Advanced"
@@ -36,7 +36,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Dr. Sarah Jenkins",
             org: "MIT Sloan",
             rating: 4.7,
-            students: "15k",
+            students_count: "15k",
             image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=600&q=80",
             tag: "Trending",
             level: "Intermediate"
@@ -47,7 +47,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Finance Ministry",
             org: "GovTech",
             rating: 4.9,
-            students: "22k",
+            students_count: "22k",
             image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80",
             tag: "Essential",
             level: "Executive"
@@ -60,7 +60,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "GovTech Institute",
             org: "T6 Public",
             rating: 4.9,
-            students: "9k",
+            students_count: "9k",
             image: "https://images.unsplash.com/photo-1555421689-491a97ff2040?auto=format&fit=crop&w=600&q=80",
             tag: "Updated",
             level: "Executive"
@@ -71,7 +71,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Urban Planning Dept",
             org: "Tsinghua Architecture",
             rating: 4.6,
-            students: "7.2k",
+            students_count: "7.2k",
             image: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=600&q=80",
             tag: "Popular",
             level: "Advanced"
@@ -82,7 +82,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Blockchain Taskforce",
             org: "T6 Tech",
             rating: 4.8,
-            students: "5.5k",
+            students_count: "5.5k",
             image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=600&q=80",
             tag: "Critical",
             level: "Executive"
@@ -93,7 +93,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "National Resilience Council",
             org: "GovTech",
             rating: 4.7,
-            students: "11k",
+            students_count: "11k",
             image: "https://images.unsplash.com/photo-1504384308090-c54be3855833?auto=format&fit=crop&w=600&q=80",
             tag: "New",
             level: "Intermediate"
@@ -106,7 +106,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Tech Innovation Lab",
             org: "T6 Business",
             rating: 4.8,
-            students: "18k",
+            students_count: "18k",
             image: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=600&q=80",
             tag: "Bestseller",
             level: "Beginner"
@@ -117,7 +117,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Data Science Faculty",
             org: "MIT Sloan",
             rating: 4.9,
-            students: "14k",
+            students_count: "14k",
             image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80",
             tag: "Essential",
             level: "Intermediate"
@@ -128,7 +128,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Cyber Defense Unit",
             org: "T6 Security",
             rating: 4.7,
-            students: "25k",
+            students_count: "25k",
             image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=600&q=80",
             tag: "Critical",
             level: "Beginner"
@@ -139,7 +139,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "AI Research Center",
             org: "Tsinghua SEA",
             rating: 4.9,
-            students: "6k",
+            students_count: "6k",
             image: "https://images.unsplash.com/photo-1527474305487-b87b222841cc?auto=format&fit=crop&w=600&q=80",
             tag: "Advanced",
             level: "Advanced"
@@ -152,7 +152,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Executive Education",
             org: "MIT Sloan",
             rating: 4.9,
-            students: "10k",
+            students_count: "10k",
             image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=600&q=80",
             tag: "Executive",
             level: "Executive"
@@ -163,7 +163,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Public Service Institute",
             org: "GovTech",
             rating: 4.7,
-            students: "5k",
+            students_count: "5k",
             image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=600&q=80",
             tag: "Niche",
             level: "Advanced"
@@ -174,7 +174,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Logistics Expert Panel",
             org: "T6 Business",
             rating: 4.8,
-            students: "9.5k",
+            students_count: "9.5k",
             image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80",
             tag: "Green",
             level: "Intermediate"
@@ -185,7 +185,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Venture Capital Group",
             org: "Tsinghua SEA",
             rating: 4.8,
-            students: "13k",
+            students_count: "13k",
             image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=600&q=80",
             tag: "Practical",
             level: "Beginner"
@@ -198,7 +198,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Transport Authority",
             org: "GovTech",
             rating: 4.7,
-            students: "6.5k",
+            students_count: "6.5k",
             image: "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?auto=format&fit=crop&w=600&q=80",
             tag: "Future",
             level: "Advanced"
@@ -209,7 +209,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Sustainability Council",
             org: "T6 Green",
             rating: 4.6,
-            students: "4k",
+            students_count: "4k",
             image: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=600&q=80",
             tag: "Technical",
             level: "Intermediate"
@@ -222,7 +222,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Carbon Exchange",
             org: "T6 Finance",
             rating: 4.9,
-            students: "16k",
+            students_count: "16k",
             image: "https://images.unsplash.com/photo-1611974765270-ca12586343bb?auto=format&fit=crop&w=600&q=80",
             tag: "Hot",
             level: "Beginner"
@@ -233,7 +233,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             instructor: "Global Impact Fund",
             org: "United in Diversity",
             rating: 4.8,
-            students: "7k",
+            students_count: "7k",
             image: "https://images.unsplash.com/photo-1579532537598-459ecdaf39cc?auto=format&fit=crop&w=600&q=80",
             tag: "Executive",
             level: "Executive"

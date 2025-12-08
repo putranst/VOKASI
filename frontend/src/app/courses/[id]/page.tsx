@@ -101,7 +101,7 @@ export default function CourseDetailPage() {
                                 <div className="flex items-center gap-2">
                                     <Star className="text-gold" size={20} fill="currentColor" />
                                     <span className="font-bold">{course.rating}</span>
-                                    <span className="text-gray-400">({course.students} students)</span>
+                                    <span className="text-gray-400">({course.students_count} students)</span>
                                 </div>
                                 {course.tag && (
                                     <span className="px-3 py-1 bg-gold/20 text-gold rounded-full text-xs font-bold">
@@ -156,7 +156,7 @@ export default function CourseDetailPage() {
                         <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
                             <Users className="mx-auto mb-4 text-accent" size={32} />
                             <h3 className="font-bold text-gray-900 mb-2">Students</h3>
-                            <p className="text-gray-600">{course.students} enrolled</p>
+                            <p className="text-gray-600">{course.students_count} enrolled</p>
                         </div>
                         <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
                             <Award className="mx-auto mb-4 text-gold" size={32} />
