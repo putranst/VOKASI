@@ -1,0 +1,28 @@
+TSEA-X/
+├── App.jsx (Original)
+├── tsea_x_blueprint.md (Original)
+├── frontend/
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── globals.css
+│   │   │   ├── layout.tsx
+│   │   │   └── page.tsx
+│   │   ├── components/
+│   │   │   └── ui/
+│   │   │       ├── Logo.tsx
+│   │   │       ├── NavItem.tsx
+│   │   │       ├── CourseCard.tsx
+│   │   │       ├── PathwayCard.tsx
+│   │   │       └── HeroSlider.tsx
+│   │   └── lib/
+│   │       └── data.ts
+│   ├── package.json
+│   ├── tailwind.config.ts (Implicit via v4)
+│   └── tsconfig.json
+├── backend/
+│   ├── main.py
+│   ├── models.py
+│   ├── requirements.txt
+│   └── venv/
+└── blockchain/
+    └── T6Credential.sol

@@ -1,0 +1,30 @@
+# General
+.DS_Store
+*.log
+**/.idea/
+**/.vscode/
+**/__pycache__/
+*.pyc
+
+# Backend
+backend/venv/
+backend/.env
+backend/*.db
+backend/api_test_output.txt
+backend/available_models.txt
+backend/debug_*.log
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+frontend/.env.production.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# OS specific
+Thumbs.db
