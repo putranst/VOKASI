@@ -95,7 +95,7 @@ pm2 start "backend/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000" --name 
 
 # Frontend
 pm2 delete tsea-frontend 2>/dev/null || true
-pm2 start "npm start" --name tsea-frontend --cwd ./frontend --port 3000
+pm2 start npm --name "tsea-frontend" --cwd ./frontend -- start
 
 pm2 save
 
