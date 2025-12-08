@@ -264,21 +264,36 @@ def init_sample_data():
     CREDENTIALS_DB[credential_counter] = cred1
     credential_counter += 1
 
-    # Ensure sample user exists for login
+    # Ensure standard users exist
     db = next(get_db())
-    existing_user = db.query(models.User).filter(models.User.email == "mats@uid.or.id").first()
-    if not existing_user:
-        new_user = models.User(
-            email="mats@uid.or.id",
-            full_name="Mats",
-            role="student",
-            password_hash="hashed_secret" # Mock hash
-        )
-        db.add(new_user)
+    try:
+        users_to_seed = [
+            {"email": "mats@uid.or.id", "name": "Prof. Mats", "role": "instructor"},
+            {"email": "putra@tsea.asia", "name": "Putra Admin", "role": "admin"},
+            {"email": "student@tsea.asia", "name": "Student User", "role": "student"}
+        ]
+
+        for u in users_to_seed:
+            existing = db.query(models.User).filter(models.User.email == u["email"]).first()
+            if not existing:
+                new_user = models.User(
+                    email=u["email"],
+                    full_name=u["name"],
+                    role=u["role"],
+                    password_hash="hashed_secret" # Mock hash
+                )
+                db.add(new_user)
+                print(f"DEBUG: Created {u['role']} user {u['email']}")
+            else:
+                # Update role/name if mismatch
+                if existing.role != u["role"]:
+                    existing.role = u["role"]
+                    existing.full_name = u["name"]
+                    print(f"DEBUG: Updated role for {u['email']} to {u['role']}")
+        
         db.commit()
-        print("DEBUG: Created sample user mats@uid.or.id")
-    else:
-        print("DEBUG: Sample user mats@uid.or.id already exists")
+    finally:
+        db.close()
 
     # Legacy data population removed - using database
 
