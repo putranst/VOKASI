@@ -36,7 +36,12 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "https://t6.tsea.asia",
+        "http://t6.tsea.asia",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
