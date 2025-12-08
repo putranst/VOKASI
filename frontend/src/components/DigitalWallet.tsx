@@ -42,7 +42,7 @@ export default function DigitalWallet({ userId }: { userId: number }) {
         try {
             setLoading(true);
             const statusParam = filter !== 'all' ? `?status=${filter}` : '';
-            const response = await fetch(`http://localhost:8000/api/v1/users/${userId}/credentials${statusParam}`);
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/users/${userId}/credentials${statusParam}`);
             const data = await response.json();
             setCredentials(Array.isArray(data) ? data : []);
         } catch (error) {

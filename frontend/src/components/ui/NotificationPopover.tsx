@@ -24,7 +24,7 @@ export function NotificationPopover() {
 
     const fetchNotifications = async () => {
         try {
-            const res = await fetch('http://localhost:8000/api/v1/notifications');
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/notifications`);
             if (res.ok) {
                 const data = await res.json();
                 setNotifications(data);
@@ -37,7 +37,7 @@ export function NotificationPopover() {
 
     const markAsRead = async (id: number) => {
         try {
-            await fetch(`http://localhost:8000/api/v1/notifications/${id}/read`, {
+            await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/notifications/${id}/read`, {
                 method: 'POST'
             });
             setNotifications(prev => prev.map(n =>

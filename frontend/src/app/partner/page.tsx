@@ -31,7 +31,7 @@ export default function InstitutionDashboardPage() {
 
     // Mock institution ID (would come from auth context)
     const institutionId = 1;
-    const API_BASE_URL = 'http://localhost:8000';
+    const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
     useEffect(() => {
         const fetchStats = async () => {

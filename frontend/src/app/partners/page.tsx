@@ -29,7 +29,7 @@ export default function PartnersPage() {
     useEffect(() => {
         const fetchInstitutions = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/v1/institutions');
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/institutions`);
                 if (response.ok) {
                     const data = await response.json();
                     setInstitutions(data);

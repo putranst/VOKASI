@@ -90,7 +90,7 @@ export function AICompanion() {
         setLoading(true);
 
         try {
-            const response = await fetch('http://localhost:8000/api/v1/ai/companion-chat', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/ai/companion-chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -146,8 +146,8 @@ export function AICompanion() {
                         <button
                             onClick={handleToggleSocratic}
                             className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 ${socratic.isOpen
-                                    ? 'bg-gray-300 text-gray-600'
-                                    : 'bg-gradient-to-r from-green-600 to-teal-600 text-white hover:scale-110'
+                                ? 'bg-gray-300 text-gray-600'
+                                : 'bg-gradient-to-r from-green-600 to-teal-600 text-white hover:scale-110'
                                 }`}
                             title="Socratic Tutor"
                         >

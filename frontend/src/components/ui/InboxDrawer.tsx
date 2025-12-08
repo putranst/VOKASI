@@ -51,7 +51,7 @@ export function InboxDrawer() {
 
     const fetchConversations = async () => {
         try {
-            const res = await fetch('http://localhost:8000/api/v1/inbox/conversations');
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/inbox/conversations`);
             if (res.ok) {
                 const data = await res.json();
                 setConversations(data);
@@ -63,7 +63,7 @@ export function InboxDrawer() {
 
     const fetchMessages = async (convId: number) => {
         try {
-            const res = await fetch(`http://localhost:8000/api/v1/inbox/conversations/${convId}/messages`);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/inbox/conversations/${convId}/messages`);
             if (res.ok) {
                 const data = await res.json();
                 setMessages(data);
@@ -78,7 +78,7 @@ export function InboxDrawer() {
         if (!newMessage.trim() || !activeConversation) return;
 
         try {
-            const res = await fetch(`http://localhost:8000/api/v1/inbox/conversations/${activeConversation.id}/messages`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/inbox/conversations/${activeConversation.id}/messages`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content: newMessage })
@@ -189,8 +189,8 @@ export function InboxDrawer() {
                                                 >
                                                     <div
                                                         className={`max-w-[80%] p-3 rounded-2xl ${isMe
-                                                                ? 'bg-primary text-white rounded-tr-none'
-                                                                : 'bg-white border border-gray-100 text-gray-800 rounded-tl-none shadow-sm'
+                                                            ? 'bg-primary text-white rounded-tr-none'
+                                                            : 'bg-white border border-gray-100 text-gray-800 rounded-tl-none shadow-sm'
                                                             }`}
                                                     >
                                                         <p className="text-sm">{msg.content}</p>

@@ -75,7 +75,7 @@ export default function SocraticTutor({ projectId, phase, context, className = '
         setLoading(true);
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/api/v1/ai/socratic-chat`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/ai/socratic-chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

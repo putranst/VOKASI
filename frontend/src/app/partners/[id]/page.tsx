@@ -42,7 +42,7 @@ export default function InstitutionProfilePage() {
     useEffect(() => {
         const fetchInstitutionDetail = async () => {
             try {
-                const response = await fetch(`http://localhost:8000/api/v1/institutions/${params.id}`);
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/institutions/${params.id}`);
                 if (response.ok) {
                     const result = await response.json();
                     setData(result);

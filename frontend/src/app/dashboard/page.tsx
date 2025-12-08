@@ -46,7 +46,7 @@ export default function DashboardPage() {
                 try {
                     console.log('[Dashboard] Fetching data for user:', user.id);
 
-                    const response = await fetch(`http://localhost:8000/api/v1/student/dashboard?user_id=${user.id}`);
+                    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/student/dashboard?user_id=${user.id}`);
 
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);

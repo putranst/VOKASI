@@ -43,7 +43,7 @@ export default function QuizComponent({ courseId, onComplete }: QuizComponentPro
 
     const fetchQuiz = async () => {
         try {
-            const res = await fetch(`http://localhost:8000/api/v1/courses/${courseId}/quizzes`);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/courses/${courseId}/quizzes`);
             const quizzes = await res.json();
             if (quizzes.length > 0) {
                 setQuiz(quizzes[0]);
@@ -68,7 +68,7 @@ export default function QuizComponent({ courseId, onComplete }: QuizComponentPro
         if (!quiz) return;
 
         try {
-            const res = await fetch(`http://localhost:8000/api/v1/quizzes/${quiz.id}/submit`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/quizzes/${quiz.id}/submit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

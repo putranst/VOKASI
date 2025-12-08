@@ -156,7 +156,7 @@ export default function ConceivePage() {
 
         try {
             // Call backend API which handles both saving and AI suggestions
-            const response = await fetch(`http://localhost:8000/api/v1/projects/${projectId}/charter`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/projects/${projectId}/charter`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -204,7 +204,7 @@ export default function ConceivePage() {
 
         setGrading(true);
         try {
-            const response = await fetch('http://localhost:8000/api/v1/grading/charter', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/grading/charter`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

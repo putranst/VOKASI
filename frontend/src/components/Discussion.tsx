@@ -47,7 +47,7 @@ export default function Discussion({ courseId }: DiscussionProps) {
 
     const fetchThreads = async () => {
         try {
-            const res = await fetch(`http://localhost:8000/api/v1/courses/${courseId}/discussions`);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/courses/${courseId}/discussions`);
             const data = await res.json();
             setThreads(data);
         } catch (error) {
@@ -61,7 +61,7 @@ export default function Discussion({ courseId }: DiscussionProps) {
         e.preventDefault();
 
         try {
-            const res = await fetch(`http://localhost:8000/api/v1/courses/${courseId}/discussions`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/courses/${courseId}/discussions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -88,7 +88,7 @@ export default function Discussion({ courseId }: DiscussionProps) {
         if (!newComment.trim()) return;
 
         try {
-            const res = await fetch(`http://localhost:8000/api/v1/discussions/${threadId}/comments`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/discussions/${threadId}/comments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

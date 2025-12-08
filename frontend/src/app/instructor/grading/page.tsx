@@ -37,7 +37,7 @@ export default function GradingPage() {
     useEffect(() => {
         const fetchGradingQueue = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/v1/instructor/grading-queue');
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/instructor/grading-queue`);
                 if (response.ok) {
                     const data = await response.json();
                     setSubmissions(data);

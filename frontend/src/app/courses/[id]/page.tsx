@@ -27,7 +27,7 @@ export default function CourseDetailPage() {
         const checkEnrollment = async () => {
             try {
                 const response = await fetch(
-                    `http://localhost:8000/api/v1/enrollments/check?user_id=${mockUserId}&course_id=${courseId}`
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/enrollments/check?user_id=${mockUserId}&course_id=${courseId}`
                 );
                 if (response.ok) {
                     const data = await response.json();

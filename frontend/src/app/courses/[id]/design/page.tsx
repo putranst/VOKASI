@@ -118,7 +118,7 @@ export default function DesignPage() {
         setSuccess(false);
 
         try {
-            const response = await fetch(`http://localhost:8000/api/v1/blueprints?project_id=${projectId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/blueprints?project_id=${projectId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -165,7 +165,7 @@ export default function DesignPage() {
 
         setGrading(true);
         try {
-            const response = await fetch('http://localhost:8000/api/v1/grading/blueprint', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/grading/blueprint`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

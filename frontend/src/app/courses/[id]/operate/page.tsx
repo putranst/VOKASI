@@ -39,7 +39,7 @@ export default function OperatePage() {
 
         try {
             // 1. Submit deployment via backend API
-            const deployResponse = await fetch(`http://localhost:8000/api/v1/deployments?project_id=${projectId}`, {
+            const deployResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/deployments?project_id=${projectId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -54,7 +54,7 @@ export default function OperatePage() {
             }
 
             // 2. Request Credential Issuance (Backend)
-            const credResponse = await fetch(`http://localhost:8000/api/v1/projects/${projectId}/issue-credential`, {
+            const credResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/projects/${projectId}/issue-credential`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });

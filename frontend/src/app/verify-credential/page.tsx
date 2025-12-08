@@ -24,7 +24,7 @@ export default function VerifyCredentialPage() {
         setSearched(true);
 
         try {
-            const response = await fetch(`http://localhost:8000/api/v1/credentials/verify/${tokenId.trim()}`);
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/credentials/verify/${tokenId.trim()}`);
             const data = await response.json();
             setVerification(data);
         } catch (error) {
@@ -97,8 +97,8 @@ export default function VerifyCredentialPage() {
                 {searched && verification && (
                     <div
                         className={`rounded-2xl shadow-xl border-2 p-8 ${verification.is_valid
-                                ? 'bg-green-50 border-green-300'
-                                : 'bg-red-50 border-red-300'
+                            ? 'bg-green-50 border-green-300'
+                            : 'bg-red-50 border-red-300'
                             }`}
                     >
                         {/* Status Header */}

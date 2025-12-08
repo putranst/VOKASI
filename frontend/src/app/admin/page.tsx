@@ -141,7 +141,7 @@ export default function AdminDashboard() {
                 const [name, email, role] = line.split(',').map(s => s.trim());
                 if (name && email) {
                     try {
-                        await fetch('http://localhost:8000/api/v1/admin/import-user', {
+                        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/import-user`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ name, email, role: role || 'student' })
@@ -154,7 +154,7 @@ export default function AdminDashboard() {
             setIsImportModalOpen(false);
             setImportFile(null);
             // Refresh users data
-            const usersResponse = await fetch('http://localhost:8000/api/v1/admin/users');
+            const usersResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/users`);
             if (usersResponse.ok) setUsers(await usersResponse.json());
         };
         reader.readAsText(importFile);
@@ -373,34 +373,34 @@ export default function AdminDashboard() {
     const fetchDashboardData = async () => {
         try {
             // Fetch platform stats from backend API
-            const statsResponse = await fetch('http://localhost:8000/api/v1/admin/stats');
+            const statsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/stats`);
             if (statsResponse.ok) {
                 const data = await statsResponse.json();
                 setStats(data);
             }
 
-            const activityResponse = await fetch('http://localhost:8000/api/v1/admin/recent-activity');
+            const activityResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/recent-activity`);
             if (activityResponse.ok) {
                 const data = await activityResponse.json();
                 setRecentActivity(data);
             }
 
             // Fetch users from backend API
-            const usersResponse = await fetch('http://localhost:8000/api/v1/admin/users');
+            const usersResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/users`);
             if (usersResponse.ok) {
                 const usersData = await usersResponse.json();
                 setUsers(usersData);
             }
 
             // Fetch courses from backend API
-            const coursesResponse = await fetch('http://localhost:8000/api/v1/admin/courses');
+            const coursesResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/courses`);
             if (coursesResponse.ok) {
                 const coursesData = await coursesResponse.json();
                 setAdminCourses(coursesData);
             }
 
             // Fetch credentials from backend API
-            const credentialsResponse = await fetch('http://localhost:8000/api/v1/admin/credentials');
+            const credentialsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/credentials`);
             if (credentialsResponse.ok) {
                 const credentialsData = await credentialsResponse.json();
                 setAdminCredentials(credentialsData);

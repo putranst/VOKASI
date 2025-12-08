@@ -107,7 +107,7 @@ export default function InstructorDashboard() {
     const fetchDashboardData = async () => {
         if (!user?.email) return;
 
-        const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+        const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
         try {
             const [queueRes, coursesRes, studentsRes] = await Promise.all([
@@ -160,7 +160,7 @@ export default function InstructorDashboard() {
         setGradingResult(null);
 
         try {
-            const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+            const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
             const response = await fetch(`${BACKEND_URL}/api/v1/projects/${item.project_id}/grade`, {
                 method: 'POST'
             });
@@ -202,7 +202,7 @@ export default function InstructorDashboard() {
     };
 
     const handleSaveCourse = async (courseData: CourseFormData) => {
-        const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+        const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
         try {
             let response;
             if (editingCourse) {
@@ -755,7 +755,7 @@ export default function InstructorDashboard() {
                                 setSelectedCourseForSyllabus(null);
                             }}
                             onSave={async (syllabusData) => {
-                                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/courses/${selectedCourseForSyllabus.id}/syllabus`, {
+                                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/courses/${selectedCourseForSyllabus.id}/syllabus`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify(syllabusData)
