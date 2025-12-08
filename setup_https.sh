@@ -67,7 +67,7 @@ else
     CONFIG="
 server {
     listen 80;
-    server_name $DOMAIN_NAME;
+    server_name $DOMAIN;
 
     location / {
         proxy_pass http://localhost:3000;
