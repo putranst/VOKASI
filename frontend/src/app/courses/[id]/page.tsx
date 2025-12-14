@@ -8,11 +8,12 @@ import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { EnrollmentButton } from '@/components/EnrollmentButton';
 import { TABBED_COURSES } from '@/lib/data';
 import { Star, Clock, Users, Award, PlayCircle, BookOpen, CheckCircle } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function CourseDetailPage() {
     const params = useParams();
     const courseId = parseInt(params.id as string);
-    const mockUserId = 1; // In real app, get from auth context
+    const { user } = useAuth();
 
     const [isEnrolled, setIsEnrolled] = useState(false);
     const [enrollmentId, setEnrollmentId] = useState<number | undefined>();
@@ -26,8 +27,9 @@ export default function CourseDetailPage() {
         // Check enrollment status on page load
         const checkEnrollment = async () => {
             try {
+                if (!user) return;
                 const response = await fetch(
-                    `${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/enrollments/check?user_id=${mockUserId}&course_id=${courseId}`
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/enrollments/check?user_id=${user.id}&course_id=${courseId}`
                 );
                 if (response.ok) {
                     const data = await response.json();
@@ -41,8 +43,12 @@ export default function CourseDetailPage() {
             }
         };
 
-        checkEnrollment();
-    }, [courseId, mockUserId]);
+        if (user) {
+            checkEnrollment();
+        } else {
+            setLoading(false);
+        }
+    }, [courseId, user]);
 
     if (!course) {
         return (
@@ -128,6 +134,10 @@ export default function CourseDetailPage() {
                                         </a>
                                     </>
                                 ) : (
+                                    // Just show text if not enrolled, the button below handles enrollment
+                                    // Actually the button is in the sticky sidebar usually, but let's see where it was.
+                                    // In the original code, this was just text "Enroll in this course..." or empty if not enrolled here?
+                                    // Ah, the original had a check. Let's keep the logic simple.
                                     <div className="text-gray-300 text-sm italic">
                                         Enroll in this course to access the content
                                     </div>
@@ -223,7 +233,7 @@ export default function CourseDetailPage() {
                                 ) : (
                                     <EnrollmentButton
                                         courseId={courseId}
-                                        userId={mockUserId}
+                                        userId={user?.id || 0}
                                         isEnrolled={isEnrolled}
                                         enrollmentId={enrollmentId}
                                         onEnrollmentChange={(enrolled) => {

@@ -28,6 +28,7 @@ export default function CreateCoursePage() {
                     image: formData.image,
                     tag: formData.tag,
                     level: formData.level,
+                    category: formData.category || 'Technology',
                     description: formData.description,
                     duration: formData.duration,
                     institution_id: formData.institution_id ? parseInt(formData.institution_id) : undefined
@@ -111,15 +112,18 @@ export default function CreateCoursePage() {
                 ) : (
                     <AICourseGenerator
                         onCourseGenerated={(courseData) => {
-                            // Pre-fill manual form with AI data and switch to manual mode for review
-                            // For now, just show success and redirect or log
-                            console.log('AI Generated:', courseData);
-
+                            // Submit the AI-generated course with user info
                             handleManualSubmit({
-                                ...courseData,
-                                instructor: user?.name || 'Mats Hanson', // Use logged in user
-                                org: 'UID', // Default to UID for Mats
-                                institution_id: 5 // Default to UID institution ID
+                                title: courseData.title,
+                                description: courseData.description,
+                                level: courseData.level,
+                                duration: courseData.duration,
+                                tag: courseData.tag || 'New',
+                                image: courseData.image,
+                                category: courseData.category || 'Technology',
+                                instructor: user?.name || 'Instructor',
+                                org: 'TSEA',
+                                institution_id: 1
                             });
                         }}
                     />

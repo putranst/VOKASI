@@ -1362,8 +1362,6 @@ def get_student_dashboard(user_id: int = 1, db: Session = Depends(get_db)):
 def create_enrollment(enrollment_data: schemas.EnrollmentCreate, db: Session = Depends(get_db)):
     """Enroll a student in a course"""
     
-    print(f"DEBUG: create_enrollment called with user_id={enrollment_data.user_id} course_id={enrollment_data.course_id}")
-
     # Check if course exists
     course = db.query(models.Course).filter(models.Course.id == enrollment_data.course_id).first()
     if not course:

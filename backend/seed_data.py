@@ -12,42 +12,31 @@ def seed_data():
 
     # --- Institutions ---
     mit = Institution(
-        name="Massachusetts Institute of Technology",
-        short_name="MIT",
-        type="university",
-        description="World-renowned university.",
-        logo_url="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/MIT_logo.svg/200px-MIT_logo.svg.png",
-        country="United States",
-        is_featured=True
+        name="Massachusetts Institute of Technology", short_name="MIT", type="university",
+        description="World-renowned university.", logo_url="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/MIT_logo.svg/200px-MIT_logo.svg.png",
+        country="United States", is_featured=True
     )
     uid = Institution(
-        name="United in Diversity",
-        short_name="UID",
-        type="nonprofit",
-        description="Sustainable development nonprofit.",
-        logo_url="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=200&q=80",
-        country="International",
-        is_featured=True
+        name="United in Diversity", short_name="UID", type="nonprofit",
+        description="Sustainable development nonprofit.", logo_url="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=200&q=80",
+        country="International", is_featured=True
     )
     tech_corp = Institution(
-        name="TechFuture Corp",
-        short_name="TechFuture",
-        type="corporate",
-        description="Leading technology innovator.",
-        logo_url="https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&w=200&q=80",
-        country="Singapore",
-        is_featured=False
+        name="TechFuture Corp", short_name="TechFuture", type="corporate",
+        description="Leading technology innovator.", logo_url="https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&w=200&q=80",
+        country="Singapore", is_featured=False
     )
-    min_edu = Institution(
-        name="Ministry of Education",
-        short_name="MOE",
-        type="government",
-        description="Government education body.",
-        logo_url="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=200&q=80",
-        country="Indonesia",
-        is_featured=False
+    gov_tech = Institution(
+        name="GovTech", short_name="GovTech", type="government",
+        description="Government Technology Agency.", logo_url="https://images.unsplash.com/photo-1555421689-491a97ff2040?auto=format&fit=crop&w=200&q=80",
+        country="Singapore", is_featured=True
     )
-    db.add_all([mit, uid, tech_corp, min_edu])
+    tsinghua = Institution(
+        name="Tsinghua University", short_name="Tsinghua", type="university",
+        description="Leading research university in Beijing.", logo_url="https://images.unsplash.com/photo-1527474305487-b87b222841cc?auto=format&fit=crop&w=200&q=80",
+        country="China", is_featured=True
+    )
+    db.add_all([mit, uid, tech_corp, gov_tech, tsinghua])
     db.commit()
 
     # --- Users ---
@@ -62,333 +51,154 @@ def seed_data():
     charlie = User(email="charlie@tsea.asia", full_name="Charlie Lee", role="student") # Conceive Phase
     david = User(email="david@tsea.asia", full_name="David Chen", role="student") # Implementation Phase
     eve = User(email="eve@tsea.asia", full_name="Eve Sato", role="student") # Deployment Phase
+    frank = User(email="frank@tsea.asia", full_name="Frank Wright", role="student") # Scenario
+    grace = User(email="grace@tsea.asia", full_name="Grace Ho", role="student") # Scenario
+    harry = User(email="harry@tsea.asia", full_name="Harry Potter", role="student") # Scenario
     
-    # Partners
-    partner_mit = User(email="partner.mit@tsea.asia", full_name="MIT Admin", role="partner")
-
+    # Test User
+    student_user = User(email="student@tsea.asia", full_name="Student User", role="student")
+    
     # Admins
     admin_user = User(email="admin@tsea.asia", full_name="System Admin", role="admin")
     
-    db.add_all([inst_mats, inst_siti, inst_james, alice, bob, charlie, david, eve, partner_mit, admin_user])
+    db.add_all([inst_mats, inst_siti, inst_james, alice, bob, charlie, david, eve, frank, grace, harry, student_user, admin_user])
     db.commit()
 
-    # --- Courses ---
-    course_circular = Course(
-        title="Circular Economy Models",
-        instructor="UID Expert Panel",
-        org="United in Diversity",
-        institution_id=uid.id,
-        rating=4.8,
-        students_count="12k",
-        image="https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&w=600&q=80",
-        level="Beginner",
-        category="Sustainable Development",
-        description="Learn the principles of circular economy and how to apply them.",
-        duration="4 weeks"
-    )
-    course_ai = Course(
-        title="AI Governance",
-        instructor="GovTech Institute",
-        org="MIT",
-        institution_id=mit.id,
-        rating=4.9,
-        students_count="9k",
-        image="https://images.unsplash.com/photo-1555421689-491a97ff2040?auto=format&fit=crop&w=600&q=80",
-        level="Executive",
-        category="Public Policy",
-        description="Understand the policy implications of AI.",
-        duration="5 weeks"
-    )
-    course_digital = Course(
-        title="Digital Transformation",
-        instructor="James Wong",
-        org="TechFuture",
-        institution_id=tech_corp.id,
-        rating=4.7,
-        students_count="5k",
-        image="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=600&q=80",
-        level="Intermediate",
-        category="Technology",
-        description="Master the fundamentals of AI governance and ethics in modern organizations.",
-        duration="6 weeks"
-    )
-    
-    db.add_all([course_circular, course_ai, course_digital])
+    # --- Courses (Full list of 21) ---
+    courses = [
+        # Sustainable Development
+        {"id": 1, "title": "Circular Economy Models for SMEs", "instructor": "UID Expert Panel", "org": "United in Diversity", "rating": 4.8, "students_count": "12k", "image": "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&w=600&q=80", "tag": "Bestseller", "level": "Beginner", "category": "Sustainable Development", "institution_id": uid.id},
+        {"id": 2, "title": "Blue Carbon: Marine Conservation Strategies", "instructor": "Prof. Lin", "org": "Tsinghua SEA", "rating": 4.9, "students_count": "8.5k", "image": "https://images.unsplash.com/photo-1582967788606-a171f1080ca8?auto=format&fit=crop&w=600&q=80", "tag": "New", "level": "Advanced", "category": "Sustainable Development", "institution_id": tsinghua.id},
+        {"id": 3, "title": "Renewable Energy Transitions", "instructor": "Dr. Sarah Jenkins", "org": "MIT Sloan", "rating": 4.7, "students_count": "15k", "image": "https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=600&q=80", "tag": "Trending", "level": "Intermediate", "category": "Sustainable Development", "institution_id": mit.id},
+        {"id": 4, "title": "ESG Reporting Standards 2025", "instructor": "Finance Ministry", "org": "GovTech", "rating": 4.9, "students_count": "22k", "image": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80", "tag": "Essential", "level": "Executive", "category": "Sustainable Development", "institution_id": gov_tech.id},
+        
+        # Public Policy
+        {"id": 5, "title": "AI Governance for Policymakers", "instructor": "GovTech Institute", "org": "T6 Public", "rating": 4.9, "students_count": "9k", "image": "https://images.unsplash.com/photo-1555421689-491a97ff2040?auto=format&fit=crop&w=600&q=80", "tag": "Updated", "level": "Executive", "category": "Public Policy", "institution_id": gov_tech.id},
+        {"id": 6, "title": "Smart City Infrastructure Planning", "instructor": "Urban Planning Dept", "org": "Tsinghua Architecture", "rating": 4.6, "students_count": "7.2k", "image": "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=600&q=80", "tag": "Popular", "level": "Advanced", "category": "Public Policy", "institution_id": tsinghua.id},
+        {"id": 7, "title": "Digital Identity & Sovereign Data", "instructor": "Blockchain Taskforce", "org": "T6 Tech", "rating": 4.8, "students_count": "5.5k", "image": "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=600&q=80", "tag": "Critical", "level": "Executive", "category": "Public Policy", "institution_id": gov_tech.id},
+        {"id": 8, "title": "Crisis Management in the Digital Age", "instructor": "National Resilience Council", "org": "GovTech", "rating": 4.7, "students_count": "11k", "image": "https://images.unsplash.com/photo-1504384308090-c54be3855833?auto=format&fit=crop&w=600&q=80", "tag": "New", "level": "Intermediate", "category": "Public Policy", "institution_id": gov_tech.id},
+
+        # Data & AI
+        {"id": 9, "title": "AI for SMEs: Practical Implementation", "instructor": "Tech Innovation Lab", "org": "T6 Business", "rating": 4.8, "students_count": "18k", "image": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=600&q=80", "tag": "Bestseller", "level": "Beginner", "category": "Data & AI", "institution_id": tech_corp.id},
+        {"id": 10, "title": "Data Analytics for Decision Makers", "instructor": "Data Science Faculty", "org": "MIT Sloan", "rating": 4.9, "students_count": "14k", "image": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80", "tag": "Essential", "level": "Intermediate", "category": "Data & AI", "institution_id": mit.id},
+        {"id": 11, "title": "Cyber Security Fundamentals", "instructor": "Cyber Defense Unit", "org": "T6 Security", "rating": 4.7, "students_count": "25k", "image": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=600&q=80", "tag": "Critical", "level": "Beginner", "category": "Data & AI", "institution_id": tech_corp.id},
+        {"id": 12, "title": "Advanced Machine Learning Ops", "instructor": "AI Research Center", "org": "Tsinghua SEA", "rating": 4.9, "students_count": "6k", "image": "https://images.unsplash.com/photo-1527474305487-b87b222841cc?auto=format&fit=crop&w=600&q=80", "tag": "Advanced", "level": "Advanced", "category": "Data & AI", "institution_id": tsinghua.id},
+
+        # Business Leadership
+        {"id": 14, "title": "Digital Transformation Strategy", "instructor": "Executive Education", "org": "MIT Sloan", "rating": 4.9, "students_count": "10k", "image": "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=600&q=80", "tag": "Executive", "level": "Executive", "category": "Business Leadership", "institution_id": mit.id},
+        {"id": 15, "title": "Agile Leadership for Government", "instructor": "Public Service Institute", "org": "GovTech", "rating": 4.7, "students_count": "5k", "image": "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=600&q=80", "tag": "Niche", "level": "Advanced", "category": "Business Leadership", "institution_id": gov_tech.id},
+        {"id": 16, "title": "Sustainable Supply Chain Management", "instructor": "Logistics Expert Panel", "org": "T6 Business", "rating": 4.8, "students_count": "9.5k", "image": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80", "tag": "Green", "level": "Intermediate", "category": "Business Leadership", "institution_id": tech_corp.id},
+        {"id": 17, "title": "Financial Modeling for Startups", "instructor": "Venture Capital Group", "org": "Tsinghua SEA", "rating": 4.8, "students_count": "13k", "image": "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=600&q=80", "tag": "Practical", "level": "Beginner", "category": "Business Leadership", "institution_id": tsinghua.id},
+
+        # Urban Planning
+        {"id": 18, "title": "Smart Mobility Systems", "instructor": "Transport Authority", "org": "GovTech", "rating": 4.7, "students_count": "6.5k", "image": "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?auto=format&fit=crop&w=600&q=80", "tag": "Future", "level": "Advanced", "category": "Urban Planning", "institution_id": gov_tech.id},
+        {"id": 19, "title": "Green Building Certifications", "instructor": "Sustainability Council", "org": "T6 Green", "rating": 4.6, "students_count": "4k", "image": "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=600&q=80", "tag": "Technical", "level": "Intermediate", "category": "Urban Planning", "institution_id": uid.id},
+
+        # Green Finance
+        {"id": 20, "title": "Carbon Credits Trading 101", "instructor": "Carbon Exchange", "org": "T6 Finance", "rating": 4.9, "students_count": "16k", "image": "https://images.unsplash.com/photo-1611974765270-ca12586343bb?auto=format&fit=crop&w=600&q=80", "tag": "Hot", "level": "Beginner", "category": "Green Finance", "institution_id": tech_corp.id},
+        {"id": 21, "title": "Impact Investing Strategies", "instructor": "Global Impact Fund", "org": "United in Diversity", "rating": 4.8, "students_count": "7k", "image": "https://images.unsplash.com/photo-1579532537598-459ecdaf39cc?auto=format&fit=crop&w=600&q=80", "tag": "Executive", "level": "Executive", "category": "Green Finance", "institution_id": uid.id}
+    ]
+
+    for c in courses:
+        db.add(Course(
+            id=c["id"],
+            title=c["title"],
+            instructor=c["instructor"],
+            org=c["org"],
+            rating=c["rating"],
+            students_count=c["students_count"],
+            image=c["image"],
+            tag=c["tag"],
+            level=c["level"],
+            category=c["category"],
+            institution_id=c["institution_id"],
+            duration="4-8 weeks",
+            description=f"Learn {c['title']} in this comprehensive course."
+        ))
     db.commit()
+
 
     # --- Enrollments ---
-    # Alice: Active in Circular Economy
-    # Bob: Completed Circular Economy
-    # Charlie: Active in AI Governance
-    # David: Active in Digital Transformation
-    # Eve: Active in AI Governance
+    # Alice: Active in Circular Economy (Course 1)
+    # Bob: Completed Circular Economy (Course 1)
+    # Charlie: Active in AI Governance (Course 5)
+    # David: Active in Digital Transformation (Course 14)
+    # Eve: Active in AI Governance (Course 5)
+    # Frank: Active in Renewable Energy (Course 3)
+    # Grace: Active in Green Building (Course 19)
+    # Harry: Active in Circular Economy (Course 1)
+    # Student: Active in AI for SMEs (Course 9)
     
     enrollments = [
-        Enrollment(user_id=alice.id, course_id=course_circular.id, status="active"),
-        Enrollment(user_id=bob.id, course_id=course_circular.id, status="completed"),
-        Enrollment(user_id=charlie.id, course_id=course_ai.id, status="active"),
-        Enrollment(user_id=david.id, course_id=course_digital.id, status="active"),
-        Enrollment(user_id=eve.id, course_id=course_ai.id, status="active"),
+        Enrollment(user_id=alice.id, course_id=1, status="active"),
+        Enrollment(user_id=bob.id, course_id=1, status="completed"),
+        Enrollment(user_id=charlie.id, course_id=5, status="active"),
+        Enrollment(user_id=david.id, course_id=14, status="active"),
+        Enrollment(user_id=eve.id, course_id=5, status="active"),
+        Enrollment(user_id=frank.id, course_id=3, status="active"),
+        Enrollment(user_id=grace.id, course_id=19, status="active"),
+        Enrollment(user_id=harry.id, course_id=1, status="active"),
+        Enrollment(user_id=student_user.id, course_id=9, status="active"), # Our main test user
     ]
     db.add_all(enrollments)
     db.commit()
 
     # --- Projects ---
     
-    # 1. Alice (Design Phase) - Circular Economy
+    # 1. Alice (Design Phase) - Course 1
     proj_alice = CDIOProject(
-        course_id=course_circular.id,
-        user_id=alice.id,
-        title="Waste-to-Energy for Local Markets",
-        current_phase="design",
-        overall_status="in_progress",
-        completion_percentage=40
+        course_id=1, user_id=alice.id, title="Waste-to-Energy for Local Markets",
+        current_phase="design", overall_status="in_progress", completion_percentage=40
     )
     db.add(proj_alice)
-    db.commit()
     
-    db.add(ProjectCharter(
-        project_id=proj_alice.id,
-        problem_statement="Organic waste in markets causes pollution.",
-        success_metrics="Convert 50% of waste to biogas.",
-        target_outcome="Biogas digester prototype.",
-        suggested_tools=["Python", "IoT Sensors"]
-    ))
-    db.add(DesignBlueprint(
-        project_id=proj_alice.id,
-        logic_flow="Waste -> Digester -> Gas -> Generator",
-        component_list=["Digester Tank", "Gas Valve", "Arduino Controller"]
-    ))
-    
-    # 2. Bob (Completed) - Circular Economy
+    # 2. Bob (Completed) - Course 1
     proj_bob = CDIOProject(
-        course_id=course_circular.id,
-        user_id=bob.id,
-        title="Plastic Recycling Hub",
-        current_phase="operate",
-        overall_status="completed",
-        completion_percentage=100
+        course_id=1, user_id=bob.id, title="Plastic Recycling Hub",
+        current_phase="operate", overall_status="completed", completion_percentage=100
     )
     db.add(proj_bob)
-    db.commit()
-    
-    db.add(ProjectCharter(
-        project_id=proj_bob.id,
-        problem_statement="Plastic pollution in rivers.",
-        success_metrics="Recycle 1 ton per month.",
-        target_outcome="Community recycling center."
-    ))
-    db.add(Deployment(
-        project_id=proj_bob.id,
-        deployment_url="https://plastic-hub.tsea.asia",
-        verification_status="verified"
-    ))
-    
-    # 3. Charlie (Conceive Phase) - AI Governance
+
+    # 3. Charlie (Conceive Phase) - Course 5
     proj_charlie = CDIOProject(
-        course_id=course_ai.id,
-        user_id=charlie.id,
-        title="Ethical AI Framework",
-        current_phase="conceive",
-        overall_status="in_progress",
-        completion_percentage=10
+        course_id=5, user_id=charlie.id, title="Ethical AI Framework",
+        current_phase="conceive", overall_status="in_progress", completion_percentage=10
     )
     db.add(proj_charlie)
-    db.commit()
-    
-    db.add(ProjectCharter(
-        project_id=proj_charlie.id,
-        problem_statement="Lack of transparency in AI decisions.",
-        success_metrics="Adopted by 3 local startups.",
-        target_outcome="Open source governance framework."
-    ))
-    
-    # 4. David (Implementation Phase) - Digital Transformation
+
+    # 4. David (Implementation Phase) - Course 14
     proj_david = CDIOProject(
-        course_id=course_digital.id,
-        user_id=david.id,
-        title="SME Digital Wallet",
-        current_phase="implement",
-        overall_status="in_progress",
-        completion_percentage=60
+        course_id=14, user_id=david.id, title="SME Digital Wallet",
+        current_phase="implement", overall_status="in_progress", completion_percentage=60
     )
     db.add(proj_david)
-    db.commit()
-    
-    db.add(ProjectCharter(
-        project_id=proj_david.id,
-        problem_statement="SMEs lack digital payment options.",
-        success_metrics="Onboard 100 merchants.",
-        target_outcome="Mobile wallet app."
-    ))
-    db.add(Implementation(
-        project_id=proj_david.id,
-        code_repository_url="https://github.com/david/wallet",
-        code_snapshot="def process_payment(): pass"
-    ))
-    
-    # 5. Eve (Deployment Phase) - AI Governance
+
+    # 5. Eve (Deployment Phase) - Course 5
     proj_eve = CDIOProject(
-        course_id=course_ai.id,
-        user_id=eve.id,
-        title="AI Bias Detector",
-        current_phase="operate",
-        overall_status="in_progress",
-        completion_percentage=90
+        course_id=5, user_id=eve.id, title="AI Bias Detector",
+        current_phase="operate", overall_status="in_progress", completion_percentage=90
     )
     db.add(proj_eve)
-    db.commit()
-    
-    db.add(ProjectCharter(
-        project_id=proj_eve.id,
-        problem_statement="Bias in hiring algorithms.",
-        success_metrics="Reduce bias by 20%.",
-        target_outcome="Bias detection tool."
-    ))
-    db.add(Deployment(
-        project_id=proj_eve.id,
-        deployment_url="https://bias-detector.tsea.asia",
-        verification_status="submitted" # Waiting for verification
-    ))
     
     db.commit()
-
-    # --- Credentials ---
-    cred_bob = Credential(
-        user_id=bob.id,
-        course_id=course_circular.id,
-        title="Circular Economy Specialist",
-        description="Completed the Circular Economy Models course.",
-        issuer_name="United in Diversity",
-        credential_type="course_completion",
-        status="issued"
-    )
-    db.add(cred_bob)
-    db.commit()
-
-    # --- Instructor Demo Data (Mats Hanson) ---
     
-    # Course 1: Advanced Renewable Energy Systems (Existing)
-    course_mats_1 = Course(
-        title="Advanced Renewable Energy Systems",
-        instructor="Mats Hanson",
-        org="UID",
-        institution_id=uid.id,
-        rating=4.5,
-        students_count="25",
-        image="https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=600&q=80",
-        level="Advanced",
-        category="Engineering"
-    )
-    db.add(course_mats_1)
+    # Artifacts for projects (simplified for brevity but sufficient for logic)
+    db.add(ProjectCharter(project_id=proj_alice.id, problem_statement="Waste issue", success_metrics="Less waste", target_outcome="Clean market"))
     
-    # Course 2: Sustainable Urban Planning (New)
-    course_mats_2 = Course(
-        title="Sustainable Urban Planning",
-        instructor="Mats Hanson",
-        org="UID",
-        institution_id=uid.id,
-        rating=4.7,
-        students_count="42",
-        image="https://images.unsplash.com/photo-1449824913929-2b3a3e357925?auto=format&fit=crop&w=600&q=80",
-        level="Intermediate",
-        category="Urban Planning"
-    )
-    db.add(course_mats_2)
-    db.commit()
+    db.add(ProjectCharter(project_id=proj_bob.id, problem_statement="Plastic issue", success_metrics="More recycling", target_outcome="Recycling center"))
+    db.add(Deployment(project_id=proj_bob.id, deployment_url="https://bob-recycle.tsea.asia", verification_status="verified"))
+    db.add(Credential(user_id=bob.id, course_id=1, title="Circular Economy Specialist", credential_type="course_completion", status="issued", issuer_name="UID"))
 
-    # Scenario 1: Frank (Pending Deployment Review) - Course 1
-    frank = User(email="frank@tsea.asia", full_name="Frank Wright", role="student")
-    db.add(frank)
-    db.commit()
-
-    db.add(Enrollment(user_id=frank.id, course_id=course_mats_1.id, status="active"))
+    db.add(ProjectCharter(project_id=proj_charlie.id, problem_statement="AI Bias", success_metrics="Fairness", target_outcome="Fair AI"))
     
-    proj_frank = CDIOProject(
-        course_id=course_mats_1.id,
-        user_id=frank.id,
-        title="Solar Grid Optimization",
-        current_phase="operate",
-        overall_status="in_progress",
-        completion_percentage=95
-    )
-    db.add(proj_frank)
-    db.commit()
-
-    db.add(ProjectCharter(
-        project_id=proj_frank.id,
-        problem_statement="Inefficient grid distribution.",
-        success_metrics="Improve efficiency by 15%.",
-        target_outcome="Optimized grid controller."
-    ))
-    db.add(Deployment(
-        project_id=proj_frank.id,
-        deployment_url="https://solar-grid.tsea.asia",
-        verification_status="submitted" # Triggers Pending Review
-    ))
-
-    # Scenario 2: Grace (Pending Charter Review) - Course 2
-    grace = User(email="grace@tsea.asia", full_name="Grace Ho", role="student")
-    db.add(grace)
-    db.commit()
-
-    db.add(Enrollment(user_id=grace.id, course_id=course_mats_2.id, status="active"))
-
-    proj_grace = CDIOProject(
-        course_id=course_mats_2.id,
-        user_id=grace.id,
-        title="Green Roof Initiative",
-        current_phase="conceive",
-        overall_status="in_progress",
-        completion_percentage=10
-    )
-    db.add(proj_grace)
-    db.commit()
-
-    db.add(ProjectCharter(
-        project_id=proj_grace.id,
-        problem_statement="Lack of green spaces in downtown.",
-        success_metrics="Convert 5 rooftops.",
-        target_outcome="Community garden network.",
-        reasoning="AI Analysis: Feasible with current budget.",
-        difficulty_level="Beginner",
-        estimated_duration="3 months"
-    ))
-    # Note: No Deployment yet, but Charter exists. Dashboard logic checks for charter_id && !design_completed for "Charter Review"
-
-    # Scenario 3: Harry (Active Design) - Course 1
-    harry = User(email="harry@tsea.asia", full_name="Harry Potter", role="student")
-    db.add(harry)
-    db.commit()
-
-    db.add(Enrollment(user_id=harry.id, course_id=course_mats_1.id, status="active"))
-
-    proj_harry = CDIOProject(
-        course_id=course_mats_1.id,
-        user_id=harry.id,
-        title="Wind Turbine Blade Design",
-        current_phase="design",
-        overall_status="in_progress",
-        completion_percentage=40
-    )
-    db.add(proj_harry)
-    db.commit()
+    db.add(ProjectCharter(project_id=proj_david.id, problem_statement="No digital wallet", success_metrics="100 users", target_outcome="Wallet app"))
+    db.add(Implementation(project_id=proj_david.id, code_snapshot="print('wallet')"))
     
-    db.add(ProjectCharter(
-        project_id=proj_harry.id,
-        problem_statement="Noise pollution from turbines.",
-        success_metrics="Reduce noise by 10dB.",
-        target_outcome="Silent blade prototype."
-    ))
-    db.add(DesignBlueprint(
-        project_id=proj_harry.id,
-        logic_flow="Aerodynamic simulation -> Material selection -> 3D Print",
-        component_list=["Carbon Fiber", "Resin"]
-    ))
+    db.add(ProjectCharter(project_id=proj_eve.id, problem_statement="Bias in hiring", success_metrics="Less bias", target_outcome="Detector"))
+    db.add(Deployment(project_id=proj_eve.id, deployment_url="https://eve-ai.tsea.asia", verification_status="submitted"))
 
     db.commit()
-
-    print("Seeding complete! Tables dropped and recreated with new data.")
+    print("Seeding complete! Full alignment with frontend established.")
 
 if __name__ == "__main__":
     seed_data()

@@ -87,7 +87,7 @@ export const CourseModal: React.FC<CourseModalProps> = ({ isOpen, onClose, onSub
 
         setIsGenerating(true);
         try {
-            const response = await fetch('http://localhost:8000/api/v1/courses/generate', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/courses/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
