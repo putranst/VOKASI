@@ -52,7 +52,7 @@ const HEXAHELIX_SECTORS = [
     'Government', 'Academia', 'Industry', 'Civil Society', 'Media', 'Community'
 ];
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 export default function SyllabusManager({ courseId, courseTitle, courseDuration, onSave, onClose }: Props) {
     const [mode, setMode] = useState<'manual' | 'ai'>('manual');
@@ -136,7 +136,7 @@ export default function SyllabusManager({ courseId, courseTitle, courseDuration,
 
             aiFiles.forEach(file => formData.append('files', file));
 
-            const response = await fetch('http://localhost:8000/api/v1/syllabus/generate', {
+            const response = await fetch(`${API_BASE}/api/v1/syllabus/generate`, {
                 method: 'POST',
                 body: formData
             });
