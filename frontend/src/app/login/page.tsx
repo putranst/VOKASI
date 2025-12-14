@@ -97,7 +97,6 @@ export default function LoginPage() {
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
                                     placeholder="Enter your password"
-                                    required
                                 />
                                 <button
                                     type="button"
