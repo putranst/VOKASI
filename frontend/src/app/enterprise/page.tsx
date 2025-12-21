@@ -1,30 +1,16 @@
 import React from 'react';
-import { Logo } from '@/components/ui/Logo';
-import { NavItem } from '@/components/ui/NavItem';
+import { Navbar } from '@/components/Navbar';
 import { CheckCircle, TrendingUp, Users } from 'lucide-react';
 import { Footer } from '@/components/Footer';
 
 export default function EnterprisePage() {
     return (
         <div className="min-h-screen bg-background text-slate-800 font-sans">
-            <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200/50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-10">
-                        <Logo />
-                        <nav className="hidden lg:flex items-center gap-8">
-                            <NavItem label="Hexahelix Model" href="/hexahelix" />
-                            <NavItem label="Career Pathways" href="/pathways" />
-                            <NavItem label="Enterprise" active href="/enterprise" />
-                            <NavItem label="Government" href="/government" />
-                            <NavItem label="All Courses" href="/courses" />
-                        </nav>
-                    </div>
-                </div>
-            </header>
+            <Navbar />
 
             <main>
                 <section className="bg-[#1a1a1a] text-white py-24">
-                    <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
+                    <div className="max-w-[70rem] mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
                         <div>
                             <h1 className="text-5xl font-black mb-6">TSEA-X for Enterprise</h1>
                             <p className="text-xl text-gray-400 mb-8 leading-relaxed">

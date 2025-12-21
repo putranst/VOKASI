@@ -9,13 +9,18 @@ import { NotificationPopover } from '@/components/ui/NotificationPopover';
 import { InboxDrawer } from '@/components/ui/InboxDrawer';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { BookOpen, Award, TrendingUp, Clock, LogOut, X, Check, ArrowRight, Sparkles, GraduationCap, Users, Shield } from 'lucide-react';
+import { BookOpen, Award, TrendingUp, Clock, LogOut, X, Check, ArrowRight, Sparkles, GraduationCap, Users, Shield, Target } from 'lucide-react';
 import { CourseProgressCard, DashboardCourseProgress } from '@/components/CourseProgressCard';
 import { CourseCard, Course } from '@/components/ui/CourseCard';
 import DigitalWallet from '@/components/DigitalWallet';
 import { RoleRouteGuard } from '@/components/RoleRouteGuard';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { KnowledgeGraph } from '@/components/ui/KnowledgeGraph';
+import { CareerGoalBanner } from '@/components/CareerGoalBanner';
+import { CareerExplorer } from '@/components/CareerExplorer';
+import { CAREER_PATHWAYS } from '@/components/careerData';
+import { IRISProgressTracker } from '@/components/ui/IRISProgressTracker';
+import { LearningStreak } from '@/components/ui/LearningStreak';
 
 interface DashboardData {
     enrolled_courses: DashboardCourseProgress[];
@@ -24,6 +29,21 @@ interface DashboardData {
     average_progress: number;
     recommended_courses: Course[];
     upcoming_deadlines: any[];
+    career_pathway_id?: string | null;
+    iris_projects?: {
+        project_id: number;
+        course_id: number;
+        project_title: string;
+        current_phase: 'immerse' | 'realize' | 'iterate' | 'scale' | 'completed';
+        completion_percentage: number;
+        sfia_target_level?: number;
+    }[];
+    learning_streak?: {
+        current_streak: number;
+        longest_streak: number;
+        this_week: boolean[];
+        total_xp: number;
+    };
 }
 
 export default function DashboardPage() {
@@ -80,6 +100,31 @@ export default function DashboardPage() {
         setSelectedCredential(cert);
         setShowCredentialModal(true);
     };
+
+    const handleSelectPathway = async (pathwayId: string) => {
+        if (!user) return;
+
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/users/${user.id}/career-pathway`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ career_pathway_id: pathwayId })
+            });
+
+            if (response.ok) {
+                // Update local state
+                setData(prev => prev ? { ...prev, career_pathway_id: pathwayId } : null);
+                console.log('[Dashboard] Career pathway updated to:', pathwayId);
+            }
+        } catch (error) {
+            console.error('[Dashboard] Failed to update career pathway:', error);
+        }
+    };
+
+    // Get selected pathway details
+    const selectedPathway = data?.career_pathway_id
+        ? CAREER_PATHWAYS.find(p => p.id === data.career_pathway_id)
+        : null;
 
     return (
         <RoleRouteGuard allowedRoles={['student']}>
@@ -162,15 +207,63 @@ export default function DashboardPage() {
                     <PageTransition className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
                         {activeTab === 'overview' ? (
                             <>
+                                {/* Career Goal Banner - Show if no pathway selected */}
+                                {!data?.career_pathway_id && (
+                                    <CareerGoalBanner
+                                        onSetGoal={() => {
+                                            // Scroll to career explorer or open modal
+                                            const element = document.getElementById('career-explorer');
+                                            element?.scrollIntoView({ behavior: 'smooth' });
+                                        }}
+                                    />
+                                )}
+
                                 {/* Welcome Section */}
-                                <div className="mb-8">
+                                <div className="mb-6">
                                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
                                         Welcome back, {user?.name?.split(' ')[0]}! 👋
                                     </h2>
                                     <p className="text-gray-600">
-                                        You've made great progress this week. Keep it up!
+                                        {selectedPathway
+                                            ? `You're on track to become a ${selectedPathway.title}. Keep learning!`
+                                            : "You've made great progress this week. Keep it up!"
+                                        }
                                     </p>
                                 </div>
+
+                                {/* Career Explorer - Show if no pathway selected */}
+                                {!data?.career_pathway_id && (
+                                    <div id="career-explorer">
+                                        <CareerExplorer
+                                            onSelectPathway={handleSelectPathway}
+                                            selectedPathwayId={data?.career_pathway_id}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Selected Career Goal Card - Show if pathway selected */}
+                                {selectedPathway && (
+                                    <div className="mb-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white">
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-4xl">{selectedPathway.icon}</div>
+                                            <div className="flex-1">
+                                                <div className="text-sm font-medium text-blue-200 mb-1">Your Career Goal</div>
+                                                <h3 className="text-xl font-bold">{selectedPathway.title}</h3>
+                                                <p className="text-blue-100 text-sm mt-1">{selectedPathway.shortDescription}</p>
+                                            </div>
+                                            <div className="hidden md:flex items-center gap-4">
+                                                <div className="text-center">
+                                                    <div className="text-2xl font-bold">{selectedPathway.requiredCourses.length}</div>
+                                                    <div className="text-xs text-blue-200">Required Courses</div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="text-2xl font-bold">{selectedPathway.timeToMastery.split('-')[0]}</div>
+                                                    <div className="text-xs text-blue-200">Months to Master</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Stats Grid */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -205,6 +298,36 @@ export default function DashboardPage() {
                                         </div>
                                         <p className="text-gray-500 text-sm font-medium">Average Progress</p>
                                         <h3 className="text-2xl font-black text-gray-900">{data?.average_progress || 0}%</h3>
+                                    </div>
+                                </div>
+
+                                {/* Learning Streak + IRIS Progress Row */}
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                                    {/* Learning Streak */}
+                                    <div className="lg:col-span-1">
+                                        <LearningStreak
+                                            currentStreak={data?.learning_streak?.current_streak || 3}
+                                            longestStreak={data?.learning_streak?.longest_streak || 7}
+                                            thisWeek={data?.learning_streak?.this_week || [true, true, true, false, false, false, false]}
+                                            totalXp={data?.learning_streak?.total_xp || 450}
+                                        />
+                                    </div>
+
+                                    {/* IRIS Project Progress */}
+                                    <div className="lg:col-span-2">
+                                        <IRISProgressTracker
+                                            projects={data?.iris_projects || data?.enrolled_courses?.slice(0, 2).map(c => {
+                                                const phase = c.progress > 75 ? 'scale' : c.progress > 50 ? 'iterate' : c.progress > 25 ? 'realize' : 'immerse';
+                                                return {
+                                                    project_id: c.course_id,
+                                                    course_id: c.course_id,
+                                                    project_title: `${c.title} Project`,
+                                                    current_phase: phase as 'immerse' | 'realize' | 'iterate' | 'scale' | 'completed',
+                                                    completion_percentage: c.progress,
+                                                    sfia_target_level: 3
+                                                };
+                                            }) || []}
+                                        />
                                     </div>
                                 </div>
 

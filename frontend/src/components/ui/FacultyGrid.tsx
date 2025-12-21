@@ -93,7 +93,7 @@ export const FACULTY_DATA = [
 export const FacultyGrid = () => {
     return (
         <section className="py-20 bg-gray-900 text-white overflow-hidden relative">
-            <div className="max-w-7xl mx-auto px-4 mb-4 z-10 relative">
+            <div className="max-w-[70rem] mx-auto px-4 mb-4 z-10 relative">
                 <h2 className="text-3xl font-black mb-4">World-Class Faculty</h2>
                 <div className="flex justify-between items-end">
                     <p className="text-gray-400 text-lg max-w-2xl">

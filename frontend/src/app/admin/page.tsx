@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import {
     Users, BookOpen, Award, TrendingUp, Activity,
     Shield, Database, Globe, Settings, AlertCircle,
-    CheckCircle, Clock, DollarSign, GraduationCap,
+    CheckCircle, Clock, DollarSign, GraduationCap, Flame, Zap, Trophy,
     BarChart3, FileText, Upload, Download, X, LogOut
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -86,6 +86,23 @@ const MOCK_LOGS: SystemLog[] = [
     { id: 5, timestamp: "2025-11-28 04:40:00", level: "info", service: "api", message: "System backup completed" },
 ];
 
+// Gamification Stats interface
+interface GamificationStats {
+    total_xp_distributed: number;
+    active_streakers: number;
+    average_streak: number;
+    seven_day_achievers: number;
+    thirty_day_achievers: number;
+    total_badges_earned: number;
+    top_learners: Array<{
+        user_id: number;
+        name: string;
+        xp: number;
+        streak: number;
+        level: number;
+    }>;
+}
+
 export default function AdminDashboard() {
     const router = useRouter();
     const [stats, setStats] = useState<PlatformStats>({
@@ -102,6 +119,7 @@ export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'courses' | 'credentials' | 'system'>('overview');
     const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
     const [loading, setLoading] = useState(true);
+    const [gamificationStats, setGamificationStats] = useState<GamificationStats | null>(null);
 
     // User Management State
     const [searchTerm, setSearchTerm] = useState('');
@@ -406,6 +424,13 @@ export default function AdminDashboard() {
                 setAdminCredentials(credentialsData);
             }
 
+            // Fetch gamification stats
+            const gamificationResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/gamification-stats`);
+            if (gamificationResponse.ok) {
+                const gamificationData = await gamificationResponse.json();
+                setGamificationStats(gamificationData);
+            }
+
         } catch (error) {
             console.error('Failed to fetch dashboard data:', error);
         } finally {
@@ -602,6 +627,87 @@ export default function AdminDashboard() {
                                         <p className="text-sm text-gray-600 mt-1">This month</p>
                                     </div>
                                 </div>
+
+                                {/* Gamification Overview */}
+                                {gamificationStats && (
+                                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 shadow-sm border border-amber-100">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl">
+                                                    <Flame className="w-6 h-6 text-white" />
+                                                </div>
+                                                <h3 className="font-bold text-gray-900 text-lg">Gamification Overview</h3>
+                                            </div>
+                                            <span className="text-sm text-amber-600 font-medium">
+                                                {gamificationStats.total_badges_earned} badges earned
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                            <div className="bg-white/80 rounded-xl p-4 text-center">
+                                                <div className="flex justify-center mb-2">
+                                                    <Zap className="w-6 h-6 text-amber-500" />
+                                                </div>
+                                                <p className="text-2xl font-bold text-gray-900">{gamificationStats.total_xp_distributed.toLocaleString()}</p>
+                                                <p className="text-xs text-gray-600">Total XP</p>
+                                            </div>
+                                            <div className="bg-white/80 rounded-xl p-4 text-center">
+                                                <div className="flex justify-center mb-2">
+                                                    <Flame className="w-6 h-6 text-orange-500" />
+                                                </div>
+                                                <p className="text-2xl font-bold text-gray-900">{gamificationStats.active_streakers}</p>
+                                                <p className="text-xs text-gray-600">Active Streakers</p>
+                                            </div>
+                                            <div className="bg-white/80 rounded-xl p-4 text-center">
+                                                <div className="flex justify-center mb-2">
+                                                    <TrendingUp className="w-6 h-6 text-green-500" />
+                                                </div>
+                                                <p className="text-2xl font-bold text-gray-900">{gamificationStats.average_streak}</p>
+                                                <p className="text-xs text-gray-600">Avg Streak</p>
+                                            </div>
+                                            <div className="bg-white/80 rounded-xl p-4 text-center">
+                                                <div className="flex justify-center mb-2">
+                                                    <Trophy className="w-6 h-6 text-yellow-500" />
+                                                </div>
+                                                <p className="text-2xl font-bold text-gray-900">{gamificationStats.seven_day_achievers}</p>
+                                                <p className="text-xs text-gray-600">7-Day Achievers</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Top Learners Leaderboard */}
+                                        <div className="bg-white/80 rounded-xl p-4">
+                                            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                                <Trophy className="w-4 h-4 text-yellow-500" />
+                                                Top Learners
+                                            </h4>
+                                            <div className="space-y-2">
+                                                {gamificationStats.top_learners.map((learner, index) => (
+                                                    <div key={learner.user_id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-amber-50 transition-colors">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${index === 0 ? 'bg-yellow-400 text-yellow-900' :
+                                                                    index === 1 ? 'bg-gray-300 text-gray-700' :
+                                                                        index === 2 ? 'bg-amber-600 text-white' :
+                                                                            'bg-gray-100 text-gray-600'
+                                                                }`}>
+                                                                {index + 1}
+                                                            </span>
+                                                            <span className="font-medium text-gray-900">{learner.name}</span>
+                                                            <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Lvl {learner.level}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-4">
+                                                            <span className="text-sm text-orange-600 font-medium flex items-center gap-1">
+                                                                <Flame className="w-3 h-3" /> {learner.streak} day{learner.streak !== 1 ? 's' : ''}
+                                                            </span>
+                                                            <span className="text-sm font-bold text-amber-600">
+                                                                {learner.xp.toLocaleString()} XP
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Recent Activity */}
                                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">

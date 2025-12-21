@@ -2,10 +2,16 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Search, Menu, X, ChevronRight, LogOut, User as UserIcon } from 'lucide-react';
+import {
+    Menu, X, ChevronRight, LogOut,
+    GraduationCap, BookOpen, Sparkles, Code2,
+    Globe, Target, TrendingUp,
+    Building2, Briefcase, Landmark,
+    FileText, HelpCircle, BookMarked,
+    Users, Mail, ShieldCheck, Info
+} from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
-import { NavItem } from '@/components/ui/NavItem';
-import { useSearch } from '@/lib/SearchContext';
+import { NavDropdown } from '@/components/ui/NavDropdown';
 import { useAuth } from '@/lib/AuthContext';
 import { NotificationPopover } from '@/components/ui/NotificationPopover';
 import { InboxDrawer } from '@/components/ui/InboxDrawer';
@@ -13,7 +19,6 @@ import { useRouter } from 'next/navigation';
 
 export const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { searchTerm, setSearchTerm } = useSearch();
     const { user, isAuthenticated, logout } = useAuth();
     const router = useRouter();
 
@@ -22,50 +27,74 @@ export const Navbar = () => {
         router.push('/');
     };
 
+    // Menu structure with dropdowns
+    const learnItems = [
+        { label: 'Career Pathways', href: '/pathways', icon: <GraduationCap size={18} />, description: 'AI-guided career transitions' },
+        { label: 'All Courses', href: '/courses', icon: <BookOpen size={18} />, description: 'Browse our course catalog' },
+        { label: 'AI Tutor', href: '/ai-tutor', icon: <Sparkles size={18} />, description: 'Get personalized guidance' },
+        { label: 'Cloud IDE', href: '/cloud-ide', icon: <Code2 size={18} />, description: 'Build real projects' },
+    ];
+
+    const impactItems = [
+        { label: 'Hexahelix Model', href: '/hexahelix', icon: <Globe size={18} />, description: 'Our ecosystem approach' },
+        { label: 'SDG Alignment', href: '/sdg', icon: <Target size={18} />, description: 'UN Sustainable Development Goals' },
+        { label: 'Success Stories', href: '/success-stories', icon: <TrendingUp size={18} />, description: 'Graduate transformations' },
+    ];
+
+    const partnersItems = [
+        { label: 'Universities', href: '/partners', icon: <Building2 size={18} />, description: 'Academic partnerships' },
+        { label: 'Enterprise', href: '/enterprise', icon: <Briefcase size={18} />, description: 'Corporate training solutions' },
+        { label: 'Government', href: '/government', icon: <Landmark size={18} />, description: 'Public sector programs' },
+    ];
+
+    const resourcesItems = [
+        { label: 'Documentation', href: '/docs', icon: <FileText size={18} />, description: 'Platform guides' },
+        { label: 'FAQs', href: '/faq', icon: <HelpCircle size={18} />, description: 'Common questions' },
+        { label: 'Blog', href: '/blog', icon: <BookMarked size={18} />, description: 'Insights & updates' },
+    ];
+
+    const aboutItems = [
+        { label: 'Our Mission', href: '/about', icon: <Info size={18} />, description: 'Why we exist' },
+        { label: 'Team', href: '/team', icon: <Users size={18} />, description: 'Meet the people' },
+        { label: 'Contact', href: '/contact', icon: <Mail size={18} />, description: 'Get in touch' },
+        { label: 'Verify Credential', href: '/verify-credential', icon: <ShieldCheck size={18} />, description: 'Validate certificates' },
+    ];
+
     return (
-        <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200/50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-                <div className="flex items-center gap-10">
-                    <Link href="/">
+        <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200/50 shadow-sm">
+            <div className="max-w-[70rem] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+
+                {/* Left: Logo */}
+                <div className="flex-shrink-0">
+                    <Link href="/" className="block">
                         <Logo />
                     </Link>
-
-                    <nav className="hidden lg:flex items-center gap-8">
-                        <NavItem label="Hexahelix Model" href="/hexahelix" />
-                        <NavItem label="Career Pathways" href="/pathways" />
-                        <NavItem label="Partners" href="/partners" />
-                        <NavItem label="Enterprise" href="/enterprise" />
-                        <NavItem label="Government" href="/government" />
-                        <NavItem label="Verify Credential" href="/verify-credential" />
-                    </nav>
                 </div>
 
-                <div className="hidden md:flex items-center gap-2 flex-1 max-w-sm mx-8">
-                    <div className="relative w-full group">
-                        <input
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-gray-100 border border-transparent rounded-full py-2.5 pl-10 pr-4 text-sm focus:bg-white focus:border-primary/50 focus:ring-2 focus:ring-primary/10 outline-none transition-all font-medium"
-                            placeholder="Search courses, skills, or mentors..."
-                        />
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary" size={18} />
-                    </div>
-                </div>
+                {/* Center: Navigation */}
+                <nav className="hidden lg:flex items-center justify-center gap-6 flex-1 mx-8">
+                    <NavDropdown label="Learn" items={learnItems} />
+                    <NavDropdown label="Impact" items={impactItems} />
+                    <NavDropdown label="Partners" items={partnersItems} />
+                    <NavDropdown label="Resources" items={resourcesItems} />
+                    <NavDropdown label="About" items={aboutItems} />
+                </nav>
 
-                <div className="hidden md:flex items-center gap-4">
+                {/* Right: Auth Actions */}
+                <div className="hidden md:flex items-center gap-3 flex-shrink-0">
                     {isAuthenticated && user ? (
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3">
                             <InboxDrawer />
                             <NotificationPopover />
 
-                            <div className="h-8 w-px bg-gray-200 mx-2"></div>
+                            <div className="h-6 w-px bg-gray-200 mx-1"></div>
 
-                            <Link href="/dashboard" className="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-xl transition-colors">
+                            <Link href="/dashboard" className="flex items-center gap-2.5 hover:bg-gray-50 py-1.5 px-2 rounded-lg transition-colors">
                                 <div className="text-right hidden sm:block">
-                                    <p className="text-sm font-bold text-gray-900">{user.name}</p>
+                                    <p className="text-sm font-bold text-gray-900 leading-tight">{user.name}</p>
                                     <p className="text-xs text-gray-500 capitalize">{user.role}</p>
                                 </div>
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 p-0.5">
+                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent p-0.5">
                                     <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
                                         <img
                                             src={`https://ui-avatars.com/api/?name=${user.name}&background=random`}
@@ -81,45 +110,102 @@ export const Navbar = () => {
                                 className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
                                 title="Sign Out"
                             >
-                                <LogOut size={20} />
+                                <LogOut size={18} />
                             </button>
                         </div>
                     ) : (
                         <>
-                            <Link href="/login" className="text-gray-600 text-sm font-bold hover:text-primary px-2">
+                            <Link href="/login" className="text-gray-600 text-sm font-semibold hover:text-primary transition-colors px-3 py-2">
                                 Log In
                             </Link>
-                            <button className="bg-primary text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-[#5a4a3b] transition-all shadow-lg shadow-primary/20 flex items-center gap-2">
-                                Join T6 <ChevronRight size={16} />
-                            </button>
+                            <Link
+                                href="/pathways"
+                                className="bg-primary text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-primary/90 transition-all shadow-md hover:shadow-lg flex items-center gap-1.5"
+                            >
+                                Start Learning <ChevronRight size={16} />
+                            </Link>
                         </>
                     )}
                 </div>
 
-                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden text-gray-600">
-                    {isMenuOpen ? <X /> : <Menu />}
+                {/* Mobile Menu Button */}
+                <button
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className="lg:hidden text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                    {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
             </div>
 
             {/* Mobile Menu */}
             {isMenuOpen && (
-                <div className="md:hidden bg-white border-t border-gray-200 py-4 px-4 space-y-4">
-                    <div className="flex flex-col gap-4">
-                        <Link href="/hexahelix" className="text-gray-600 font-medium">Hexahelix Model</Link>
-                        <Link href="/pathways" className="text-gray-600 font-medium">Career Pathways</Link>
-                        <Link href="/partners" className="text-gray-600 font-medium">Partners</Link>
-                        <Link href="/enterprise" className="text-gray-600 font-medium">Enterprise</Link>
-                        <Link href="/government" className="text-gray-600 font-medium">Government</Link>
-                        <Link href="/verify-credential" className="text-gray-600 font-medium">Verify Credential</Link>
-                        <hr />
-                        <hr />
+                <div className="lg:hidden bg-white border-t border-gray-100 py-4 px-4 shadow-lg animate-slide-up">
+                    <div className="space-y-4">
+                        {/* Learn Section */}
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Learn</p>
+                            <div className="space-y-1">
+                                <Link href="/pathways" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Career Pathways</Link>
+                                <Link href="/courses" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>All Courses</Link>
+                            </div>
+                        </div>
+
+                        {/* Impact Section */}
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Impact</p>
+                            <div className="space-y-1">
+                                <Link href="/hexahelix" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Hexahelix Model</Link>
+                                <Link href="/success-stories" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Success Stories</Link>
+                            </div>
+                        </div>
+
+                        {/* Partners Section */}
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Partners</p>
+                            <div className="space-y-1">
+                                <Link href="/partners" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Universities</Link>
+                                <Link href="/enterprise" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Enterprise</Link>
+                                <Link href="/government" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Government</Link>
+                            </div>
+                        </div>
+
+                        {/* About Section */}
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">About</p>
+                            <div className="space-y-1">
+                                <Link href="/verify-credential" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Verify Credential</Link>
+                                <Link href="/about" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Our Mission</Link>
+                            </div>
+                        </div>
+
+                        <hr className="border-gray-100" />
+
+                        {/* Auth Section */}
                         {isAuthenticated ? (
-                            <>
-                                <Link href="/dashboard" className="text-primary font-bold">My Dashboard</Link>
-                                <button onClick={handleLogout} className="text-red-600 font-medium text-left">Sign Out</button>
-                            </>
+                            <div className="space-y-2">
+                                <Link href="/dashboard" className="block py-2 px-3 text-primary font-bold hover:bg-primary/5 rounded-lg" onClick={() => setIsMenuOpen(false)}>
+                                    My Dashboard
+                                </Link>
+                                <button
+                                    onClick={() => { handleLogout(); setIsMenuOpen(false); }}
+                                    className="block w-full text-left py-2 px-3 text-red-600 font-medium hover:bg-red-50 rounded-lg"
+                                >
+                                    Sign Out
+                                </button>
+                            </div>
                         ) : (
-                            <Link href="/login" className="text-gray-600 font-bold">Log In</Link>
+                            <div className="space-y-2">
+                                <Link href="/login" className="block py-2 px-3 text-gray-700 font-semibold hover:bg-gray-50 rounded-lg" onClick={() => setIsMenuOpen(false)}>
+                                    Log In
+                                </Link>
+                                <Link
+                                    href="/pathways"
+                                    className="block py-3 px-4 bg-primary text-white text-center font-bold rounded-xl"
+                                    onClick={() => setIsMenuOpen(false)}
+                                >
+                                    Start Learning →
+                                </Link>
+                            </div>
                         )}
                     </div>
                 </div>

@@ -1,5 +1,5 @@
 from database import SessionLocal, engine, Base
-from sql_models import User, Institution, Course, CDIOProject, ProjectCharter, DesignBlueprint, Implementation, Deployment, Enrollment, Credential
+from sql_models import User, Institution, Course, CDIOProject, ProjectCharter, DesignBlueprint, Implementation, Deployment, Enrollment, Credential, LearningStreak
 from datetime import datetime, timedelta
 
 def seed_data():
@@ -40,16 +40,36 @@ def seed_data():
     db.commit()
 
     # --- Users ---
-    # Instructors
-    inst_mats = User(email="mats@uid.or.id", full_name="Mats Hanson", role="instructor")
-    inst_siti = User(email="dr.siti@tsea.asia", full_name="Dr. Siti", role="instructor")
-    inst_james = User(email="james.w@tsea.asia", full_name="James Wong", role="instructor")
+    # Institutional Instructors (linked to partner organizations)
+    inst_mats = User(
+        email="mats@uid.or.id", full_name="Mats Hanson", role="instructor",
+        institution_id=uid.id, instructor_type="institutional"
+    )
+    inst_siti = User(
+        email="dr.siti@tsea.asia", full_name="Dr. Siti", role="instructor",
+        institution_id=tsinghua.id, instructor_type="institutional"
+    )
+    inst_james = User(
+        email="james.w@tsea.asia", full_name="James Wong", role="instructor",
+        institution_id=gov_tech.id, instructor_type="institutional"
+    )
+    
+    # Individual Instructor (not linked to any institution)
+    inst_individual = User(
+        email="rangga@gmail.com", full_name="Rangga", role="instructor",
+        instructor_type="individual"
+    )
+    
+    # Institution Admins (partner dashboard users)
+    uid_admin = User(email="admin@uid.or.id", full_name="UID Partner Admin", role="institution", institution_id=uid.id)
+    tsinghua_admin = User(email="admin@tsinghua.edu", full_name="Tsinghua Partner Admin", role="institution", institution_id=tsinghua.id)
+    govtech_admin = User(email="admin@govtech.sg", full_name="GovTech Partner Admin", role="institution", institution_id=gov_tech.id)
     
     # Students
     alice = User(email="alice@tsea.asia", full_name="Alice Tan", role="student") # Design Phase
     bob = User(email="bob@tsea.asia", full_name="Bob Nguyen", role="student") # Completed
-    charlie = User(email="charlie@tsea.asia", full_name="Charlie Lee", role="student") # Conceive Phase
-    david = User(email="david@tsea.asia", full_name="David Chen", role="student") # Implementation Phase
+    charlie = User(email="charlie@tsea.asia", full_name="Charlie Lee", role="student")  # New Learner - No pathway selected
+    david = User(email="david@tsea.asia", full_name="David Chen", role="student", career_pathway_id="ai-ml-engineer")  # Experienced - AI/ML Engineer pathway
     eve = User(email="eve@tsea.asia", full_name="Eve Sato", role="student") # Deployment Phase
     frank = User(email="frank@tsea.asia", full_name="Frank Wright", role="student") # Scenario
     grace = User(email="grace@tsea.asia", full_name="Grace Ho", role="student") # Scenario
@@ -58,10 +78,15 @@ def seed_data():
     # Test User
     student_user = User(email="student@tsea.asia", full_name="Student User", role="student")
     
-    # Admins
+    # Platform Admins
     admin_user = User(email="admin@tsea.asia", full_name="System Admin", role="admin")
     
-    db.add_all([inst_mats, inst_siti, inst_james, alice, bob, charlie, david, eve, frank, grace, harry, student_user, admin_user])
+    db.add_all([
+        inst_mats, inst_siti, inst_james, inst_individual,
+        uid_admin, tsinghua_admin, govtech_admin,
+        alice, bob, charlie, david, eve, frank, grace, harry,
+        student_user, admin_user
+    ])
     db.commit()
 
     # --- Courses (Full list of 21) ---
@@ -144,42 +169,67 @@ def seed_data():
     db.add_all(enrollments)
     db.commit()
 
-    # --- Projects ---
+    # --- Projects (Now using IRIS Cycle phases) ---
     
-    # 1. Alice (Design Phase) - Course 1
+    # NUSA Sprint Scenarios - mapping IRIS phases:
+    # immersion = conceive (backward compat)
+    # reflection = design
+    # iteration = implement  
+    # scale = operate
+    
+    # 1. Alice (Reflection Phase) - Course 1
     proj_alice = CDIOProject(
-        course_id=1, user_id=alice.id, title="Waste-to-Energy for Local Markets",
-        current_phase="design", overall_status="in_progress", completion_percentage=40
+        course_id=1, user_id=alice.id, title="NUSA Sprint: Circular Economy Solution",
+        current_phase="reflection", overall_status="in_progress", completion_percentage=40
     )
     db.add(proj_alice)
     
-    # 2. Bob (Completed) - Course 1
+    # 2. Bob (Completed - Scale Phase) - Course 1
     proj_bob = CDIOProject(
-        course_id=1, user_id=bob.id, title="Plastic Recycling Hub",
-        current_phase="operate", overall_status="completed", completion_percentage=100
+        course_id=1, user_id=bob.id, title="NUSA Sprint: Community Recycling Network",
+        current_phase="scale", overall_status="completed", completion_percentage=100
     )
     db.add(proj_bob)
 
-    # 3. Charlie (Conceive Phase) - Course 5
+    # 3. Charlie (Immersion Phase) - Course 5 - New learner just starting
     proj_charlie = CDIOProject(
-        course_id=5, user_id=charlie.id, title="Ethical AI Framework",
-        current_phase="conceive", overall_status="in_progress", completion_percentage=10
+        course_id=5, user_id=charlie.id, title="NUSA Sprint: AI Ethics for Indonesia",
+        current_phase="immersion", overall_status="in_progress", completion_percentage=10
     )
     db.add(proj_charlie)
 
-    # 4. David (Implementation Phase) - Course 14
+    # 4. David (Iteration Phase - Build-Measure-Learn) - Course 14
     proj_david = CDIOProject(
-        course_id=14, user_id=david.id, title="SME Digital Wallet",
-        current_phase="implement", overall_status="in_progress", completion_percentage=60
+        course_id=14, user_id=david.id, title="NUSA Sprint: Financial Inclusion App",
+        current_phase="iteration", overall_status="in_progress", completion_percentage=60
     )
     db.add(proj_david)
 
-    # 5. Eve (Deployment Phase) - Course 5
+    # 5. Eve (Scale Phase - Institutional handoff) - Course 5
     proj_eve = CDIOProject(
-        course_id=5, user_id=eve.id, title="AI Bias Detector",
-        current_phase="operate", overall_status="in_progress", completion_percentage=90
+        course_id=5, user_id=eve.id, title="NUSA Sprint: Fair Hiring AI",
+        current_phase="scale", overall_status="in_progress", completion_percentage=90
     )
     db.add(proj_eve)
+    
+    # 6. Additional NUSA Sprint scenarios
+    proj_frank = CDIOProject(
+        course_id=3, user_id=frank.id, title="NUSA Sprint: Rural Energy Access",
+        current_phase="reflection", overall_status="in_progress", completion_percentage=35
+    )
+    db.add(proj_frank)
+    
+    proj_grace = CDIOProject(
+        course_id=19, user_id=grace.id, title="NUSA Sprint: Sustainable Construction",
+        current_phase="iteration", overall_status="in_progress", completion_percentage=55
+    )
+    db.add(proj_grace)
+    
+    proj_harry = CDIOProject(
+        course_id=1, user_id=harry.id, title="NUSA Sprint: Campus Sustainability",
+        current_phase="immersion", overall_status="in_progress", completion_percentage=15
+    )
+    db.add(proj_harry)
     
     db.commit()
     
@@ -199,7 +249,124 @@ def seed_data():
     db.add(Deployment(project_id=proj_eve.id, deployment_url="https://eve-ai.tsea.asia", verification_status="submitted"))
 
     db.commit()
-    print("Seeding complete! Full alignment with frontend established.")
+
+    # --- Learning Streaks (Gamification) ---
+    # Different scenarios for gamification data
+    today = datetime.utcnow()
+    
+    # Alice: Active learner, 5-day streak
+    streak_alice = LearningStreak(
+        user_id=alice.id,
+        current_streak=5,
+        longest_streak=12,
+        total_xp=2450,
+        last_activity_date=today,
+        week_activity=[True, True, True, True, True, False, False],  # M-F active
+        badges=["first_course", "week_warrior", "fast_learner"],
+        level=3
+    )
+    
+    # Bob: Champion - completed course, lost streak but has high XP
+    streak_bob = LearningStreak(
+        user_id=bob.id,
+        current_streak=0,
+        longest_streak=28,
+        total_xp=8500,
+        last_activity_date=today - timedelta(days=5),
+        week_activity=[False, False, False, False, False, False, False],
+        badges=["first_course", "course_completed", "streak_master", "xp_champion", "certificate_earned"],
+        level=8
+    )
+    
+    # Charlie: New learner, just starting
+    streak_charlie = LearningStreak(
+        user_id=charlie.id,
+        current_streak=1,
+        longest_streak=1,
+        total_xp=150,
+        last_activity_date=today,
+        week_activity=[False, False, False, False, False, False, True],
+        badges=["first_login"],
+        level=1
+    )
+    
+    # David: Power user, 14-day streak (2 weeks!)
+    streak_david = LearningStreak(
+        user_id=david.id,
+        current_streak=14,
+        longest_streak=14,
+        total_xp=4200,
+        last_activity_date=today,
+        week_activity=[True, True, True, True, True, True, True],  # Full week
+        badges=["first_course", "week_warrior", "two_week_streak", "consistency_king"],
+        level=5
+    )
+    
+    # Eve: Consistent learner, 7-day weekly complete
+    streak_eve = LearningStreak(
+        user_id=eve.id,
+        current_streak=7,
+        longest_streak=21,
+        total_xp=3800,
+        last_activity_date=today,
+        week_activity=[True, True, True, True, True, True, True],
+        badges=["first_course", "week_warrior", "perfect_week", "three_week_streak"],
+        level=4
+    )
+    
+    # Frank: Moderate learner
+    streak_frank = LearningStreak(
+        user_id=frank.id,
+        current_streak=3,
+        longest_streak=10,
+        total_xp=1850,
+        last_activity_date=today,
+        week_activity=[False, False, True, True, True, False, False],
+        badges=["first_course", "fast_learner"],
+        level=2
+    )
+    
+    # Grace: Weekend warrior
+    streak_grace = LearningStreak(
+        user_id=grace.id,
+        current_streak=2,
+        longest_streak=8,
+        total_xp=2100,
+        last_activity_date=today,
+        week_activity=[False, False, False, False, False, True, True],
+        badges=["first_course", "weekend_warrior"],
+        level=3
+    )
+    
+    # Harry: Casual learner, just getting back
+    streak_harry = LearningStreak(
+        user_id=harry.id,
+        current_streak=1,
+        longest_streak=5,
+        total_xp=780,
+        last_activity_date=today,
+        week_activity=[False, False, False, False, False, False, True],
+        badges=["first_login", "comeback_kid"],
+        level=1
+    )
+    
+    # Student User (Demo): Moderate engagement
+    streak_student = LearningStreak(
+        user_id=student_user.id,
+        current_streak=3,
+        longest_streak=7,
+        total_xp=890,
+        last_activity_date=today,
+        week_activity=[False, True, True, True, False, False, False],
+        badges=["first_course", "first_project"],
+        level=2
+    )
+    
+    db.add_all([streak_alice, streak_bob, streak_charlie, streak_david, streak_eve, 
+                streak_frank, streak_grace, streak_harry, streak_student])
+    db.commit()
+    
+    print("Seeding complete! Full alignment with frontend established. Gamification data added.")
 
 if __name__ == "__main__":
     seed_data()

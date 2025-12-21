@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Logo } from '@/components/ui/Logo';
-import { NavItem } from '@/components/ui/NavItem';
+import { Navbar } from '@/components/Navbar';
 import { CourseCard } from '@/components/ui/CourseCard';
 import { CourseCardSkeleton } from '@/components/ui/CourseCardSkeleton';
 import { TABBED_COURSES, CATEGORIES } from '@/lib/data';
@@ -53,20 +52,22 @@ export default function CoursesPage() {
 
     return (
         <div className="min-h-screen bg-background text-slate-800 font-sans">
-            <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200/50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-10">
-                        <Logo />
-                        <nav className="hidden lg:flex items-center gap-8">
-                            <NavItem label="Hexahelix Model" href="/hexahelix" />
-                            <NavItem label="Career Pathways" href="/pathways" />
-                            <NavItem label="Enterprise" href="/enterprise" />
-                            <NavItem label="Government" href="/government" />
-                            <NavItem label="All Courses" active href="/courses" />
-                        </nav>
+            <Navbar />
+
+            <main className="max-w-[70rem] mx-auto px-4 py-12">
+                <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+                    <div>
+                        <h1 className="text-3xl font-black text-gray-900 mb-2">Explore Courses</h1>
+                        <p className="text-gray-600">
+                            {searchTerm
+                                ? `Showing results for "${searchTerm}"`
+                                : "Discover world-class education from T6 partners."
+                            }
+                        </p>
                     </div>
 
-                    <div className="hidden md:flex items-center gap-2 flex-1 max-w-sm mx-8">
+                    {/* Search bar */}
+                    <div className="hidden md:flex items-center gap-2 flex-1 max-w-sm">
                         <div className="relative w-full group">
                             <input
                                 value={searchTerm}
@@ -87,37 +88,24 @@ export default function CoursesPage() {
                         </div>
                     </div>
                 </div>
-            </header>
 
-            <main className="max-w-7xl mx-auto px-4 py-12">
-                <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
-                    <div>
-                        <h1 className="text-3xl font-black text-gray-900 mb-2">Explore Courses</h1>
-                        <p className="text-gray-600">
-                            {searchTerm
-                                ? `Showing results for "${searchTerm}"`
-                                : "Discover world-class education from T6 partners."
-                            }
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar max-w-full">
+                {/* Category filters */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar max-w-full mb-8">
+                    <button
+                        onClick={() => handleCategoryChange("All")}
+                        className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-all ${activeCategory === "All" ? "bg-primary text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                    >
+                        All Courses
+                    </button>
+                    {CATEGORIES.map(cat => (
                         <button
-                            onClick={() => handleCategoryChange("All")}
-                            className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-all ${activeCategory === "All" ? "bg-primary text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                            key={cat}
+                            onClick={() => handleCategoryChange(cat)}
+                            className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-all ${activeCategory === cat ? "bg-primary text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
                         >
-                            All Courses
+                            {cat}
                         </button>
-                        {CATEGORIES.map(cat => (
-                            <button
-                                key={cat}
-                                onClick={() => handleCategoryChange(cat)}
-                                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-all ${activeCategory === cat ? "bg-primary text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
-                            >
-                                {cat}
-                            </button>
-                        ))}
-                    </div>
+                    ))}
                 </div>
 
                 {/* Loading State */}

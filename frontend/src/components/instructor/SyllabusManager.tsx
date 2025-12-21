@@ -9,7 +9,7 @@ import {
 interface SyllabusSection {
     order: number;
     title: string;
-    cdio_phase: string;
+    iris_phase: string;  // Now uses IRIS phases
     week_number?: number;
     topics: string[];
     activities: string[];
@@ -41,11 +41,11 @@ interface Props {
     onClose: () => void;
 }
 
-const CDIO_PHASES = [
-    { id: 'conceive', label: 'Conceive', color: 'bg-blue-500' },
-    { id: 'design', label: 'Design', color: 'bg-purple-500' },
-    { id: 'implement', label: 'Implement', color: 'bg-green-500' },
-    { id: 'operate', label: 'Operate', color: 'bg-orange-500' }
+const IRIS_PHASES = [
+    { id: 'immerse', label: 'Immerse', color: 'bg-blue-500' },
+    { id: 'realize', label: 'Realize', color: 'bg-purple-500' },
+    { id: 'iterate', label: 'Iterate', color: 'bg-green-500' },
+    { id: 'scale', label: 'Scale', color: 'bg-orange-500' }
 ];
 
 const HEXAHELIX_SECTORS = [
@@ -164,14 +164,14 @@ export default function SyllabusManager({ courseId, courseTitle, courseDuration,
     const addSection = () => {
         const newOrder = syllabus.sections.length + 1;
         const phaseIndex = Math.floor((newOrder - 1) / Math.max(1, syllabus.duration_weeks / 4));
-        const phase = CDIO_PHASES[Math.min(phaseIndex, 3)].id;
+        const phase = IRIS_PHASES[Math.min(phaseIndex, 3)].id;
 
         setSyllabus({
             ...syllabus,
             sections: [...syllabus.sections, {
                 order: newOrder,
                 title: `Week ${newOrder}`,
-                cdio_phase: phase,
+                iris_phase: phase,
                 week_number: newOrder,
                 topics: [''],
                 activities: [''],
@@ -445,9 +445,9 @@ export default function SyllabusManager({ courseId, courseTitle, courseDuration,
                                                 onClick={() => toggleSection(index)}
                                             >
                                                 <GripVertical size={16} className="text-gray-400" />
-                                                <div className={`w-3 h-3 rounded-full ${CDIO_PHASES.find(p => p.id === section.cdio_phase)?.color || 'bg-gray-400'}`} />
+                                                <div className={`w-3 h-3 rounded-full ${IRIS_PHASES.find(p => p.id === section.iris_phase)?.color || 'bg-gray-400'}`} />
                                                 <span className="font-medium flex-1">{section.title}</span>
-                                                <span className="text-xs text-gray-500 capitalize">{section.cdio_phase}</span>
+                                                <span className="text-xs text-gray-500 capitalize">{section.iris_phase}</span>
                                                 {expandedSections.includes(index) ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                             </div>
 
@@ -462,14 +462,13 @@ export default function SyllabusManager({ courseId, courseTitle, courseDuration,
                                                             className="p-2 border border-gray-200 rounded-lg text-sm"
                                                         />
                                                         <select
-                                                            value={section.cdio_phase}
-                                                            onChange={(e) => updateSection(index, 'cdio_phase', e.target.value)}
+                                                            value={section.iris_phase}
+                                                            onChange={(e) => updateSection(index, 'iris_phase', e.target.value)}
                                                             className="p-2 border border-gray-200 rounded-lg text-sm"
                                                         >
-                                                            {CDIO_PHASES.map(p => (
+                                                            {IRIS_PHASES.map(p => (
                                                                 <option key={p.id} value={p.id}>{p.label}</option>
-                                                            ))}
-                                                        </select>
+                                                            ))}                                                        </select>
                                                         <input
                                                             type="text"
                                                             value={section.assessment || ''}

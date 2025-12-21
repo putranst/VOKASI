@@ -1,31 +1,17 @@
 import React from 'react';
-import { Logo } from '@/components/ui/Logo';
-import { NavItem } from '@/components/ui/NavItem';
+import { Navbar } from '@/components/Navbar';
 import { Building2, ShieldCheck, Globe } from 'lucide-react';
 import { Footer } from '@/components/Footer';
 
 export default function GovernmentPage() {
     return (
         <div className="min-h-screen bg-background text-slate-800 font-sans">
-            <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200/50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-10">
-                        <Logo />
-                        <nav className="hidden lg:flex items-center gap-8">
-                            <NavItem label="Hexahelix Model" href="/hexahelix" />
-                            <NavItem label="Career Pathways" href="/pathways" />
-                            <NavItem label="Enterprise" href="/enterprise" />
-                            <NavItem label="Government" active href="/government" />
-                            <NavItem label="All Courses" href="/courses" />
-                        </nav>
-                    </div>
-                </div>
-            </header>
+            <Navbar />
 
             <main>
                 <section className="bg-slate-900 text-white py-24 relative overflow-hidden">
                     <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=2000&q=80')] bg-cover bg-center opacity-20" />
-                    <div className="max-w-7xl mx-auto px-4 relative z-10 text-center">
+                    <div className="max-w-[70rem] mx-auto px-4 relative z-10 text-center">
                         <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-xs font-bold text-white mb-8">
                             <Building2 size={14} /> TRUSTED BY 15+ MINISTRIES
                         </div>
@@ -44,7 +30,7 @@ export default function GovernmentPage() {
                     </div>
                 </section>
 
-                <section className="py-20 max-w-7xl mx-auto px-4">
+                <section className="py-20 max-w-[70rem] mx-auto px-4">
                     <div className="grid md:grid-cols-3 gap-12 text-center">
                         <div className="p-6">
                             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">

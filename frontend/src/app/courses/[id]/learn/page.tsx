@@ -427,7 +427,7 @@ export default function CourseLearnPage() {
                                 </div>
                             </div>
 
-                            {/* CDIO Project CTA */}
+                            {/* IRIS Project CTA */}
                             <div className="mt-4">
                                 <div className="p-4 bg-gradient-to-br from-accent/10 to-primary/10 rounded-lg border border-accent/20">
                                     <div className="flex items-center gap-3 mb-3">
@@ -435,18 +435,18 @@ export default function CourseLearnPage() {
                                             <BookOpen className="text-accent" size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-gray-900">CDIO Project</p>
+                                            <p className="text-sm font-bold text-gray-900">IRIS Project</p>
                                             <p className="text-xs text-gray-500">Apply your knowledge</p>
                                         </div>
                                     </div>
                                     <p className="text-xs text-gray-600 mb-3">
-                                        Start your hands-on project through the Conceive-Design-Implement-Operate framework.
+                                        Start your hands-on project through the Immersion-Reflection-Iteration-Scale framework.
                                     </p>
                                     <button
-                                        onClick={() => router.push(`/courses/${courseId}/conceive`)}
+                                        onClick={() => router.push(`/courses/${courseId}/immersion`)}
                                         className="w-full py-2 bg-accent text-white rounded-lg text-sm font-bold hover:bg-accent/90 transition-all"
                                     >
-                                        Start CDIO Project →
+                                        Start IRIS Project →
                                     </button>
                                 </div>
                             </div>

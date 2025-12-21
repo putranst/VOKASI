@@ -22,11 +22,11 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ width = 600, hei
         // Sample Data for Demo
         const initialNodes = [
             { id: 'PKC', group: 1, val: 20, label: 'My Knowledge' },
-            { id: 'CDIO', group: 2, val: 10, label: 'CDIO Framework' },
-            { id: 'Conceive', group: 2, val: 5, label: 'Conceive' },
-            { id: 'Design', group: 2, val: 5, label: 'Design' },
-            { id: 'Implement', group: 2, val: 5, label: 'Implement' },
-            { id: 'Operate', group: 2, val: 5, label: 'Operate' },
+            { id: 'IRIS', group: 2, val: 10, label: 'IRIS Cycle' },
+            { id: 'Immersion', group: 2, val: 5, label: 'Immersion' },
+            { id: 'Reflection', group: 2, val: 5, label: 'Reflection' },
+            { id: 'Iteration', group: 2, val: 5, label: 'Iteration' },
+            { id: 'Scale', group: 2, val: 5, label: 'Scale' },
             { id: 'React', group: 3, val: 8, label: 'React.js' },
             { id: 'NextJS', group: 3, val: 8, label: 'Next.js' },
             { id: 'TypeScript', group: 3, val: 8, label: 'TypeScript' },
@@ -35,11 +35,11 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ width = 600, hei
         ];
 
         const initialLinks = [
-            { source: 'PKC', target: 'CDIO' },
-            { source: 'CDIO', target: 'Conceive' },
-            { source: 'CDIO', target: 'Design' },
-            { source: 'CDIO', target: 'Implement' },
-            { source: 'CDIO', target: 'Operate' },
+            { source: 'PKC', target: 'IRIS' },
+            { source: 'IRIS', target: 'Immersion' },
+            { source: 'IRIS', target: 'Reflection' },
+            { source: 'IRIS', target: 'Iteration' },
+            { source: 'IRIS', target: 'Scale' },
             { source: 'PKC', target: 'React' },
             { source: 'React', target: 'NextJS' },
             { source: 'PKC', target: 'TypeScript' },

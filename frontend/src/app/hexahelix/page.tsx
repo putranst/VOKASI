@@ -1,28 +1,14 @@
 import React from 'react';
-import { Logo } from '@/components/ui/Logo';
-import { NavItem } from '@/components/ui/NavItem';
+import { Navbar } from '@/components/Navbar';
 import { Zap, Layers, Users, Globe, Hexagon, Briefcase } from 'lucide-react';
 import { Footer } from '@/components/Footer';
 
 export default function HexahelixPage() {
     return (
         <div className="min-h-screen bg-background text-slate-800 font-sans">
-            <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200/50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-10">
-                        <Logo />
-                        <nav className="hidden lg:flex items-center gap-8">
-                            <NavItem label="Hexahelix Model" active href="/hexahelix" />
-                            <NavItem label="Career Pathways" href="/pathways" />
-                            <NavItem label="Enterprise" href="/enterprise" />
-                            <NavItem label="Government" href="/government" />
-                            <NavItem label="All Courses" href="/courses" />
-                        </nav>
-                    </div>
-                </div>
-            </header>
+            <Navbar />
 
-            <main className="max-w-7xl mx-auto px-4 py-16">
+            <main className="max-w-[70rem] mx-auto px-4 py-16">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-100 rounded-full text-xs font-bold text-accent shadow-sm tracking-wide mb-6">
                         <Hexagon size={14} fill="currentColor" />

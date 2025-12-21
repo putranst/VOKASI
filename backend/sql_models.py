@@ -9,15 +9,25 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
     full_name = Column(String)
-    role = Column(String)  # student, instructor, admin
+    role = Column(String)  # student, instructor, admin, institution
     password_hash = Column(String, nullable=True)
+    supabase_id = Column(String, unique=True, nullable=True, index=True)  # Link to Supabase Auth
+    career_pathway_id = Column(String, nullable=True)  # ID from careerData.ts (e.g., 'ai-ml-engineer')
+    
+    # Instructor-specific fields
+    institution_id = Column(Integer, ForeignKey("institutions.id"), nullable=True)  # NULL = individual instructor
+    instructor_type = Column(String, nullable=True)  # 'institutional' or 'individual'
+    
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    # Relationships
+    institution = relationship("Institution", backref="instructors")
     projects = relationship("CDIOProject", back_populates="user")
     enrollments = relationship("Enrollment", back_populates="user")
     credentials = relationship("Credential", back_populates="user")
     knowledge_nodes = relationship("KnowledgeNode", back_populates="user")
     learning_journal_entries = relationship("LearningJournal", back_populates="user")
+    learning_streak = relationship("LearningStreak", uselist=False, back_populates="user")
 
 class Institution(Base):
     __tablename__ = "institutions"
@@ -38,7 +48,8 @@ class Course(Base):
     __tablename__ = "courses"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
-    instructor = Column(String)
+    instructor = Column(String)  # Instructor name (for display)
+    instructor_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Link to instructor user
     org = Column(String)
     institution_id = Column(Integer, ForeignKey("institutions.id"))
     rating = Column(Float, default=0.0)
@@ -49,6 +60,12 @@ class Course(Base):
     category = Column(String)
     description = Column(Text, nullable=True)
     duration = Column(String, nullable=True)
+    
+    # Approval workflow fields
+    approval_status = Column(String, default="approved")  # draft, pending_approval, approved, rejected
+    approved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    approved_at = Column(DateTime, nullable=True)
+    rejection_reason = Column(Text, nullable=True)
     
     institution = relationship("Institution", back_populates="courses")
     projects = relationship("CDIOProject", back_populates="course")
@@ -302,3 +319,20 @@ class CodeSnapshot(Base):
     
     project = relationship("CDIOProject", back_populates="snapshots")
 
+
+class LearningStreak(Base):
+    """Gamification: Tracks user learning streaks, XP, and badges"""
+    __tablename__ = "learning_streaks"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    current_streak = Column(Integer, default=0)
+    longest_streak = Column(Integer, default=0)
+    total_xp = Column(Integer, default=0)
+    last_activity_date = Column(DateTime, nullable=True)
+    week_activity = Column(JSON, default=list)  # [Mon, Tue, Wed, Thu, Fri, Sat, Sun] booleans
+    badges = Column(JSON, default=list)  # List of earned badge IDs
+    level = Column(Integer, default=1)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+    
+    user = relationship("User", back_populates="learning_streak")

@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Logo } from '@/components/ui/Logo';
-import { NavItem } from '@/components/ui/NavItem';
+import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { EnrollmentButton } from '@/components/EnrollmentButton';
 import { TABBED_COURSES } from '@/lib/data';
@@ -69,24 +69,11 @@ export default function CourseDetailPage() {
 
     return (
         <div className="min-h-screen bg-background text-slate-800 font-sans">
-            <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200/50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-10">
-                        <Logo />
-                        <nav className="hidden lg:flex items-center gap-8">
-                            <NavItem label="Hexahelix Model" href="/hexahelix" />
-                            <NavItem label="Career Pathways" href="/pathways" />
-                            <NavItem label="Enterprise" href="/enterprise" />
-                            <NavItem label="Government" href="/government" />
-                            <NavItem label="All Courses" href="/courses" />
-                        </nav>
-                    </div>
-                </div>
-            </header>
+            <Navbar />
 
             {/* Breadcrumb */}
             <div className="bg-gray-50 border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 py-4">
+                <div className="max-w-[70rem] mx-auto px-4 py-4">
                     <Breadcrumb items={breadcrumbItems} />
                 </div>
             </div>
@@ -119,7 +106,7 @@ export default function CourseDetailPage() {
                                 {isEnrolled ? (
                                     <>
                                         <a
-                                            href={`/courses/${course.id}/conceive`}
+                                            href={`/courses/${course.id}/immersion`}
                                             className="bg-primary text-white px-8 py-4 rounded-xl font-bold hover:bg-[#5a4a3b] transition-all flex items-center gap-2"
                                         >
                                             <PlayCircle size={20} />

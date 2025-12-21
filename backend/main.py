@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, HTTPException, status, Depends
+from fastapi import FastAPI, Query, HTTPException, status, Depends, Form
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict
 from datetime import datetime
@@ -29,8 +29,8 @@ class GradingQueueItem(BaseModel):
 
 app = FastAPI(
     title="TSEA-X API",
-    description="Backend for TSEA-X Platform with CDIO Framework",
-    version="2.0.0"
+    description="Backend for TSEA-X Platform with CDIO Framework and NUSA IRIS Cycle",
+    version="2.1.0"
 )
 
 # CORS middleware
@@ -302,6 +302,76 @@ def init_sample_data():
 # Initialize on startup
 init_sample_data()
 
+
+# ===== AUTH ENDPOINTS =====
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class SyncUserRequest(BaseModel):
+    supabase_id: str
+    email: str
+    full_name: str
+    role: str = "student"
+
+
+@app.post("/api/v1/auth/login")
+def demo_login(request: LoginRequest, db: Session = Depends(get_db)):
+    """Demo login for testing - accepts 'test' as password for all seeded users"""
+    user = db.query(models.User).filter(models.User.email == request.email).first()
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid login credentials")
+    
+    # For demo purposes, accept 'test' as password for all seeded users
+    if request.password != "test":
+        raise HTTPException(status_code=401, detail="Invalid login credentials")
+    
+    return {
+        "id": user.id,
+        "email": user.email,
+        "name": user.full_name,
+        "role": user.role,
+        "institution_id": user.institution_id,
+        "instructor_type": user.instructor_type
+    }
+
+
+@app.post("/api/v1/auth/sync-user")
+def sync_user(request: SyncUserRequest, db: Session = Depends(get_db)):
+    """Sync Supabase user to local database"""
+    # Check if user exists by supabase_id
+    user = db.query(models.User).filter(models.User.supabase_id == request.supabase_id).first()
+    
+    if not user:
+        # Check by email
+        user = db.query(models.User).filter(models.User.email == request.email).first()
+        if user:
+            # Link existing user to supabase
+            user.supabase_id = request.supabase_id
+        else:
+            # Create new user
+            user = models.User(
+                email=request.email,
+                full_name=request.full_name,
+                role=request.role,
+                supabase_id=request.supabase_id
+            )
+            db.add(user)
+    
+    db.commit()
+    db.refresh(user)
+    
+    return {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+        "institution_id": user.institution_id,
+        "instructor_type": user.instructor_type
+    }
+
 @app.get("/api/v1/courses", response_model=List[schemas.Course])
 def get_courses(category: Optional[str] = None, db: Session = Depends(get_db)):
     query = db.query(models.Course)
@@ -411,6 +481,190 @@ def get_institution_stats(institution_id: int, db: Session = Depends(get_db)):
         total_revenue=total_revenue,
         month_over_month_growth=12.5 # Placeholder for now
     )
+
+
+# ===== PARTNER INSTRUCTOR MANAGEMENT =====
+
+@app.get("/api/v1/institutions/{institution_id}/instructors")
+def get_institution_instructors(institution_id: int, db: Session = Depends(get_db)):
+    """Get all instructors belonging to an institution"""
+    institution = db.query(models.Institution).filter(models.Institution.id == institution_id).first()
+    if not institution:
+        raise HTTPException(status_code=404, detail="Institution not found")
+    
+    instructors = db.query(models.User).filter(
+        models.User.institution_id == institution_id,
+        models.User.role == "instructor"
+    ).all()
+    
+    result = []
+    for inst in instructors:
+        # Get course count for this instructor
+        course_count = db.query(models.Course).filter(
+            models.Course.instructor_id == inst.id
+        ).count()
+        # Get pending courses count
+        pending_count = db.query(models.Course).filter(
+            models.Course.instructor_id == inst.id,
+            models.Course.approval_status == "pending_approval"
+        ).count()
+        
+        result.append({
+            "id": inst.id,
+            "name": inst.full_name,
+            "email": inst.email,
+            "instructor_type": inst.instructor_type,
+            "courses_count": course_count,
+            "pending_courses": pending_count,
+            "created_at": inst.created_at.isoformat() if inst.created_at else None
+        })
+    
+    return result
+
+
+@app.post("/api/v1/institutions/{institution_id}/instructors")
+def add_institution_instructor(
+    institution_id: int,
+    email: str = Form(...),
+    full_name: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Add a new instructor to an institution"""
+    institution = db.query(models.Institution).filter(models.Institution.id == institution_id).first()
+    if not institution:
+        raise HTTPException(status_code=404, detail="Institution not found")
+    
+    # Check if user already exists
+    existing = db.query(models.User).filter(models.User.email == email).first()
+    if existing:
+        # Update existing user to be institutional instructor
+        existing.institution_id = institution_id
+        existing.instructor_type = "institutional"
+        existing.role = "instructor"
+        db.commit()
+        return {"message": f"User {email} added as instructor", "user_id": existing.id}
+    
+    # Create new instructor
+    new_instructor = models.User(
+        email=email,
+        full_name=full_name,
+        role="instructor",
+        institution_id=institution_id,
+        instructor_type="institutional"
+    )
+    db.add(new_instructor)
+    db.commit()
+    db.refresh(new_instructor)
+    
+    return {"message": "Instructor created", "user_id": new_instructor.id}
+
+
+@app.delete("/api/v1/institutions/{institution_id}/instructors/{user_id}")
+def remove_institution_instructor(institution_id: int, user_id: int, db: Session = Depends(get_db)):
+    """Remove an instructor from an institution (doesn't delete the user)"""
+    user = db.query(models.User).filter(
+        models.User.id == user_id,
+        models.User.institution_id == institution_id
+    ).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Instructor not found in this institution")
+    
+    # Remove institution link, convert to individual
+    user.institution_id = None
+    user.instructor_type = "individual"
+    db.commit()
+    
+    return {"message": "Instructor removed from institution"}
+
+
+@app.get("/api/v1/institutions/{institution_id}/pending-courses")
+def get_pending_courses(institution_id: int, db: Session = Depends(get_db)):
+    """Get courses pending approval for an institution"""
+    institution = db.query(models.Institution).filter(models.Institution.id == institution_id).first()
+    if not institution:
+        raise HTTPException(status_code=404, detail="Institution not found")
+    
+    pending_courses = db.query(models.Course).filter(
+        models.Course.institution_id == institution_id,
+        models.Course.approval_status == "pending_approval"
+    ).all()
+    
+    result = []
+    for course in pending_courses:
+        instructor = db.query(models.User).filter(models.User.id == course.instructor_id).first()
+        result.append({
+            "id": course.id,
+            "title": course.title,
+            "category": course.category,
+            "level": course.level,
+            "instructor_id": course.instructor_id,
+            "instructor_name": instructor.full_name if instructor else course.instructor,
+            "created_at": None  # Add created_at to Course model if needed
+        })
+    
+    return result
+
+
+@app.post("/api/v1/courses/{course_id}/approve")
+def approve_course(
+    course_id: int,
+    approver_id: int = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Approve a pending course for publishing"""
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    if course.approval_status != "pending_approval":
+        raise HTTPException(status_code=400, detail="Course is not pending approval")
+    
+    course.approval_status = "approved"
+    course.approved_by = approver_id
+    course.approved_at = datetime.utcnow()
+    course.rejection_reason = None
+    db.commit()
+    
+    return {"message": "Course approved", "course_id": course_id}
+
+
+@app.post("/api/v1/courses/{course_id}/reject")
+def reject_course(
+    course_id: int,
+    approver_id: int = Form(...),
+    reason: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Reject a pending course with feedback"""
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    if course.approval_status != "pending_approval":
+        raise HTTPException(status_code=400, detail="Course is not pending approval")
+    
+    course.approval_status = "rejected"
+    course.approved_by = approver_id
+    course.approved_at = datetime.utcnow()
+    course.rejection_reason = reason
+    db.commit()
+    
+    return {"message": "Course rejected", "course_id": course_id, "reason": reason}
+
+
+@app.get("/api/v1/instructors/{user_id}/type")
+def get_instructor_type(user_id: int, db: Session = Depends(get_db)):
+    """Get instructor type (institutional or individual) for course creation workflow"""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {
+        "user_id": user_id,
+        "instructor_type": user.instructor_type,
+        "institution_id": user.institution_id,
+        "requires_approval": user.instructor_type == "institutional"
+    }
 
 @app.post("/api/v1/search")
 async def vector_search(query: str, db: Session = Depends(get_db)):
@@ -1293,6 +1547,10 @@ async def test_ai_endpoint():
 def get_student_dashboard(user_id: int = 1, db: Session = Depends(get_db)):
     """Get aggregated dashboard data for a student"""
     
+    # Get user to retrieve career_pathway_id
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    career_pathway_id = user.career_pathway_id if user else None
+    
     # 1. Get Enrolled Courses (Active Projects)
     enrolled_courses = []
     total_progress = 0
@@ -1351,9 +1609,31 @@ def get_student_dashboard(user_id: int = 1, db: Session = Depends(get_db)):
         total_learning_hours=42, # Mock
         average_progress=avg_progress,
         recommended_courses=recommended_courses,
-        upcoming_deadlines=upcoming_deadlines
+        upcoming_deadlines=upcoming_deadlines,
+        career_pathway_id=career_pathway_id
     )
 
+
+class CareerPathwayUpdate(BaseModel):
+    career_pathway_id: Optional[str] = None
+
+@app.put("/api/v1/users/{user_id}/career-pathway")
+def update_career_pathway(user_id: int, data: CareerPathwayUpdate, db: Session = Depends(get_db)):
+    """Update user's selected career pathway"""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.career_pathway_id = data.career_pathway_id
+    db.commit()
+    db.refresh(user)
+    
+    return {
+        "success": True,
+        "message": f"Career pathway updated to: {data.career_pathway_id or 'None'}",
+        "user_id": user.id,
+        "career_pathway_id": user.career_pathway_id
+    }
 
 
 # ===== Enrollment Endpoints =====
@@ -2669,6 +2949,47 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         "role": user.role
     }
 
+class UserSyncRequest(BaseModel):
+    supabase_id: str
+    email: str
+    full_name: str
+    role: str = "student"
+
+@app.post("/api/v1/auth/sync-user")
+def sync_user(request: UserSyncRequest, db: Session = Depends(get_db)):
+    """
+    Sync a user from Supabase Auth to the local database.
+    Creates the user if they don't exist, or updates if they do.
+    """
+    # Check if user exists by email
+    user = db.query(models.User).filter(models.User.email == request.email).first()
+    
+    if user:
+        # Update existing user with Supabase ID if not set
+        if not user.supabase_id:
+            user.supabase_id = request.supabase_id
+            db.commit()
+            db.refresh(user)
+    else:
+        # Create new user
+        user = models.User(
+            email=request.email,
+            full_name=request.full_name,
+            role=request.role,
+            supabase_id=request.supabase_id
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    
+    return {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+        "supabase_id": user.supabase_id
+    }
+
 @app.get("/api/v1/users/email/{email}")
 def get_user_by_email(email: str, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == email).first()
@@ -2997,3 +3318,650 @@ def publish_syllabus(syllabus_id: int, db: Session = Depends(get_db)):
     
     return {"message": "Syllabus published successfully"}
 
+
+# ===== IRIS Cycle Endpoints (NUSA Framework) =====
+# Maps to: Immersion → Reflection → Iteration → Scale
+
+class ImmersionDataCreate(BaseModel):
+    """Immersion phase - observing authentic problem context"""
+    observation_notes: str
+    stakeholder_interviews: Optional[List[str]] = []
+    field_photos: Optional[List[str]] = []
+    problem_context: str
+    target_sfia_level: int = 3
+
+class ReflectionDataCreate(BaseModel):
+    """Reflection phase - Q/P analysis and SFIA gap mapping"""
+    q_what_i_know: List[str]
+    p_what_i_need: List[str]
+    sfia_current_level: int
+    sfia_target_level: int
+    skill_gaps: List[str]
+    learning_resources: Optional[List[str]] = []
+
+class IterationCycleCreate(BaseModel):
+    """Single Build-Measure-Learn iteration"""
+    cycle_number: int
+    hypothesis: str
+    build_description: str
+    measurement_data: Optional[str] = None
+    learnings: Optional[str] = None
+    pivot_or_persevere: Optional[str] = None
+    next_steps: Optional[str] = None
+
+class ScaleDataCreate(BaseModel):
+    """Scale phase - institutional handoff and credential issuance"""
+    deployment_url: Optional[str] = None
+    handoff_documentation: str
+    institution_partner: Optional[str] = None
+    adoption_metrics: Optional[str] = None
+    presentation_url: Optional[str] = None
+    sfia_achieved_level: int
+    ready_for_credential: bool = False
+
+
+@app.post("/api/v1/iris/immersion")
+async def create_immersion(
+    data: ImmersionDataCreate,
+    project_id: int = Query(...),
+    db: Session = Depends(get_db)
+):
+    """Save Immersion phase data (NUSA Framework - Phase 1)"""
+    project = db.query(models.CDIOProject).filter(models.CDIOProject.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    now = datetime.utcnow()
+    
+    # Store in ProjectCharter with adapted fields for backward compatibility
+    charter = db.query(models.ProjectCharter).filter(models.ProjectCharter.project_id == project_id).first()
+    
+    if charter:
+        charter.problem_statement = data.problem_context
+        charter.constraints = data.observation_notes
+        charter.stakeholders = data.stakeholder_interviews
+        charter.updated_at = now
+    else:
+        charter = models.ProjectCharter(
+            project_id=project_id,
+            problem_statement=data.problem_context,
+            constraints=data.observation_notes,
+            stakeholders=data.stakeholder_interviews,
+            success_metrics=f"SFIA Level {data.target_sfia_level}",
+            target_outcome="Authentic problem immersion complete",
+            created_at=now,
+            updated_at=now
+        )
+        db.add(charter)
+    
+    # Update project phase (using IRIS naming)
+    project.current_phase = "reflection"  # Move to next phase
+    project.conceive_completed = True
+    project.overall_status = "in_progress"
+    project.completion_percentage = 25
+    project.last_activity_at = now
+    
+    db.commit()
+    
+    return {
+        "status": "success",
+        "phase": "immersion",
+        "next_phase": "reflection",
+        "project_id": project_id,
+        "completion_percentage": 25
+    }
+
+
+@app.post("/api/v1/iris/reflection")
+async def create_reflection(
+    data: ReflectionDataCreate,
+    project_id: int = Query(...),
+    db: Session = Depends(get_db)
+):
+    """Save Reflection phase data - Q/P analysis (NUSA Framework - Phase 2)"""
+    project = db.query(models.CDIOProject).filter(models.CDIOProject.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    now = datetime.utcnow()
+    
+    # Store in DesignBlueprint with adapted fields
+    blueprint = db.query(models.DesignBlueprint).filter(models.DesignBlueprint.project_id == project_id).first()
+    
+    logic_flow = f"""
+Q (What I Know): {', '.join(data.q_what_i_know)}
+P (What I Need): {', '.join(data.p_what_i_need)}
+SFIA Gap: Level {data.sfia_current_level} -> {data.sfia_target_level}
+Skill Gaps: {', '.join(data.skill_gaps)}
+"""
+    
+    if blueprint:
+        blueprint.logic_flow = logic_flow
+        blueprint.component_list = data.learning_resources
+        blueprint.updated_at = now
+    else:
+        blueprint = models.DesignBlueprint(
+            project_id=project_id,
+            logic_flow=logic_flow,
+            component_list=data.learning_resources,
+            architecture_diagram="Q/P Gap Analysis",
+            created_at=now,
+            updated_at=now
+        )
+        db.add(blueprint)
+    
+    project.current_phase = "iteration"
+    project.design_completed = True
+    project.completion_percentage = 50
+    project.last_activity_at = now
+    
+    db.commit()
+    
+    return {
+        "status": "success",
+        "phase": "reflection",
+        "next_phase": "iteration",
+        "project_id": project_id,
+        "sfia_gap": data.sfia_target_level - data.sfia_current_level,
+        "completion_percentage": 50
+    }
+
+
+@app.post("/api/v1/iris/iteration")
+async def create_iteration(
+    data: IterationCycleCreate,
+    project_id: int = Query(...),
+    db: Session = Depends(get_db)
+):
+    """Save Build-Measure-Learn iteration (NUSA Framework - Phase 3)"""
+    project = db.query(models.CDIOProject).filter(models.CDIOProject.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    now = datetime.utcnow()
+    
+    # Update implementation
+    impl = db.query(models.Implementation).filter(models.Implementation.project_id == project_id).first()
+    
+    iteration_notes = f"""
+Cycle #{data.cycle_number}
+Hypothesis: {data.hypothesis}
+Build: {data.build_description}
+Measurement: {data.measurement_data or 'Pending'}
+Learnings: {data.learnings or 'Pending'}
+Decision: {data.pivot_or_persevere or 'Pending'}
+Next Steps: {data.next_steps or 'TBD'}
+"""
+    
+    if impl:
+        impl.notes = (impl.notes or "") + "\n\n" + iteration_notes
+        impl.updated_at = now
+    else:
+        impl = models.Implementation(
+            project_id=project_id,
+            notes=iteration_notes,
+            created_at=now,
+            updated_at=now
+        )
+        db.add(impl)
+    
+    # Mark implement completed after 3+ cycles
+    if data.cycle_number >= 3:
+        project.implement_completed = True
+        project.current_phase = "scale"
+        project.completion_percentage = 75
+    else:
+        project.current_phase = "iteration"
+        project.completion_percentage = 50 + (data.cycle_number * 8)
+    
+    project.last_activity_at = now
+    db.commit()
+    
+    return {
+        "status": "success",
+        "phase": "iteration",
+        "cycle_number": data.cycle_number,
+        "next_phase": "scale" if data.cycle_number >= 3 else "iteration",
+        "project_id": project_id,
+        "completion_percentage": project.completion_percentage
+    }
+
+
+@app.post("/api/v1/iris/scale")
+async def create_scale(
+    data: ScaleDataCreate,
+    project_id: int = Query(...),
+    db: Session = Depends(get_db)
+):
+    """Save Scale phase and issue credential (NUSA Framework - Phase 4)"""
+    project = db.query(models.CDIOProject).filter(models.CDIOProject.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    now = datetime.utcnow()
+    
+    # Create deployment record
+    deployment = db.query(models.Deployment).filter(models.Deployment.project_id == project_id).first()
+    
+    if deployment:
+        deployment.deployment_url = data.deployment_url
+        deployment.readme = data.handoff_documentation
+        deployment.verification_status = "submitted" if data.ready_for_credential else "pending"
+        deployment.updated_at = now
+    else:
+        deployment = models.Deployment(
+            project_id=project_id,
+            deployment_url=data.deployment_url,
+            deployment_platform=data.institution_partner or "T6 Platform",
+            readme=data.handoff_documentation,
+            verification_status="submitted" if data.ready_for_credential else "pending",
+            created_at=now,
+            updated_at=now
+        )
+        db.add(deployment)
+        db.flush()
+    
+    credential_id = None
+    
+    # Issue credential if ready
+    if data.ready_for_credential:
+        try:
+            # Mint blockchain credential
+            mint_result = await blockchain_service.mint_credential(
+                user_id=project.user_id,
+                course_id=project.course_id,
+                project_id=project.id
+            )
+            
+            deployment.sbt_minted = True
+            deployment.sbt_token_id = mint_result.get("token_id")
+            deployment.transaction_hash = mint_result.get("transaction_hash")
+            
+            credential_id = mint_result.get("credential_id")
+        except Exception as e:
+            print(f"Credential minting failed: {e}")
+    
+    project.operate_completed = True
+    project.current_phase = "completed"
+    project.overall_status = "completed"
+    project.completion_percentage = 100
+    project.last_activity_at = now
+    
+    db.commit()
+    
+    return {
+        "status": "success",
+        "phase": "scale",
+        "project_id": project_id,
+        "completion_percentage": 100,
+        "credential_issued": data.ready_for_credential,
+        "credential_id": credential_id,
+        "sfia_achieved_level": data.sfia_achieved_level
+    }
+
+
+@app.get("/api/v1/iris/project/{project_id}/status")
+def get_iris_status(project_id: int, db: Session = Depends(get_db)):
+    """Get current IRIS phase status for a project"""
+    project = db.query(models.CDIOProject).filter(models.CDIOProject.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Map CDIO phases to IRIS for backward compatibility
+    phase_mapping = {
+        'conceive': 'immerse',
+        'design': 'realize',
+        'implement': 'iterate',
+        'operate': 'scale',
+        'completed': 'completed',
+        # IRIS phases pass through
+        'immerse': 'immerse',
+        'realize': 'realize',
+        'iterate': 'iterate',
+        'scale': 'scale',
+        # Legacy IRIS names map to new
+        'immersion': 'immerse',
+        'reflection': 'realize',
+        'iteration': 'iterate'
+    }
+    
+    return {
+        "project_id": project_id,
+        "project_title": project.title,
+        "current_phase": phase_mapping.get(project.current_phase, project.current_phase),
+        "phases_completed": {
+            "immerse": project.conceive_completed or False,
+            "realize": project.design_completed or False,
+            "iterate": project.implement_completed or False,
+            "scale": project.operate_completed or False
+        },
+        "completion_percentage": project.completion_percentage,
+        "overall_status": project.overall_status,
+        "last_activity": project.last_activity_at.isoformat() if project.last_activity_at else None
+    }
+
+
+# ============================================
+# GAMIFICATION ENDPOINTS
+# ============================================
+
+@app.get("/api/v1/users/{user_id}/gamification")
+def get_user_gamification(user_id: int, db: Session = Depends(get_db)):
+    """Get gamification data (streaks, XP, badges) for a specific user"""
+    streak = db.query(models.LearningStreak).filter(models.LearningStreak.user_id == user_id).first()
+    
+    if not streak:
+        # Return default values if no streak record exists
+        return {
+            "user_id": user_id,
+            "current_streak": 0,
+            "longest_streak": 0,
+            "total_xp": 0,
+            "week_activity": [False, False, False, False, False, False, False],
+            "badges": [],
+            "level": 1,
+            "last_activity_date": None
+        }
+    
+    return {
+        "user_id": user_id,
+        "current_streak": streak.current_streak,
+        "longest_streak": streak.longest_streak,
+        "total_xp": streak.total_xp,
+        "week_activity": streak.week_activity or [False] * 7,
+        "badges": streak.badges or [],
+        "level": streak.level,
+        "last_activity_date": streak.last_activity_date.isoformat() if streak.last_activity_date else None
+    }
+
+
+@app.get("/api/v1/admin/gamification-stats")
+def get_gamification_stats(db: Session = Depends(get_db)):
+    """Get platform-wide gamification statistics for admin dashboard"""
+    
+    # Get all streak records
+    streaks = db.query(models.LearningStreak).all()
+    
+    if not streaks:
+        return {
+            "total_xp_distributed": 0,
+            "active_streakers": 0,
+            "average_streak": 0,
+            "seven_day_achievers": 0,
+            "thirty_day_achievers": 0,
+            "total_badges_earned": 0,
+            "top_learners": []
+        }
+    
+    total_xp = sum(s.total_xp for s in streaks)
+    active_streakers = sum(1 for s in streaks if s.current_streak > 0)
+    avg_streak = sum(s.current_streak for s in streaks) / len(streaks) if streaks else 0
+    seven_day_achievers = sum(1 for s in streaks if s.longest_streak >= 7)
+    thirty_day_achievers = sum(1 for s in streaks if s.longest_streak >= 30)
+    total_badges = sum(len(s.badges or []) for s in streaks)
+    
+    # Get top 5 learners by XP
+    top_streaks = sorted(streaks, key=lambda x: x.total_xp, reverse=True)[:5]
+    top_learners = []
+    for s in top_streaks:
+        user = db.query(models.User).filter(models.User.id == s.user_id).first()
+        if user:
+            top_learners.append({
+                "user_id": s.user_id,
+                "name": user.full_name,
+                "xp": s.total_xp,
+                "streak": s.current_streak,
+                "level": s.level
+            })
+    
+    return {
+        "total_xp_distributed": total_xp,
+        "active_streakers": active_streakers,
+        "average_streak": round(avg_streak, 1),
+        "seven_day_achievers": seven_day_achievers,
+        "thirty_day_achievers": thirty_day_achievers,
+        "total_badges_earned": total_badges,
+        "top_learners": top_learners
+    }
+
+
+@app.get("/api/v1/admin/stats")
+def get_admin_stats(db: Session = Depends(get_db)):
+    """Get platform-wide stats for admin dashboard"""
+    total_users = db.query(models.User).count()
+    total_courses = db.query(models.Course).count()
+    total_enrollments = db.query(models.Enrollment).count()
+    total_credentials = db.query(models.Credential).count()
+    active_projects = db.query(models.CDIOProject).filter(
+        models.CDIOProject.overall_status == "in_progress"
+    ).count()
+    
+    # Calculate completion rate
+    completed_enrollments = db.query(models.Enrollment).filter(
+        models.Enrollment.status == "completed"
+    ).count()
+    completion_rate = round((completed_enrollments / total_enrollments * 100) if total_enrollments > 0 else 0, 1)
+    
+    # Mock revenue for now
+    revenue_this_month = 24500
+    
+    return {
+        "totalUsers": total_users,
+        "totalCourses": total_courses,
+        "totalEnrollments": total_enrollments,
+        "totalCredentials": total_credentials,
+        "activeProjects": active_projects,
+        "completionRate": completion_rate,
+        "revenueThisMonth": revenue_this_month,
+        "systemHealth": "healthy"
+    }
+
+
+@app.get("/api/v1/admin/users")
+def get_admin_users(db: Session = Depends(get_db)):
+    """Get all users for admin dashboard"""
+    users = db.query(models.User).all()
+    result = []
+    for user in users:
+        enrollments_count = db.query(models.Enrollment).filter(
+            models.Enrollment.user_id == user.id
+        ).count()
+        result.append({
+            "id": user.id,
+            "name": user.full_name,
+            "email": user.email,
+            "role": user.role,
+            "status": "active",
+            "joinedDate": user.created_at.strftime("%Y-%m-%d") if user.created_at else "N/A",
+            "lastActive": "Today",
+            "coursesEnrolled": enrollments_count
+        })
+    return result
+
+
+@app.get("/api/v1/admin/courses")
+def get_admin_courses(db: Session = Depends(get_db)):
+    """Get all courses for admin dashboard"""
+    courses = db.query(models.Course).all()
+    result = []
+    for course in courses:
+        inst = db.query(models.Institution).filter(models.Institution.id == course.institution_id).first()
+        enrollments_count = db.query(models.Enrollment).filter(
+            models.Enrollment.course_id == course.id
+        ).count()
+        result.append({
+            "id": course.id,
+            "title": course.title,
+            "instructor": course.instructor,
+            "institution": inst.name if inst else course.org,
+            "category": course.category,
+            "status": "published",
+            "enrollments": enrollments_count,
+            "rating": course.rating,
+            "lastUpdated": "2025-12-01"
+        })
+    return result
+
+
+@app.get("/api/v1/admin/credentials")
+def get_admin_credentials(db: Session = Depends(get_db)):
+    """Get all credentials for admin dashboard"""
+    credentials = db.query(models.Credential).all()
+    result = []
+    for cred in credentials:
+        user = db.query(models.User).filter(models.User.id == cred.user_id).first()
+        result.append({
+            "id": f"CRT-{cred.id}",
+            "user": user.full_name if user else "Unknown",
+            "title": cred.title,
+            "type": cred.credential_type,
+            "issuedDate": cred.issued_at.strftime("%Y-%m-%d") if cred.issued_at else "N/A",
+            "status": cred.status,
+            "blockchainHash": cred.transaction_hash or "Pending"
+        })
+    return result
+
+
+@app.get("/api/v1/admin/recent-activity")
+def get_recent_activity(db: Session = Depends(get_db)):
+    """Get recent platform activity for admin dashboard"""
+    activities = []
+    
+    # Get recent enrollments
+    recent_enrollments = db.query(models.Enrollment).order_by(
+        models.Enrollment.enrolled_at.desc()
+    ).limit(3).all()
+    
+    for e in recent_enrollments:
+        user = db.query(models.User).filter(models.User.id == e.user_id).first()
+        course = db.query(models.Course).filter(models.Course.id == e.course_id).first()
+        if user and course:
+            activities.append({
+                "id": e.id,
+                "type": "enrollment",
+                "description": f"{user.full_name} enrolled in {course.title}",
+                "timestamp": e.enrolled_at.strftime("%Y-%m-%d %H:%M") if e.enrolled_at else "Recently",
+                "status": "success"
+            })
+    
+    # Get recent credentials
+    recent_creds = db.query(models.Credential).order_by(
+        models.Credential.created_at.desc()
+    ).limit(2).all()
+    
+    for c in recent_creds:
+        user = db.query(models.User).filter(models.User.id == c.user_id).first()
+        if user:
+            activities.append({
+                "id": 100 + c.id,
+                "type": "credential",
+                "description": f"Credential issued to {user.full_name}: {c.title}",
+                "timestamp": c.created_at.strftime("%Y-%m-%d %H:%M") if c.created_at else "Recently",
+                "status": "success"
+            })
+    
+    return activities[:5] if activities else [
+        {"id": 1, "type": "system", "description": "System initialized", "timestamp": "Just now", "status": "success"}
+    ]
+
+
+@app.get("/api/v1/student/dashboard")
+def get_student_dashboard(user_id: int, db: Session = Depends(get_db)):
+    """Get student dashboard data including gamification"""
+    
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get enrollments with course details
+    enrollments = db.query(models.Enrollment).filter(
+        models.Enrollment.user_id == user_id
+    ).all()
+    
+    enrolled_courses = []
+    for e in enrollments:
+        course = db.query(models.Course).filter(models.Course.id == e.course_id).first()
+        if course:
+            # Calculate progress based on project completion
+            project = db.query(models.CDIOProject).filter(
+                models.CDIOProject.course_id == e.course_id,
+                models.CDIOProject.user_id == user_id
+            ).first()
+            progress = project.completion_percentage if project else 0
+            
+            enrolled_courses.append({
+                "course_id": course.id,
+                "title": course.title,
+                "instructor": course.instructor,
+                "progress": progress,
+                "status": e.status,
+                "image": course.image,
+                "category": course.category
+            })
+    
+    # Get credentials
+    credentials = db.query(models.Credential).filter(
+        models.Credential.user_id == user_id
+    ).all()
+    creds_list = [{
+        "id": c.id,
+        "title": c.title,
+        "type": c.credential_type,
+        "status": c.status,
+        "issued_at": c.issued_at.isoformat() if c.issued_at else None
+    } for c in credentials]
+    
+    # Get gamification data
+    streak = db.query(models.LearningStreak).filter(
+        models.LearningStreak.user_id == user_id
+    ).first()
+    
+    learning_streak = None
+    if streak:
+        learning_streak = {
+            "current_streak": streak.current_streak,
+            "longest_streak": streak.longest_streak,
+            "this_week": streak.week_activity or [False] * 7,
+            "total_xp": streak.total_xp
+        }
+    
+    # Get IRIS projects
+    projects = db.query(models.CDIOProject).filter(
+        models.CDIOProject.user_id == user_id
+    ).all()
+    
+    # Map CDIO to IRIS phases
+    phase_mapping = {
+        'conceive': 'immerse', 'design': 'realize', 'implement': 'iterate', 
+        'operate': 'scale', 'immerse': 'immerse', 'realize': 'realize',
+        'iterate': 'iterate', 'scale': 'scale', 'completed': 'completed',
+        'immersion': 'immerse', 'reflection': 'realize', 'iteration': 'iterate'
+    }
+    
+    iris_projects = []
+    for p in projects:
+        course = db.query(models.Course).filter(models.Course.id == p.course_id).first()
+        iris_projects.append({
+            "project_id": p.id,
+            "course_id": p.course_id,
+            "project_title": p.title or (f"{course.title} Project" if course else "Untitled"),
+            "current_phase": phase_mapping.get(p.current_phase, p.current_phase),
+            "completion_percentage": p.completion_percentage,
+            "sfia_target_level": 3  # Default SFIA level
+        })
+    
+    # Calculate stats
+    total_hours = len(enrolled_courses) * 8  # Estimate 8 hours per course
+    avg_progress = sum(c['progress'] for c in enrolled_courses) / len(enrolled_courses) if enrolled_courses else 0
+    
+    return {
+        "enrolled_courses": enrolled_courses,
+        "credentials": creds_list,
+        "total_learning_hours": total_hours,
+        "average_progress": round(avg_progress, 1),
+        "recommended_courses": [],  # Can be populated with ML recommendations
+        "upcoming_deadlines": [],
+        "career_pathway_id": user.career_pathway_id,
+        "iris_projects": iris_projects,
+        "learning_streak": learning_streak
+    }

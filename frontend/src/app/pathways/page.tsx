@@ -32,7 +32,7 @@ export default function PathwaysPage() {
                 <div className="absolute inset-0 bg-black/10"></div>
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjA1IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20"></div>
 
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+                <div className="relative max-w-[70rem] mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
                     <div className="text-center max-w-4xl mx-auto">
                         <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-bold mb-6">
                             <Sparkles size={16} />
@@ -80,7 +80,7 @@ export default function PathwaysPage() {
 
             {/* How It Works */}
             <section className="bg-white py-16 border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-4">
+                <div className="max-w-[70rem] mx-auto px-4">
                     <h2 className="text-3xl md:text-4xl font-black text-center text-gray-900 mb-12">
                         How T6 Pathways Work
                     </h2>
@@ -110,7 +110,7 @@ export default function PathwaysPage() {
             </section>
 
             {/* Careers Section */}
-            <main className="max-w-7xl mx-auto px-4 py-16">
+            <main className="max-w-[70rem] mx-auto px-4 py-16">
                 {/* Search & Filter */}
                 <div className="mb-12">
                     {/* Search Bar */}
@@ -130,8 +130,8 @@ export default function PathwaysPage() {
                         <button
                             onClick={() => setSelectedCategory('all')}
                             className={`px-6 py-3 rounded-full font-bold transition-all ${selectedCategory === 'all'
-                                    ? 'bg-gradient-to-r from-gray-800 to-gray-900 text-white shadow-lg'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                ? 'bg-gradient-to-r from-gray-800 to-gray-900 text-white shadow-lg'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                         >
                             All Careers ({CAREER_PATHWAYS.length})
@@ -141,8 +141,8 @@ export default function PathwaysPage() {
                                 key={category.id}
                                 onClick={() => setSelectedCategory(category.id)}
                                 className={`px-6 py-3 rounded-full font-bold transition-all ${selectedCategory === category.id
-                                        ? `bg-gradient-to-r ${category.color} text-white shadow-lg`
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    ? `bg-gradient-to-r ${category.color} text-white shadow-lg`
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                             >
                                 {category.icon} {category.name}

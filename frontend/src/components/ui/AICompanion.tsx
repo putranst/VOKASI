@@ -52,8 +52,18 @@ export function AICompanion() {
     useEffect(() => {
         if (isOpen && messages.length > 1) {
             let greeting = "";
-            if (pathname.includes('conceive')) greeting = "I see you're in the Conceive phase. Need help defining your problem statement?";
-            else if (pathname.includes('design')) greeting = "Designing your solution? I can act as your Socratic tutor.";
+            // IRIS phases (new naming)
+            if (pathname.includes('immerse')) greeting = "I see you're in the Immerse phase. Need help observing the problem context?";
+            else if (pathname.includes('realize')) greeting = "Realize time! I can help you analyze your knowledge gaps.";
+            else if (pathname.includes('iterate')) greeting = "Ready for Build-Measure-Learn? I can help you debug or iterate.";
+            else if (pathname.includes('scale')) greeting = "Scale time! Let me know if you need help with institutional handoff.";
+            // Legacy pathname support
+            else if (pathname.includes('immersion')) greeting = "I see you're in the Immerse phase. Need help observing the problem context?";
+            else if (pathname.includes('reflection')) greeting = "Realize time! I can help you analyze your knowledge gaps.";
+            else if (pathname.includes('iteration')) greeting = "Ready for Build-Measure-Learn? I can help you debug or iterate.";
+            // Legacy CDIO support (redirects handle most cases)
+            else if (pathname.includes('conceive')) greeting = "I see you're in the Immerse phase. Need help defining your problem statement?";
+            else if (pathname.includes('design')) greeting = "Realizing your solution? I can act as your Socratic tutor.";
             else if (pathname.includes('implement')) greeting = "Ready to code? I can help you debug or find resources.";
             else if (pathname.includes('operate')) greeting = "Deployment time! Let me know if you need help with the checklist.";
 
@@ -134,7 +144,7 @@ export function AICompanion() {
                 isOpen={socratic.isOpen}
                 onClose={() => socratic.setIsOpen(false)}
                 projectId={socratic.projectId}
-                phase={socratic.phase}
+                phase={socratic.phase as any}
                 context={socratic.context}
             />
 

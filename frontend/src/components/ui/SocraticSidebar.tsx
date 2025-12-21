@@ -4,13 +4,17 @@ import React, { useEffect } from 'react';
 import { X, MessageSquare } from 'lucide-react';
 import SocraticTutor from '@/components/SocraticTutor';
 
+// Accept both IRIS and CDIO phase names for backward compatibility
+type Phase = 'immerse' | 'realize' | 'iterate' | 'scale' | 'conceive' | 'design' | 'implement' | 'operate' | 'immersion' | 'reflection' | 'iteration';
+
 interface SocraticSidebarProps {
     isOpen: boolean;
     onClose: () => void;
     projectId: string;
-    phase: 'conceive' | 'design' | 'implement' | 'operate';
+    phase: Phase;
     context?: any;
 }
+
 
 export default function SocraticSidebar({
     isOpen,

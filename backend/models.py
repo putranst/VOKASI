@@ -116,13 +116,41 @@ class InstitutionStats(BaseModel):
     month_over_month_growth: float
 
 
-# ===== CDIO Framework Models =====
+# ===== IRIS Framework Models (NUSA - National Upskilling Sprint for AI) =====
+# The IRIS Cycle: Immerse → Realize → Iterate → Scale
+# Replaces CDIO for Ekspedisi AI Nusantara 2026
 
+class IRISPhase(str, Enum):
+    """IRIS Cycle phases for NUSA Framework (4-week intensive sprint)"""
+    IMMERSE = "immerse"          # Days 1-5: Live in authentic problem context
+    REALIZE = "realize"          # Days 5-10: Gap analysis & SFIA mapping
+    ITERATE = "iterate"          # Days 10-25: Build-Measure-Learn cycles
+    SCALE = "scale"              # Days 25-28+: Institutional deployment
+
+# Backward compatibility alias - maps to IRIS phases
 class CDIOPhase(str, Enum):
-    CONCEIVE = "conceive"
-    DESIGN = "design"
-    IMPLEMENT = "implement"
-    OPERATE = "operate"
+    """DEPRECATED: Use IRISPhase instead. Kept for backward compatibility."""
+    CONCEIVE = "immerse"     # Maps to IRIS Immerse
+    DESIGN = "realize"       # Maps to IRIS Realize
+    IMPLEMENT = "iterate"    # Maps to IRIS Iterate
+    OPERATE = "scale"        # Maps to IRIS Scale
+
+class SFIALevel(str, Enum):
+    """SFIA (Skills Framework for the Information Age) competency levels"""
+    L1_AWARENESS = "L1"      # Knows what the skill is; can explain in general terms
+    L2_WORKING = "L2"        # Can apply the skill; seeks guidance on complex situations
+    L3_PROFICIENT = "L3"     # Applies reliably; takes responsibility; mentors juniors
+    L4_EXPERT = "L4"         # Designs approaches; shapes organizational capability
+    L5_VISIONARY = "L5"      # Strategic impact; innovation; policy influence
+
+class HexaHelixSector(str, Enum):
+    """Hexa-Helix collaboration model sectors"""
+    GOVERNMENT = "government"    # Pemerintah Daerah (Pemda)
+    ACADEMIA = "academia"        # Pendidikan (Kampus)
+    INDUSTRY = "industry"        # Industri (SME/Enterprise)
+    COMMUNITY = "community"      # Komunitas (Civil Society)
+    MEDIA = "media"              # Media (Communication)
+    FINANCE = "finance"          # Keuangan (Development Banks, VCs)
 
 class ProjectStatus(str, Enum):
     NOT_STARTED = "not_started"
@@ -134,26 +162,94 @@ class ProjectStatus(str, Enum):
     COMPLETED = "completed"
 
 
-# ===== Conceive Phase Models =====
+# ===== SFIA Competency Models =====
 
-class ProjectCharterCreate(BaseModel):
-    """Request model for creating a project charter (Conceive phase)"""
-    problem_statement: str = Field(..., min_length=50, max_length=2000, description="Business problem or challenge")
-    success_metrics: str = Field(..., min_length=20, max_length=500, description="How success will be measured")
-    target_outcome: Optional[str] = Field(None, max_length=500, description="Desired end result")
-    constraints: Optional[str] = Field(None, max_length=500, description="Budget, time, or resource constraints")
-    stakeholders: Optional[str] = Field(None, max_length=300, description="Who is affected or involved")
+class SFIACompetencyCreate(BaseModel):
+    """Request model for adding SFIA competency target"""
+    skill_code: str = Field(..., description="SFIA skill code, e.g., 'DATM' for Data Management")
+    skill_name: str = Field(..., description="Human-readable skill name")
+    target_level: SFIALevel = Field(..., description="Target competency level")
+    current_level: Optional[SFIALevel] = Field(None, description="Current assessed level")
+    evidence_notes: Optional[str] = Field(None, max_length=500)
 
-class ProjectCharter(BaseModel):
-    """Complete project charter (Conceive phase output)"""
+class SFIACompetency(ORMBase):
+    """SFIA competency mapping for user or project"""
+    id: int
+    user_id: Optional[int] = None
+    project_id: Optional[int] = None
+    skill_code: str
+    skill_name: str
+    target_level: SFIALevel
+    current_level: Optional[SFIALevel] = None
+    evidence_notes: Optional[str] = None
+    assessed_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+# ===== NUSA Sprint Models =====
+
+class NUSASprintCreate(BaseModel):
+    """Request model for creating a NUSA Sprint (4-week intensive)"""
+    province: str = Field(..., description="Indonesian province name")
+    province_code: str = Field(..., description="Province code, e.g., 'JB' for Jawa Barat")
+    start_date: datetime
+    end_date: datetime
+    max_participants: int = Field(default=3000, ge=100, le=5000)
+    helix_partners: Optional[Dict[str, str]] = Field(None, description="Partner organizations by sector")
+
+class NUSASprint(ORMBase):
+    """NUSA Sprint - Provincial 4-week AI Upskilling Bootcamp"""
+    id: int
+    province: str
+    province_code: str
+    start_date: datetime
+    end_date: datetime
+    max_participants: int
+    current_participants: int = 0
+    helix_partners: Optional[Dict[str, str]] = None  # {"government": "Pemda Jabar", ...}
+    status: str = "upcoming"  # upcoming, active, completed
+    created_at: datetime
+    updated_at: datetime
+
+
+# ===== Immersion Phase Models (formerly Conceive) =====
+
+class ImmersionArtifactCreate(BaseModel):
+    """Request model for Immersion phase artifacts"""
+    problem_context: str = Field(..., min_length=50, max_length=2000, description="Observed problem in authentic context")
+    stakeholder_map: Optional[str] = Field(None, max_length=1000, description="Who is affected or involved")
+    empathy_notes: Optional[str] = Field(None, max_length=1000, description="Observations from immersion")
+    sfia_targets: Optional[List[str]] = Field(None, description="Target SFIA skill codes")
+    institutional_anchor: Optional[str] = Field(None, description="Government office, SME, or institution")
+
+class ImmersionArtifact(ORMBase):
+    """Immersion phase output (IRIS Phase 1)"""
     id: int
     project_id: int
-    problem_statement: str
+    problem_context: str
+    stakeholder_map: Optional[str] = None
+    empathy_notes: Optional[str] = None
+    sfia_targets: List[str] = []
+    institutional_anchor: Optional[str] = None
+    # AI-generated fields
+    suggested_competencies: List[str] = []
+    difficulty_assessment: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+# Backward compatibility aliases
+ProjectCharterCreate = ImmersionArtifactCreate
+
+class ProjectCharter(BaseModel):
+    """DEPRECATED: Use ImmersionArtifact. Kept for backward compatibility."""
+    id: int
+    project_id: int
+    problem_statement: str  # Maps to problem_context
     success_metrics: str
     target_outcome: Optional[str] = None
     constraints: Optional[str] = None
     stakeholders: Optional[str] = None
-    # AI-generated fields (templates for now)
     suggested_tools: List[str] = []
     reasoning: Optional[str] = None
     estimated_duration: Optional[str] = None
@@ -162,41 +258,80 @@ class ProjectCharter(BaseModel):
     updated_at: datetime
 
 
-# ===== Design Phase Models =====
+# ===== Reflection Phase Models (formerly Design) =====
 
-class DesignBlueprintCreate(BaseModel):
-    """Request model for creating/updating design blueprint"""
-    architecture_diagram: Optional[Dict[str, Any]] = Field(None, description="JSON representation of Excalidraw/Miro diagram")
-    logic_flow: Optional[str] = Field(None, max_length=2000, description="Written description of logic flow")
-    component_list: Optional[List[str]] = Field(None, description="List of components/modules")
-    data_flow: Optional[str] = Field(None, max_length=1000, description="How data flows through system")
+class ReflectionArtifactCreate(BaseModel):
+    """Request model for Reflection phase artifacts"""
+    gap_analysis: str = Field(..., min_length=50, max_length=2000, description="Analysis of knowledge/skill gaps")
+    sfia_assessment: Optional[Dict[str, str]] = Field(None, description="Self-assessment against SFIA descriptors")
+    learning_plan: Optional[str] = Field(None, max_length=1000, description="What P (programmed knowledge) is needed")
+    question_log: Optional[List[str]] = Field(None, description="Key questions from Socratic reflection")
+    architecture_sketch: Optional[Dict[str, Any]] = Field(None, description="Initial solution architecture")
+
+class ReflectionArtifact(ORMBase):
+    """Reflection phase output (IRIS Phase 2)"""
+    id: int
+    project_id: int
+    gap_analysis: str
+    sfia_assessment: Optional[Dict[str, str]] = None  # {"DATM": "L2", "PROG": "L3"}
+    learning_plan: Optional[str] = None
+    question_log: List[str] = []
+    architecture_sketch: Optional[Dict[str, Any]] = None
+    ai_validation_score: Optional[float] = None
+    validation_notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+# Backward compatibility alias
+DesignBlueprintCreate = ReflectionArtifactCreate
 
 class DesignBlueprint(BaseModel):
-    """Design blueprint (Design phase output)"""
+    """DEPRECATED: Use ReflectionArtifact. Kept for backward compatibility."""
     id: int
     project_id: int
     architecture_diagram: Optional[Dict[str, Any]] = None
     logic_flow: Optional[str] = None
     component_list: List[str] = []
     data_flow: Optional[str] = None
-    ai_validation_score: Optional[float] = None  # Socratic tutor feedback score
+    ai_validation_score: Optional[float] = None
     validation_notes: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
 
-# ===== Implement Phase Models =====
+# ===== Iteration Phase Models (formerly Implement) =====
 
-class ImplementationCreate(BaseModel):
-    """Request model for code/implementation submission"""
-    code_repository_url: Optional[str] = None
+class IterationArtifactCreate(BaseModel):
+    """Request model for Iteration phase artifacts (Build-Measure-Learn)"""
+    iteration_number: int = Field(default=1, ge=1, description="Current BML cycle number")
+    hypothesis: Optional[str] = Field(None, max_length=500, description="What we're testing this iteration")
+    prototype_url: Optional[str] = None
     code_snapshot: Optional[str] = Field(None, description="Code content snapshot")
-    framework_used: Optional[str] = None
-    dependencies: Optional[List[str]] = None
-    notes: Optional[str] = Field(None, max_length=1000)
+    measurements: Optional[Dict[str, Any]] = Field(None, description="Metrics from this iteration")
+    learnings: Optional[str] = Field(None, max_length=1000, description="What we learned")
+    next_hypothesis: Optional[str] = Field(None, max_length=500, description="Next iteration hypothesis")
+
+class IterationArtifact(ORMBase):
+    """Iteration phase output (IRIS Phase 3 - Build-Measure-Learn cycles)"""
+    id: int
+    project_id: int
+    iteration_number: int = 1
+    hypothesis: Optional[str] = None
+    prototype_url: Optional[str] = None
+    code_snapshot: Optional[str] = None
+    measurements: Optional[Dict[str, Any]] = None
+    learnings: Optional[str] = None
+    next_hypothesis: Optional[str] = None
+    linting_passed: bool = False
+    tests_passed: bool = False
+    created_at: datetime
+    updated_at: datetime
+
+# Backward compatibility alias
+ImplementationCreate = IterationArtifactCreate
 
 class Implementation(BaseModel):
-    """Implementation artifacts (Implement phase output)"""
+    """DEPRECATED: Use IterationArtifact. Kept for backward compatibility."""
     id: int
     project_id: int
     code_repository_url: Optional[str] = None
@@ -210,17 +345,42 @@ class Implementation(BaseModel):
     updated_at: datetime
 
 
-# ===== Operate Phase Models =====
+# ===== Scale Phase Models (formerly Operate) =====
 
-class DeploymentCreate(BaseModel):
-    """Request model for project deployment"""
+class ScaleArtifactCreate(BaseModel):
+    """Request model for Scale phase artifacts (Institutional deployment)"""
     deployment_url: Optional[str] = None
     deployment_platform: Optional[str] = None
-    environment_variables: Optional[Dict[str, str]] = None
-    readme: Optional[str] = None
+    institutional_handoff: Optional[str] = Field(None, max_length=1000, description="Documentation for institution")
+    stakeholder_training: Optional[str] = Field(None, max_length=1000, description="Training provided to stakeholders")
+    impact_metrics: Optional[Dict[str, Any]] = Field(None, description="Measured impact on institution")
+    sfia_evidence: Optional[Dict[str, str]] = Field(None, description="Evidence for SFIA competency assessment")
+
+class ScaleArtifact(ORMBase):
+    """Scale phase output (IRIS Phase 4 - Institutional deployment + credential)"""
+    id: int
+    project_id: int
+    deployment_url: Optional[str] = None
+    deployment_platform: Optional[str] = None
+    institutional_handoff: Optional[str] = None
+    stakeholder_training: Optional[str] = None
+    impact_metrics: Optional[Dict[str, Any]] = None
+    sfia_evidence: Optional[Dict[str, str]] = None
+    verification_status: ProjectStatus = ProjectStatus.SUBMITTED
+    verification_tests_passed: int = 0
+    verification_tests_total: int = 0
+    # Credential fields
+    credential_issued: bool = False
+    credential_type: Optional[str] = None  # "nusantara_ai_fellow"
+    sfia_level_achieved: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+# Backward compatibility alias
+DeploymentCreate = ScaleArtifactCreate
 
 class Deployment(BaseModel):
-    """Deployment record (Operate phase output)"""
+    """DEPRECATED: Use ScaleArtifact. Kept for backward compatibility."""
     id: int
     project_id: int
     deployment_url: Optional[str] = None
@@ -239,49 +399,65 @@ class Deployment(BaseModel):
     updated_at: datetime
 
 
-# ===== CDIO Project Core Model =====
+# ===== IRIS Project Core Model =====
 
-class CDIOProjectCreate(BaseModel):
-    """Request model for creating a new CDIO project"""
-    course_id: int
+class IRISProjectCreate(BaseModel):
+    """Request model for creating a new IRIS project (NUSA Framework)"""
+    course_id: Optional[int] = None
+    sprint_id: Optional[int] = None  # For NUSA Sprint participants
     user_id: int
     project_title: Optional[str] = Field(None, max_length=200)
+    institutional_anchor: Optional[str] = Field(None, description="Government/SME/Institution hosting the problem")
 
-class CDIOProject(ORMBase):
-    """Main CDIO project model tracking all phases"""
+class IRISProject(ORMBase):
+    """Main IRIS project model tracking all phases (NUSA Framework)"""
     id: int
-    course_id: int
+    course_id: Optional[int] = None
+    sprint_id: Optional[int] = None
     user_id: int
     project_title: str = Field(validation_alias="title")
-    current_phase: CDIOPhase = CDIOPhase.CONCEIVE
+    current_phase: IRISPhase = IRISPhase.IMMERSE
     overall_status: ProjectStatus = ProjectStatus.NOT_STARTED
     
-    # Phase completion tracking
-    conceive_completed: bool = False
-    design_completed: bool = False
-    implement_completed: bool = False
-    operate_completed: bool = False
+    # Phase completion tracking (IRIS phases)
+    immersion_completed: bool = False
+    reflection_completed: bool = False
+    iteration_completed: bool = False
+    scale_completed: bool = False
     
     # References to phase artifacts
-    charter_id: Optional[int] = None
-    blueprint_id: Optional[int] = None
-    implementation_id: Optional[int] = None
-    deployment_id: Optional[int] = None
+    immersion_artifact_id: Optional[int] = None
+    reflection_artifact_id: Optional[int] = None
+    iteration_artifact_id: Optional[int] = None
+    scale_artifact_id: Optional[int] = None
+    
+    # SFIA tracking
+    target_sfia_level: Optional[str] = None
+    achieved_sfia_level: Optional[str] = None
+    sfia_competencies: List[str] = []  # List of skill codes
     
     # Progress tracking
     completion_percentage: int = 0
+    sprint_day: Optional[int] = None  # Day 1-28 of the NUSA Sprint
     started_at: datetime
     completed_at: Optional[datetime] = None
     last_activity_at: datetime
 
+# Backward compatibility alias
+CDIOProjectCreate = IRISProjectCreate
+CDIOProject = IRISProject
 
-class CDIOProjectDetail(BaseModel):
-    """Detailed project view with all phase data"""
-    project: CDIOProject
-    charter: Optional[ProjectCharter] = None
-    blueprint: Optional[DesignBlueprint] = None
-    implementation: Optional[Implementation] = None
-    deployment: Optional[Deployment] = None
+class IRISProjectDetail(BaseModel):
+    """Detailed IRIS project view with all phase data"""
+    project: IRISProject
+    immersion: Optional[ImmersionArtifact] = None
+    reflection: Optional[ReflectionArtifact] = None
+    iteration: Optional[IterationArtifact] = None
+    scale: Optional[ScaleArtifact] = None
+    sfia_competencies: List[SFIACompetency] = []
+
+# Backward compatibility alias  
+CDIOProjectDetail = IRISProjectDetail
 
 
 # ===== Quiz Models =====
@@ -366,6 +542,7 @@ class StudentDashboardData(BaseModel):
     average_progress: int
     upcoming_deadlines: List[Dict[str, Any]] = []
     recommended_courses: List[Course] = []
+    career_pathway_id: Optional[str] = None  # ID from careerData.ts
 
 
 # ===== Enrollment Models =====

@@ -66,7 +66,7 @@ export default function PartnersPage() {
                 <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=2000&q=80')] opacity-10 bg-cover bg-center" />
                 <div className="absolute inset-0 bg-gradient-to-b from-slate-900/50 to-slate-900" />
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+                <div className="max-w-[70rem] mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
                     <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
                         World-Class <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Partners</span>
                     </h1>
@@ -96,7 +96,7 @@ export default function PartnersPage() {
                 </div>
             </div>
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <main className="max-w-[70rem] mx-auto px-4 sm:px-6 lg:px-8 py-16">
                 <div className="flex flex-col lg:flex-row gap-12">
                     {/* Sidebar Filters */}
                     <div className="w-full lg:w-64 flex-shrink-0 space-y-8">

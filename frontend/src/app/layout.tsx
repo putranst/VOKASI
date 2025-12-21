@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Lato } from "next/font/google";
+import { Lato, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { AICompanion } from "@/components/ui/AICompanion";
@@ -8,6 +8,12 @@ const lato = Lato({
   weight: ['300', '400', '700', '900'],
   subsets: ["latin"],
   variable: "--font-lato",
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  weight: ['300', '400', '500', '600', '700', '800'],
+  subsets: ["latin"],
+  variable: "--font-jakarta",
 });
 
 export const metadata: Metadata = {
@@ -23,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${lato.variable} antialiased`}
+        className={`${lato.variable} ${plusJakartaSans.variable} antialiased`}
       >
         <Providers>
           {children}

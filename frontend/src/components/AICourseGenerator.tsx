@@ -258,7 +258,7 @@ export function AICourseGenerator({ onCourseGenerated }: AICourseGeneratorProps)
                         <Sparkles className="text-white" size={32} />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900">What do you want to teach?</h2>
-                    <p className="text-gray-500">Enter a topic and let AI structure your CDIO course</p>
+                    <p className="text-gray-500">Enter a topic and let AI structure your IRIS-based course</p>
                 </div>
 
                 <div className="space-y-6">
@@ -353,7 +353,7 @@ export function AICourseGenerator({ onCourseGenerated }: AICourseGeneratorProps)
                         {isGenerating ? (
                             <>
                                 <Loader2 className="animate-spin" size={20} />
-                                Generating CDIO Course Structure...
+                                Generating IRIS Course Structure...
                             </>
                         ) : (
                             <>
@@ -373,7 +373,7 @@ export function AICourseGenerator({ onCourseGenerated }: AICourseGeneratorProps)
                     {/* Info Box */}
                     <div className="p-4 bg-blue-50 rounded-xl text-sm text-blue-700 border border-blue-100">
                         <p className="font-medium mb-1">💡 How it works</p>
-                        <p>Our AI will analyze your topic and create a complete CDIO-structured course with modules covering Conceive, Design, Implement, and Operate phases.</p>
+                        <p>Our AI will analyze your topic and create a complete IRIS-structured course with phases covering Immersion, Reflection, Iteration, and Scale.</p>
                     </div>
                 </div>
             </div>
