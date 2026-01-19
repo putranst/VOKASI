@@ -113,6 +113,7 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
     const [error, setError] = useState<string | null>(null);
     const [courseThumbnail, setCourseThumbnail] = useState<string>('');
     const [expandedActions, setExpandedActions] = useState<Record<string, boolean>>({});
+    const [expandedTopics, setExpandedTopics] = useState<Record<number, boolean>>({});
 
     // Comprehensive thumbnail library organized by category/topic
     const THUMBNAIL_LIBRARY: Record<string, string[]> = {
@@ -658,69 +659,106 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                                     + Add Topic
                                 </button>
                             </div>
-                            <div className="space-y-4">
-                                {parsedContent.main_topics.map((topic, idx) => (
-                                    <div key={idx} className="p-4 bg-gray-50 rounded-xl border border-gray-100 group">
-                                        <div className="flex items-start gap-3">
-                                            <div className="flex-1 space-y-3">
-                                                <div>
-                                                    <label className="text-xs text-gray-400">Topic Name</label>
-                                                    <input
-                                                        type="text"
-                                                        value={topic.name}
-                                                        onChange={(e) => updateTopic(idx, 'name', e.target.value)}
-                                                        className="w-full font-semibold text-gray-800 bg-transparent border-b border-transparent
-                                                                 hover:border-gray-300 focus:border-purple-500 focus:outline-none py-1"
+                            <div className="space-y-3">
+                                {parsedContent.main_topics.map((topic, idx) => {
+                                    const isExpanded = expandedTopics[idx] || false;
+                                    return (
+                                        <div key={idx} className="bg-gray-50 rounded-xl border border-gray-100 overflow-hidden">
+                                            {/* Collapsible Header */}
+                                            <button
+                                                onClick={() => setExpandedTopics(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                                                className="w-full p-4 flex items-center gap-3 hover:bg-gray-100 transition-colors text-left group"
+                                            >
+                                                <div className="w-8 h-8 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                                    {idx + 1}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-semibold text-gray-800 truncate">{topic.name}</p>
+                                                    <p className="text-sm text-gray-500 truncate">{topic.description}</p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-gray-400">{topic.subtopics.length} subtopics</span>
+                                                    <ChevronDown
+                                                        size={18}
+                                                        className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                                                     />
                                                 </div>
-                                                <div>
-                                                    <label className="text-xs text-gray-400">Description</label>
-                                                    <textarea
-                                                        value={topic.description}
-                                                        onChange={(e) => updateTopic(idx, 'description', e.target.value)}
-                                                        rows={2}
-                                                        className="w-full text-sm text-gray-600 bg-white border border-gray-200 rounded-lg
-                                                                 focus:border-purple-500 focus:outline-none p-2 resize-none"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs text-gray-400">Subtopics / Key Concepts</label>
-                                                    <div className="flex flex-wrap gap-2 mt-1">
-                                                        {topic.subtopics.map((sub, i) => (
-                                                            <div key={i} className="flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-lg group/sub">
-                                                                <input
-                                                                    type="text"
-                                                                    value={sub}
-                                                                    onChange={(e) => updateSubtopic(idx, i, e.target.value)}
-                                                                    className="text-xs bg-transparent focus:outline-none w-auto min-w-[80px]"
-                                                                    style={{ width: `${Math.max(sub.length * 7, 80)}px` }}
-                                                                />
+                                            </button>
+
+                                            {/* Expanded Content */}
+                                            {isExpanded && (
+                                                <div className="px-4 pb-4 pt-0 border-t border-gray-100 bg-white">
+                                                    <div className="ml-11 space-y-4 pt-4">
+                                                        {/* Editable Topic Name */}
+                                                        <div>
+                                                            <label className="text-xs font-semibold text-gray-500 uppercase">Topic Name</label>
+                                                            <input
+                                                                type="text"
+                                                                value={topic.name}
+                                                                onChange={(e) => updateTopic(idx, 'name', e.target.value)}
+                                                                className="w-full font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg
+                                                                         focus:border-purple-500 focus:outline-none px-3 py-2 mt-1"
+                                                            />
+                                                        </div>
+
+                                                        {/* Editable Description */}
+                                                        <div>
+                                                            <label className="text-xs font-semibold text-gray-500 uppercase">Description / Learning Goals</label>
+                                                            <textarea
+                                                                value={topic.description}
+                                                                onChange={(e) => updateTopic(idx, 'description', e.target.value)}
+                                                                rows={3}
+                                                                className="w-full text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg
+                                                                         focus:border-purple-500 focus:outline-none p-3 mt-1 resize-none"
+                                                                placeholder="What will students learn in this module?"
+                                                            />
+                                                        </div>
+
+                                                        {/* Editable Subtopics */}
+                                                        <div>
+                                                            <label className="text-xs font-semibold text-gray-500 uppercase">Key Concepts & Subtopics</label>
+                                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                                {topic.subtopics.map((sub, i) => (
+                                                                    <div key={i} className="flex items-center gap-1 px-3 py-1.5 bg-purple-50 border border-purple-100 rounded-lg group/sub">
+                                                                        <input
+                                                                            type="text"
+                                                                            value={sub}
+                                                                            onChange={(e) => updateSubtopic(idx, i, e.target.value)}
+                                                                            className="text-sm text-purple-700 bg-transparent focus:outline-none w-auto min-w-[100px]"
+                                                                            style={{ width: `${Math.max(sub.length * 8, 100)}px` }}
+                                                                        />
+                                                                        <button
+                                                                            onClick={() => removeSubtopic(idx, i)}
+                                                                            className="opacity-0 group-hover/sub:opacity-100 text-purple-400 hover:text-red-500 transition-opacity"
+                                                                        >
+                                                                            <X size={14} />
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
                                                                 <button
-                                                                    onClick={() => removeSubtopic(idx, i)}
-                                                                    className="opacity-0 group-hover/sub:opacity-100 text-gray-400 hover:text-red-500"
+                                                                    onClick={() => addSubtopic(idx)}
+                                                                    className="px-3 py-1.5 text-sm bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-colors"
                                                                 >
-                                                                    <X size={12} />
+                                                                    + Add Subtopic
                                                                 </button>
                                                             </div>
-                                                        ))}
-                                                        <button
-                                                            onClick={() => addSubtopic(idx)}
-                                                            className="px-2 py-1 text-xs bg-gray-100 text-gray-500 rounded-lg hover:bg-gray-200"
-                                                        >
-                                                            + Add
-                                                        </button>
+                                                        </div>
+
+                                                        {/* Delete Topic Button */}
+                                                        <div className="pt-2 border-t border-gray-100">
+                                                            <button
+                                                                onClick={() => removeTopic(idx)}
+                                                                className="flex items-center gap-2 text-sm text-red-500 hover:text-red-600"
+                                                            >
+                                                                <Trash2 size={14} /> Remove Topic
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <button
-                                                onClick={() => removeTopic(idx)}
-                                                className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-opacity"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            )}
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
 
