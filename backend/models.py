@@ -34,6 +34,7 @@ class CourseCreate(BaseModel):
     description: Optional[str] = Field(None, max_length=1000)
     duration: Optional[str] = Field(None, description="Course duration (e.g., '4 weeks')")
     institution_id: Optional[int] = None
+    instructor_id: Optional[int] = None  # Link to instructor User
 
 class CourseUpdate(BaseModel):
     """Model for updating a course"""

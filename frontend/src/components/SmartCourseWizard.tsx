@@ -7,6 +7,7 @@ import {
     Brain, Target, Clock, Users, Layers, Play, MessageSquare,
     HelpCircle, Lightbulb, CheckCircle2, Trash2, Image
 } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
 
 interface ParsedContent {
     title: string;
@@ -100,6 +101,7 @@ const TEACHING_ACTION_COLORS: Record<string, string> = {
 };
 
 export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWizardProps) {
+    const { user } = useAuth();
     const [step, setStep] = useState(1);
     const [files, setFiles] = useState<UploadedFile[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -257,17 +259,18 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
         setProcessingStatus('Creating course...');
 
         try {
-            // Create the course
+            // Create the course with instructor details
             const courseData = {
                 title: teachingAgenda.course_title,
                 description: parsedContent.summary,
-                level: parsedContent.difficulty_level,
-                duration: parsedContent.estimated_duration,
+                level: parsedContent.difficulty_level || 'Intermediate',
+                duration: parsedContent.estimated_duration || `${durationWeeks} weeks`,
                 tag: 'AI Generated',
                 image: courseThumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800',
                 category: 'Technology',
-                instructor: 'Alexandria AI',
-                org: 'TSEA'
+                instructor: user?.name || 'Instructor',
+                org: 'TSEA',
+                instructor_id: user?.id  // Link to logged-in instructor
             };
 
             const response = await fetch(`${BACKEND_URL}/api/v1/courses`, {

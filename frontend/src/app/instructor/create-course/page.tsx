@@ -32,7 +32,8 @@ export default function CreateCoursePage() {
                     category: formData.category || 'Technology',
                     description: formData.description,
                     duration: formData.duration,
-                    institution_id: formData.institution_id ? parseInt(formData.institution_id) : undefined
+                    institution_id: formData.institution_id ? parseInt(formData.institution_id) : undefined,
+                    instructor_id: formData.instructor_id  // Link to instructor
                 })
             });
 
@@ -179,7 +180,7 @@ export default function CreateCoursePage() {
                                 category: courseData.category || 'Technology',
                                 instructor: user?.name || 'Instructor',
                                 org: 'TSEA',
-                                institution_id: 1
+                                instructor_id: user?.id  // Link to logged-in instructor
                             });
                         }}
                     />
