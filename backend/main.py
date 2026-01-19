@@ -1053,6 +1053,178 @@ Respond with just the suggestion, no preamble."""
     return {"success": False, "suggestion": "Unable to generate suggestion at this time.", "provider": "error"}
 
 
+class AgentConsultRequest(BaseModel):
+    agent_type: str  # 'alexandria', 'sme', 'pedagogy'
+    query: str
+    course_context: Optional[Dict] = None
+    system_prompt: Optional[str] = None
+
+@app.post("/api/v1/ai/agent-consult")
+async def ai_agent_consult(request: AgentConsultRequest):
+    """
+    Consult with MAIC-inspired AI agents for course development.
+    
+    Agents:
+    - alexandria: Curriculum Designer (structure, IRIS/CDIO, learning outcomes)
+    - sme: Subject Matter Expert (content depth, examples, exercises)
+    - pedagogy: Pedagogy Advisor (engagement, accessibility, differentiation)
+    """
+    from services.openai_service import clients, PRIORITY
+    
+    # Build context from course
+    context_str = ""
+    if request.course_context:
+        ctx = request.course_context
+        context_str = f"""
+COURSE CONTEXT:
+- Title: {ctx.get('title', 'Untitled')}
+- Description: {ctx.get('description', 'No description')}
+- Level: {ctx.get('level', 'Intermediate')}
+- Topics: {', '.join(ctx.get('topics', [])[:5]) if ctx.get('topics') else 'Not specified'}
+"""
+    
+    # Agent-specific system prompts
+    agent_prompts = {
+        'alexandria': """You are Alexandria, an expert curriculum designer AI. Focus on:
+- Course structure and logical flow using IRIS (Immerse-Realize-Iterate-Scale) and CDIO frameworks
+- Learning outcomes aligned with Bloom's Taxonomy
+- Assessment strategies and rubrics
+- International standards like MIT OCW structure
+Provide specific, actionable suggestions with examples when relevant.""",
+        
+        'sme': """You are Dr. Insight, a subject matter expert AI. Focus on:
+- Deep domain knowledge and accuracy
+- Real-world examples and industry case studies
+- Practical exercises that mirror workplace scenarios
+- Current research and emerging trends in the field
+- Knowledge prerequisites and learning pathways
+Provide expert-level insights that add depth to course content.""",
+        
+        'pedagogy': """You are Professor Engage, a pedagogy expert AI. Focus on:
+- Active learning and learner engagement strategies
+- Differentiated instruction for diverse learners
+- Accessibility and inclusive design (Universal Design for Learning)
+- Formative assessment integration
+- Learner motivation and retention techniques
+Provide pedagogically sound recommendations that enhance learning outcomes."""
+    }
+    
+    system_prompt = request.system_prompt or agent_prompts.get(request.agent_type, agent_prompts['alexandria'])
+    
+    prompt = f"""{system_prompt}
+
+{context_str}
+
+USER QUERY: {request.query}
+
+Provide a helpful, specific response. Use formatting like **bold** for emphasis and numbered lists for multi-step suggestions. Be concise but thorough."""
+
+    for provider in PRIORITY:
+        if provider == "mock":
+            # Return intelligent mock responses based on agent type
+            mock_responses = {
+                'alexandria': f"""Based on my analysis, here are my recommendations:
+
+**Structure Suggestions:**
+1. Begin with a clear "Immerse" phase focusing on context and stakeholder analysis
+2. Progress to "Realize" where learners design their approach with clear milestones
+3. Include hands-on "Iterate" activities with peer feedback and revision cycles
+4. Conclude with "Scale" focusing on deployment, measurement, and reflection
+
+**Learning Outcomes (Bloom's Aligned):**
+- *Remember*: Define key terminology and concepts
+- *Understand*: Explain how concepts interconnect
+- *Apply*: Demonstrate practical implementation
+- *Analyze*: Evaluate different approaches and trade-offs
+- *Create*: Design original solutions for real problems
+
+Would you like me to generate specific module structures or assessment rubrics?""",
+                
+                'sme': f"""Here are my expert recommendations for enriching your content:
+
+**Content Depth:**
+1. Include case studies from organizations like Google, Amazon, or local success stories
+2. Reference industry-standard frameworks (e.g., Agile, Design Thinking, Lean)
+3. Connect to current research and emerging trends from recent publications
+
+**Practical Applications:**
+- Design hands-on exercises that simulate real workplace challenges
+- Include templates, checklists, or tools learners can adapt and use
+- Build progressive project components toward the capstone
+
+**Prerequisites Check:**
+- Ensure foundational concepts are introduced or have prerequisite links
+- Provide optional "refresher" resources for those who need to fill gaps
+
+What specific topic would you like me to elaborate on?""",
+                
+                'pedagogy': f"""To maximize engagement and learning outcomes, consider:
+
+**Engagement Strategies:**
+1. Add Socratic AI checkpoints every 2-3 sections for reflection
+2. Include collaborative discussion prompts that encourage peer learning
+3. Vary content formats: combine video (< 10 min), text, and interactive elements
+4. Use storytelling to make abstract concepts concrete
+
+**Accessibility (UDL Principles):**
+- Provide multiple means of representation (text + video + diagrams)
+- Offer multiple means of action (typed responses, voice, project options)
+- Allow multiple means of engagement (choice in topics, flexible deadlines)
+
+**Differentiation:**
+- Extension activities for advanced learners who finish early
+- Scaffolding with hints and guided templates for those who need support
+- Self-paced modules with checkpoints for immediate feedback
+
+Which aspect would you like me to develop further?"""
+            }
+            return {
+                "success": True,
+                "response": mock_responses.get(request.agent_type, mock_responses['alexandria']),
+                "agent": request.agent_type,
+                "provider": "mock"
+            }
+        
+        if provider not in clients:
+            continue
+            
+        try:
+            if provider == "gemini":
+                response = await clients[provider].generate_content_async(prompt)
+                return {
+                    "success": True,
+                    "response": response.text.strip(),
+                    "agent": request.agent_type,
+                    "provider": provider
+                }
+            else:
+                response = await clients[provider].chat.completions.create(
+                    model="gpt-4o" if provider == "openai" else "google/gemini-2.0-flash-exp:free",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"{context_str}\n\n{request.query}"}
+                    ],
+                    max_tokens=1000,
+                    temperature=0.7
+                )
+                return {
+                    "success": True,
+                    "response": response.choices[0].message.content.strip(),
+                    "agent": request.agent_type,
+                    "provider": provider
+                }
+        except Exception as e:
+            print(f"[{provider}] Agent Consult Error: {e}")
+            continue
+    
+    return {
+        "success": False,
+        "response": "Unable to get agent response at this time. Please try again.",
+        "agent": request.agent_type,
+        "provider": "error"
+    }
+
+
 @app.get("/api/v1/courses", response_model=List[schemas.Course])
 def get_courses(db: Session = Depends(get_db)):
     """Get all courses"""
