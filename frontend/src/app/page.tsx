@@ -20,7 +20,7 @@ import { Footer } from '@/components/Footer';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background text-slate-800 selection:bg-primary selection:text-white font-sans">
+    <div className="min-h-screen bg-background text-slate-800 selection:bg-primary selection:text-white font-sans w-full max-w-[100vw] overflow-x-hidden">
       <Navbar />
 
       {/* NEW: Dual Hero Slider (Ekspedisi AI + T6 Platform) */}
