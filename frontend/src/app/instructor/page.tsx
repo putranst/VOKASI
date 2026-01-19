@@ -306,16 +306,16 @@ export default function InstructorDashboard() {
                 </aside>
 
                 {/* Main Content */}
-                <main className="flex-1 lg:ml-64 min-h-screen">
+                <main className="flex-1 lg:ml-64 min-h-screen w-full max-w-[100vw] overflow-x-hidden">
                     {/* Header */}
-                    <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+                    <header className="bg-white border-b border-gray-100 sticky top-0 z-10 w-full">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                            <h1 className="text-xl font-bold text-gray-900">
+                            <h1 className="text-xl font-bold text-gray-900 truncate pr-2">
                                 {activeTab === 'overview' ? 'Instructor Dashboard' :
                                     activeTab === 'courses' ? 'My Courses' :
                                         activeTab === 'students' ? 'Student Management' : 'Grading Queue'}
                             </h1>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-4 shrink-0">
                                 <div className="text-right hidden sm:block">
                                     <p className="text-sm font-bold text-gray-900">{user?.name}</p>
                                     <p className="text-xs text-gray-500 capitalize">Instructor</p>
@@ -327,64 +327,64 @@ export default function InstructorDashboard() {
                         </div>
                     </header>
 
-                    <PageTransition className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+                    <PageTransition className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
                         {activeTab === 'overview' && (
                             <div className="space-y-8">
                                 {/* Stats Grid */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm min-w-0">
                                         <div className="flex items-center justify-between mb-4">
-                                            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                                            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
                                                 <Users size={20} />
                                             </div>
-                                            <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">+5 new</span>
+                                            <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full whitespace-nowrap">+5 new</span>
                                         </div>
-                                        <p className="text-gray-500 text-sm font-medium">Total Students</p>
+                                        <p className="text-gray-500 text-sm font-medium truncate">Total Students</p>
                                         <h3 className="text-2xl font-black text-gray-900">{stats.totalStudents}</h3>
                                     </div>
 
-                                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm min-w-0">
                                         <div className="flex items-center justify-between mb-4">
-                                            <div className="w-10 h-10 rounded-full bg-yellow-50 flex items-center justify-center text-yellow-600">
+                                            <div className="w-10 h-10 rounded-full bg-yellow-50 flex items-center justify-center text-yellow-600 shrink-0">
                                                 <Clock size={20} />
                                             </div>
                                             {stats.pendingReviews > 0 && (
-                                                <span className="text-xs font-bold text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">Action Needed</span>
+                                                <span className="text-xs font-bold text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full whitespace-nowrap">Action Needed</span>
                                             )}
                                         </div>
-                                        <p className="text-gray-500 text-sm font-medium">Pending Reviews</p>
+                                        <p className="text-gray-500 text-sm font-medium truncate">Pending Reviews</p>
                                         <h3 className="text-2xl font-black text-gray-900">{stats.pendingReviews}</h3>
                                     </div>
 
-                                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm min-w-0">
                                         <div className="flex items-center justify-between mb-4">
-                                            <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
+                                            <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
                                                 <BookOpen size={20} />
                                             </div>
                                         </div>
-                                        <p className="text-gray-500 text-sm font-medium">Active Courses</p>
+                                        <p className="text-gray-500 text-sm font-medium truncate">Active Courses</p>
                                         <h3 className="text-2xl font-black text-gray-900">{stats.activeCourses}</h3>
                                     </div>
 
-                                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm min-w-0">
                                         <div className="flex items-center justify-between mb-4">
-                                            <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+                                            <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
                                                 <Award size={20} />
                                             </div>
-                                            <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">Top 10%</span>
+                                            <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full whitespace-nowrap">Top 10%</span>
                                         </div>
-                                        <p className="text-gray-500 text-sm font-medium">Avg. Course Rating</p>
+                                        <p className="text-gray-500 text-sm font-medium truncate">Avg. Course Rating</p>
                                         <h3 className="text-2xl font-black text-gray-900">{stats.averageRating}</h3>
                                     </div>
                                 </div>
 
                                 {/* Recent Submissions (Preview) */}
-                                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 overflow-hidden">
                                     <div className="flex items-center justify-between mb-6">
                                         <h3 className="text-lg font-bold text-gray-900">Recent Submissions</h3>
                                         <button
                                             onClick={() => setActiveTab('grading')}
-                                            className="text-sm font-bold text-indigo-600 hover:text-indigo-700"
+                                            className="text-sm font-bold text-indigo-600 hover:text-indigo-700 whitespace-nowrap"
                                         >
                                             View All
                                         </button>
@@ -413,7 +413,7 @@ export default function InstructorDashboard() {
                                         <select
                                             value={filter}
                                             onChange={(e) => setFilter(e.target.value)}
-                                            className="px-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                            className="w-full md:w-auto px-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                                         >
                                             <option value="all">All Status</option>
                                             <option value="pending">Pending</option>
@@ -424,9 +424,9 @@ export default function InstructorDashboard() {
                                 </div>
 
                                 {/* Queue List */}
-                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden max-w-full">
                                     <div className="overflow-x-auto">
-                                        <table className="w-full text-left">
+                                        <table className="w-full text-left whitespace-nowrap">
                                             <thead className="bg-gray-50 border-b border-gray-200">
                                                 <tr>
                                                     <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Student / Project</th>

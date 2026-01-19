@@ -206,9 +206,9 @@ export default function InstitutionDashboardPage() {
                 </aside>
 
                 {/* Main Content */}
-                <main className="flex-1 lg:ml-64 min-h-screen">
+                <main className="flex-1 lg:ml-64 min-h-screen w-full max-w-[100vw] overflow-x-hidden">
                     {/* Header */}
-                    <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+                    <header className="bg-white border-b border-gray-100 sticky top-0 z-10 w-full">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                             <h1 className="text-xl font-bold text-gray-900">
                                 {activeTab === 'overview' ? 'Institution Dashboard' :
@@ -244,7 +244,7 @@ export default function InstitutionDashboardPage() {
                         </div>
                     </header>
 
-                    <PageTransition className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+                    <PageTransition className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
                         {activeTab === 'overview' && (
                             <>
                                 {/* Welcome Section */}
@@ -428,78 +428,81 @@ export default function InstitutionDashboardPage() {
                                 </div>
 
                                 <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                                    <table className="w-full">
-                                        <thead className="bg-gray-50 border-b border-gray-100">
-                                            <tr>
-                                                <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Course</th>
-                                                <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Instructor</th>
-                                                <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Enrollments</th>
-                                                <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Completion</th>
-                                                <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Rating</th>
-                                                <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                                                <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-50">
-                                            {data?.courses.map((course) => (
-                                                <tr key={course.id} className="hover:bg-gray-50/50 transition-colors">
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <img
-                                                                src={course.thumbnail}
-                                                                alt={course.title}
-                                                                className="w-12 h-8 rounded object-cover flex-shrink-0"
-                                                            />
-                                                            <div>
-                                                                <p className="font-bold text-gray-900 text-sm">{course.title}</p>
-                                                                <p className="text-xs text-gray-500">{course.category}</p>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-600 hidden md:table-cell">{course.instructor}</td>
-                                                    <td className="px-6 py-4 text-center">
-                                                        <span className="font-bold text-gray-900">{course.enrollments.toLocaleString()}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-center hidden lg:table-cell">
-                                                        <div className="flex items-center justify-center gap-2">
-                                                            <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                                                <div
-                                                                    className="h-full bg-green-500 rounded-full"
-                                                                    style={{ width: `${course.completionRate}%` }}
-                                                                />
-                                                            </div>
-                                                            <span className="text-xs font-medium text-gray-500">{course.completionRate}%</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-center">
-                                                        <div className="flex items-center justify-center gap-1 text-amber-500">
-                                                            <Star size={14} fill="currentColor" />
-                                                            <span className="font-bold text-sm">{course.rating}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-center">
-                                                        <span className={`text-xs font-bold uppercase px-3 py-1 rounded-full ${getStatusBadge(course.status)}`}>
-                                                            {course.status}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex justify-center gap-2">
-                                                            <button className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" title="View">
-                                                                <Eye size={16} />
-                                                            </button>
-                                                            <button className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" title="Edit">
-                                                                <Edit size={16} />
-                                                            </button>
-                                                            <button className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Archive">
-                                                                <Archive size={16} />
-                                                            </button>
-                                                        </div>
-                                                    </td>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full whitespace-nowrap">
+                                            <thead className="bg-gray-50 border-b border-gray-100">
+                                                <tr>
+                                                    <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Course</th>
+                                                    <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Instructor</th>
+                                                    <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Enrollments</th>
+                                                    <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Completion</th>
+                                                    <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Rating</th>
+                                                    <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                                                    <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-50">
+                                                {data?.courses.map((course) => (
+                                                    <tr key={course.id} className="hover:bg-gray-50/50 transition-colors">
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <img
+                                                                    src={course.thumbnail}
+                                                                    alt={course.title}
+                                                                    className="w-12 h-8 rounded object-cover flex-shrink-0"
+                                                                />
+                                                                <div>
+                                                                    <p className="font-bold text-gray-900 text-sm">{course.title}</p>
+                                                                    <p className="text-xs text-gray-500">{course.category}</p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600 hidden md:table-cell">{course.instructor}</td>
+                                                        <td className="px-6 py-4 text-center">
+                                                            <span className="font-bold text-gray-900">{course.enrollments.toLocaleString()}</span>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center hidden lg:table-cell">
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className="h-full bg-green-500 rounded-full"
+                                                                        style={{ width: `${course.completionRate}%` }}
+                                                                    />
+                                                                </div>
+                                                                <span className="text-xs font-medium text-gray-500">{course.completionRate}%</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center">
+                                                            <div className="flex items-center justify-center gap-1 text-amber-500">
+                                                                <Star size={14} fill="currentColor" />
+                                                                <span className="font-bold text-sm">{course.rating}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center">
+                                                            <span className={`text-xs font-bold uppercase px-3 py-1 rounded-full ${getStatusBadge(course.status)}`}>
+                                                                {course.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex justify-center gap-2">
+                                                                <button className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" title="View">
+                                                                    <Eye size={16} />
+                                                                </button>
+                                                                <button className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" title="Edit">
+                                                                    <Edit size={16} />
+                                                                </button>
+                                                                <button className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Archive">
+                                                                    <Archive size={16} />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
+
                             </>
                         )}
 
@@ -527,146 +530,153 @@ export default function InstitutionDashboardPage() {
                                 </div>
 
                                 <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                                    <table className="w-full">
-                                        <thead className="bg-gray-50 border-b border-gray-100">
-                                            <tr>
-                                                <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Student</th>
-                                                <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Course</th>
-                                                <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Enrolled Date</th>
-                                                <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Progress</th>
-                                                <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-50">
-                                            {data?.recent_enrollments.map((enrollment) => (
-                                                <tr key={enrollment.id} className="hover:bg-gray-50/50 transition-colors">
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                                                                {enrollment.student_name.split(' ').map(n => n[0]).join('')}
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-bold text-gray-900 text-sm">{enrollment.student_name}</p>
-                                                                <p className="text-xs text-gray-500">{enrollment.student_email}</p>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-600">{enrollment.course_title}</td>
-                                                    <td className="px-6 py-4 text-center text-sm text-gray-500 hidden md:table-cell">
-                                                        {new Date(enrollment.enrolled_date).toLocaleDateString()}
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center justify-center gap-2">
-                                                            <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                                                <div
-                                                                    className={`h-full rounded-full ${enrollment.progress === 100 ? 'bg-green-500' :
-                                                                        enrollment.progress > 50 ? 'bg-blue-500' :
-                                                                            'bg-amber-500'
-                                                                        }`}
-                                                                    style={{ width: `${enrollment.progress}%` }}
-                                                                />
-                                                            </div>
-                                                            <span className="text-xs font-bold text-gray-700 w-8">{enrollment.progress}%</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-center">
-                                                        <span className={`text-xs font-bold uppercase px-3 py-1 rounded-full ${getStatusBadge(enrollment.status)}`}>
-                                                            {enrollment.status}
-                                                        </span>
-                                                    </td>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full whitespace-nowrap">
+                                            <thead className="bg-gray-50 border-b border-gray-100">
+                                                <tr>
+                                                    <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Student</th>
+                                                    <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Course</th>
+                                                    <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Enrolled Date</th>
+                                                    <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Progress</th>
+                                                    <th className="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-50">
+                                                {data?.recent_enrollments.map((enrollment) => (
+                                                    <tr key={enrollment.id} className="hover:bg-gray-50/50 transition-colors">
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                                                                    {enrollment.student_name.split(' ').map(n => n[0]).join('')}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-bold text-gray-900 text-sm">{enrollment.student_name}</p>
+                                                                    <p className="text-xs text-gray-500">{enrollment.student_email}</p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600">{enrollment.course_title}</td>
+                                                        <td className="px-6 py-4 text-center text-sm text-gray-500 hidden md:table-cell">
+                                                            {new Date(enrollment.enrolled_date).toLocaleDateString()}
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className={`h-full rounded-full ${enrollment.progress === 100 ? 'bg-green-500' :
+                                                                            enrollment.progress > 50 ? 'bg-blue-500' :
+                                                                                'bg-amber-500'
+                                                                            }`}
+                                                                        style={{ width: `${enrollment.progress}%` }}
+                                                                    />
+                                                                </div>
+                                                                <span className="text-xs font-bold text-gray-700 w-8">{enrollment.progress}%</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center">
+                                                            <span className={`text-xs font-bold uppercase px-3 py-1 rounded-full ${getStatusBadge(enrollment.status)}`}>
+                                                                {enrollment.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
+
+
                             </>
-                        )}
+                        )
+                        }
 
-                        {activeTab === 'analytics' && (
-                            <>
-                                <div className="mb-8">
-                                    <h2 className="text-2xl font-bold text-gray-900">Analytics & Reports</h2>
-                                    <p className="text-gray-600">Track your institution's performance metrics</p>
-                                </div>
+                        {
+                            activeTab === 'analytics' && (
+                                <>
+                                    <div className="mb-8">
+                                        <h2 className="text-2xl font-bold text-gray-900">Analytics & Reports</h2>
+                                        <p className="text-gray-600">Track your institution's performance metrics</p>
+                                    </div>
 
-                                {/* Revenue & Growth */}
-                                <div className="grid lg:grid-cols-2 gap-8 mb-8">
-                                    <div className="bg-white rounded-2xl border border-gray-100 p-6">
-                                        <h3 className="font-bold text-gray-900 mb-6">Revenue Overview</h3>
-                                        <div className="flex items-end gap-6">
-                                            <div>
-                                                <p className="text-sm text-gray-500 mb-1">This Month</p>
-                                                <p className="text-3xl font-black text-gray-900">${data?.stats.revenue_this_month?.toLocaleString()}</p>
+                                    {/* Revenue & Growth */}
+                                    <div className="grid lg:grid-cols-2 gap-8 mb-8">
+                                        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                                            <h3 className="font-bold text-gray-900 mb-6">Revenue Overview</h3>
+                                            <div className="flex items-end gap-6">
+                                                <div>
+                                                    <p className="text-sm text-gray-500 mb-1">This Month</p>
+                                                    <p className="text-3xl font-black text-gray-900">${data?.stats.revenue_this_month?.toLocaleString()}</p>
+                                                </div>
+                                                <span className="text-sm font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                                                    +12% from last month
+                                                </span>
                                             </div>
-                                            <span className="text-sm font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                                                +12% from last month
-                                            </span>
+                                            <div className="mt-6 h-32 bg-gradient-to-t from-blue-50 to-transparent rounded-xl flex items-end justify-around px-4 pb-2">
+                                                {[40, 65, 45, 80, 55, 90, 75].map((h, i) => (
+                                                    <div
+                                                        key={i}
+                                                        className="w-8 bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg"
+                                                        style={{ height: `${h}%` }}
+                                                    />
+                                                ))}
+                                            </div>
                                         </div>
-                                        <div className="mt-6 h-32 bg-gradient-to-t from-blue-50 to-transparent rounded-xl flex items-end justify-around px-4 pb-2">
-                                            {[40, 65, 45, 80, 55, 90, 75].map((h, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="w-8 bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg"
-                                                    style={{ height: `${h}%` }}
-                                                />
+
+                                        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                                            <h3 className="font-bold text-gray-900 mb-6">Enrollment Trends</h3>
+                                            <div className="flex items-end gap-6">
+                                                <div>
+                                                    <p className="text-sm text-gray-500 mb-1">Total Enrollments</p>
+                                                    <p className="text-3xl font-black text-gray-900">{data?.stats.total_enrollments?.toLocaleString()}</p>
+                                                </div>
+                                                <span className="text-sm font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                                                    +{data?.stats.new_enrollments_this_week} this week
+                                                </span>
+                                            </div>
+                                            <div className="mt-6 h-32 bg-gradient-to-t from-purple-50 to-transparent rounded-xl flex items-end justify-around px-4 pb-2">
+                                                {[55, 70, 60, 85, 75, 95, 88].map((h, i) => (
+                                                    <div
+                                                        key={i}
+                                                        className="w-8 bg-gradient-to-t from-purple-500 to-purple-400 rounded-t-lg"
+                                                        style={{ height: `${h}%` }}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Top Performing Courses */}
+                                    <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                                        <h3 className="font-bold text-gray-900 mb-6">Top Performing Courses</h3>
+                                        <div className="space-y-4">
+                                            {data?.courses.sort((a, b) => b.enrollments - a.enrollments).slice(0, 4).map((course, index) => (
+                                                <div key={course.id} className="flex items-center gap-4">
+                                                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-600">
+                                                        {index + 1}
+                                                    </div>
+                                                    <img
+                                                        src={course.thumbnail}
+                                                        alt={course.title}
+                                                        className="w-12 h-8 rounded object-cover"
+                                                    />
+                                                    <div className="flex-1">
+                                                        <p className="font-bold text-gray-900 text-sm">{course.title}</p>
+                                                        <p className="text-xs text-gray-500">{course.instructor}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="font-bold text-gray-900">{course.enrollments.toLocaleString()}</p>
+                                                        <p className="text-xs text-gray-500">enrollments</p>
+                                                    </div>
+                                                </div>
                                             ))}
                                         </div>
                                     </div>
-
-                                    <div className="bg-white rounded-2xl border border-gray-100 p-6">
-                                        <h3 className="font-bold text-gray-900 mb-6">Enrollment Trends</h3>
-                                        <div className="flex items-end gap-6">
-                                            <div>
-                                                <p className="text-sm text-gray-500 mb-1">Total Enrollments</p>
-                                                <p className="text-3xl font-black text-gray-900">{data?.stats.total_enrollments?.toLocaleString()}</p>
-                                            </div>
-                                            <span className="text-sm font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                                                +{data?.stats.new_enrollments_this_week} this week
-                                            </span>
-                                        </div>
-                                        <div className="mt-6 h-32 bg-gradient-to-t from-purple-50 to-transparent rounded-xl flex items-end justify-around px-4 pb-2">
-                                            {[55, 70, 60, 85, 75, 95, 88].map((h, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="w-8 bg-gradient-to-t from-purple-500 to-purple-400 rounded-t-lg"
-                                                    style={{ height: `${h}%` }}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Top Performing Courses */}
-                                <div className="bg-white rounded-2xl border border-gray-100 p-6">
-                                    <h3 className="font-bold text-gray-900 mb-6">Top Performing Courses</h3>
-                                    <div className="space-y-4">
-                                        {data?.courses.sort((a, b) => b.enrollments - a.enrollments).slice(0, 4).map((course, index) => (
-                                            <div key={course.id} className="flex items-center gap-4">
-                                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-600">
-                                                    {index + 1}
-                                                </div>
-                                                <img
-                                                    src={course.thumbnail}
-                                                    alt={course.title}
-                                                    className="w-12 h-8 rounded object-cover"
-                                                />
-                                                <div className="flex-1">
-                                                    <p className="font-bold text-gray-900 text-sm">{course.title}</p>
-                                                    <p className="text-xs text-gray-500">{course.instructor}</p>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="font-bold text-gray-900">{course.enrollments.toLocaleString()}</p>
-                                                    <p className="text-xs text-gray-500">enrollments</p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </PageTransition>
-                </main>
-            </div>
-        </RoleRouteGuard>
+                                </>
+                            )
+                        }
+                    </PageTransition >
+                </main >
+            </div >
+        </RoleRouteGuard >
     );
 }

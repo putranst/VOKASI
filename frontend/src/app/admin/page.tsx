@@ -549,7 +549,7 @@ export default function AdminDashboard() {
                 </header>
 
                 {/* Main Content */}
-                <main className="max-w-7xl mx-auto px-6 py-8">
+                <main className="max-w-7xl mx-auto px-6 py-8 w-full max-w-[100vw] overflow-x-hidden">
                     <PageTransition>
                         {activeTab === 'overview' && (
                             <div className="space-y-8">
@@ -685,9 +685,9 @@ export default function AdminDashboard() {
                                                     <div key={learner.user_id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-amber-50 transition-colors">
                                                         <div className="flex items-center gap-3">
                                                             <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${index === 0 ? 'bg-yellow-400 text-yellow-900' :
-                                                                    index === 1 ? 'bg-gray-300 text-gray-700' :
-                                                                        index === 2 ? 'bg-amber-600 text-white' :
-                                                                            'bg-gray-100 text-gray-600'
+                                                                index === 1 ? 'bg-gray-300 text-gray-700' :
+                                                                    index === 2 ? 'bg-amber-600 text-white' :
+                                                                        'bg-gray-100 text-gray-600'
                                                                 }`}>
                                                                 {index + 1}
                                                             </span>
