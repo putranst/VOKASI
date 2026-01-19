@@ -483,6 +483,147 @@ def get_institution_stats(institution_id: int, db: Session = Depends(get_db)):
     )
 
 
+@app.get("/api/v1/institutions/{institution_id}/dashboard")
+def get_institution_dashboard(institution_id: int, db: Session = Depends(get_db)):
+    """Get comprehensive dashboard data for institution admin (stats, courses, enrollments)"""
+    institution = db.query(models.Institution).filter(models.Institution.id == institution_id).first()
+    if not institution:
+        raise HTTPException(status_code=404, detail="Institution not found")
+    
+    # Get all courses for this institution
+    courses = db.query(models.Course).filter(models.Course.institution_id == institution_id).all()
+    
+    # Calculate stats
+    total_courses = len(courses)
+    
+    # Get unique enrolled students
+    total_enrollments = db.query(models.Enrollment).join(models.Course).filter(
+        models.Course.institution_id == institution_id
+    ).count()
+    
+    active_students = db.query(models.Enrollment.user_id).join(models.Course).filter(
+        models.Course.institution_id == institution_id,
+        models.Enrollment.status == 'active'
+    ).distinct().count()
+    
+    completed_enrollments = db.query(models.Enrollment).join(models.Course).filter(
+        models.Course.institution_id == institution_id,
+        models.Enrollment.status == 'completed'
+    ).count()
+    
+    completion_rate = round((completed_enrollments / total_enrollments * 100) if total_enrollments > 0 else 0, 1)
+    
+    # Average rating
+    avg_rating = db.query(func.avg(models.Course.rating)).filter(
+        models.Course.institution_id == institution_id
+    ).scalar() or 0.0
+    
+    # Recent enrollments (last 7 days)
+    from datetime import timedelta
+    week_ago = datetime.utcnow() - timedelta(days=7)
+    new_enrollments_this_week = db.query(models.Enrollment).join(models.Course).filter(
+        models.Course.institution_id == institution_id,
+        models.Enrollment.enrolled_at >= week_ago
+    ).count()
+    
+    # Build courses list with enrollment counts and completion rates
+    courses_data = []
+    for course in courses:
+        course_enrollments = db.query(models.Enrollment).filter(
+            models.Enrollment.course_id == course.id
+        ).count()
+        
+        course_completed = db.query(models.Enrollment).filter(
+            models.Enrollment.course_id == course.id,
+            models.Enrollment.status == 'completed'
+        ).count()
+        
+        course_completion_rate = round((course_completed / course_enrollments * 100) if course_enrollments > 0 else 0, 1)
+        
+        # Determine status based on approval_status
+        status = 'published'
+        if hasattr(course, 'approval_status'):
+            if course.approval_status == 'pending_approval':
+                status = 'pending'
+            elif course.approval_status == 'rejected':
+                status = 'draft'
+        
+        courses_data.append({
+            "id": course.id,
+            "title": course.title,
+            "instructor": course.instructor,
+            "enrollments": course_enrollments,
+            "rating": course.rating or 0.0,
+            "status": status,
+            "completionRate": course_completion_rate,
+            "thumbnail": course.image or f"https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400",
+            "category": course.category or "Technology"
+        })
+    
+    # Get recent enrollments with student info
+    recent_enrollments_query = db.query(
+        models.Enrollment, models.User, models.Course
+    ).join(
+        models.User, models.Enrollment.user_id == models.User.id
+    ).join(
+        models.Course, models.Enrollment.course_id == models.Course.id
+    ).filter(
+        models.Course.institution_id == institution_id
+    ).order_by(
+        models.Enrollment.enrolled_at.desc()
+    ).limit(10).all()
+    
+    recent_enrollments = []
+    for enrollment, user, course in recent_enrollments_query:
+        # Calculate progress (mock for now - could be based on project phases)
+        progress = 0
+        if enrollment.status == 'completed':
+            progress = 100
+        elif enrollment.status == 'active':
+            # Check if there's a project and calculate based on phase
+            project = db.query(models.CDIOProject).filter(
+                models.CDIOProject.course_id == course.id,
+                models.CDIOProject.user_id == user.id
+            ).first()
+            if project:
+                progress = project.completion_percentage or 0
+        
+        recent_enrollments.append({
+            "id": enrollment.id,
+            "student_name": user.full_name or user.email.split('@')[0],
+            "student_email": user.email,
+            "course_title": course.title,
+            "enrolled_date": enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else None,
+            "progress": progress,
+            "status": enrollment.status
+        })
+    
+    # Format learners count
+    learners_display = f"{active_students:,}" if active_students < 10000 else f"{active_students // 1000}K+"
+    
+    return {
+        "institution": {
+            "id": institution.id,
+            "name": institution.name,
+            "short_name": institution.short_name or institution.name[:3].upper(),
+            "logo_url": institution.logo_url or f"https://ui-avatars.com/api/?name={institution.short_name or institution.name}&background=0066cc&color=fff&size=128",
+            "type": institution.type
+        },
+        "stats": {
+            "total_courses": total_courses,
+            "total_learners": learners_display,
+            "total_programs": 0,  # Programs feature not implemented yet
+            "total_enrollments": total_enrollments,
+            "completion_rate": completion_rate,
+            "average_rating": round(avg_rating, 1),
+            "revenue_this_month": 0,  # Revenue tracking not implemented
+            "new_enrollments_this_week": new_enrollments_this_week
+        },
+        "courses": courses_data,
+        "recent_enrollments": recent_enrollments
+    }
+
+
 # ===== PARTNER INSTRUCTOR MANAGEMENT =====
 
 @app.get("/api/v1/institutions/{institution_id}/instructors")
@@ -713,6 +854,103 @@ async def generate_course(
     
     return await openai_service.generate_course_structure(topic, target_audience, material_content)
 
+
+# ===== SMART COURSE CREATION (Alexandria AI Engine) =====
+
+class SmartParseRequest(BaseModel):
+    file_base64: str
+    file_name: str
+    mime_type: str = "application/pdf"
+
+class SmartAgendaRequest(BaseModel):
+    parsed_content: Dict
+    target_audience: str = "Intermediate"
+    duration_weeks: int = 4
+
+class SmartKnowledgeGraphRequest(BaseModel):
+    content: str
+
+@app.post("/api/v1/courses/smart-create/parse")
+async def smart_parse_materials(request: SmartParseRequest):
+    """
+    Parse uploaded materials using AI (Gemini Vision for multi-modal).
+    Extracts structured content from slides, PDFs, and images.
+    
+    Powered by Alexandria AI Engine for intelligent content extraction.
+    """
+    result = await openai_service.parse_materials_multimodal(
+        file_base64=request.file_base64,
+        file_name=request.file_name,
+        mime_type=request.mime_type
+    )
+    return result
+
+
+@app.post("/api/v1/courses/smart-create/agenda")
+async def smart_generate_agenda(request: SmartAgendaRequest):
+    """
+    Generate Alexandria AI Engine teaching agenda with heterogeneous teaching actions.
+    
+    Teaching action types: EXPLAIN, DISCUSS, PRACTICE, QUIZ, DEMO, REFLECT, COLLABORATE
+    """
+    result = await openai_service.generate_teaching_agenda(
+        parsed_content=request.parsed_content,
+        target_audience=request.target_audience,
+        duration_weeks=request.duration_weeks
+    )
+    return result
+
+
+@app.post("/api/v1/courses/smart-create/knowledge-graph")
+async def smart_extract_knowledge_graph(request: SmartKnowledgeGraphRequest):
+    """
+    Extract knowledge points for visual knowledge graph.
+    Returns nodes and edges for graph visualization.
+    """
+    result = await openai_service.extract_knowledge_points(content=request.content)
+    return result
+
+
+@app.post("/api/v1/courses/smart-create/upload")
+async def smart_upload_materials(
+    files: List[UploadFile] = File(...)
+):
+    """
+    Upload and parse materials for Smart Course Creation.
+    Accepts PDF, PPTX, images, and text files.
+    Returns base64 encoded content for further processing.
+    """
+    parsed_files = []
+    
+    for file in files:
+        try:
+            content = await file.read()
+            import base64
+            file_base64 = base64.b64encode(content).decode('utf-8')
+            
+            # Determine MIME type
+            mime_type = file.content_type or "application/octet-stream"
+            
+            parsed_files.append({
+                "filename": file.filename,
+                "mime_type": mime_type,
+                "size_bytes": len(content),
+                "base64": file_base64
+            })
+        except Exception as e:
+            print(f"Error processing file {file.filename}: {e}")
+            parsed_files.append({
+                "filename": file.filename,
+                "error": str(e)
+            })
+    
+    return {
+        "success": True,
+        "files": parsed_files,
+        "total_files": len(parsed_files)
+    }
+
+
 @app.get("/api/v1/courses", response_model=List[schemas.Course])
 def get_courses(db: Session = Depends(get_db)):
     """Get all courses"""
@@ -740,6 +978,169 @@ def create_course(course_data: schemas.CourseCreate, db: Session = Depends(get_d
     db.refresh(new_course)
     
     return new_course
+
+
+# ===== INSTRUCTOR DASHBOARD ENDPOINTS =====
+
+@app.get("/api/v1/instructor/courses")
+def get_instructor_courses(user_email: str = None, db: Session = Depends(get_db)):
+    """Get courses created by instructor (based on email lookup)"""
+    if not user_email:
+        # Return all courses if no email specified (for testing)
+        courses = db.query(models.Course).all()
+    else:
+        # Find instructor by email
+        user = db.query(models.User).filter(models.User.email == user_email).first()
+        if not user:
+            return []
+        
+        # First try by instructor_id FK
+        courses = db.query(models.Course).filter(models.Course.instructor_id == user.id).all()
+        
+        # Fallback: match by instructor name (for seed data compatibility)
+        if not courses and user.full_name:
+            courses = db.query(models.Course).filter(
+                models.Course.instructor == user.full_name
+            ).all()
+    
+    return [
+        {
+            "id": c.id,
+            "title": c.title,
+            "students_count": c.students_count or "0",
+            "rating": c.rating or 0.0,
+            "image": c.image or "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400",
+            "level": c.level or "Beginner",
+            "category": c.category or "Technology",
+            "description": c.description,
+            "duration": c.duration
+        }
+        for c in courses
+    ]
+
+
+@app.get("/api/v1/instructor/grading-queue")
+def get_instructor_grading_queue(user_email: str = None, db: Session = Depends(get_db)):
+    """Get pending submissions for instructor's courses"""
+    # Get instructor's course IDs
+    instructor_course_ids = []
+    if user_email:
+        user = db.query(models.User).filter(models.User.email == user_email).first()
+        if user:
+            # Get courses by instructor_id OR instructor name
+            courses = db.query(models.Course).filter(
+                (models.Course.instructor_id == user.id) | (models.Course.instructor == user.full_name)
+            ).all()
+            instructor_course_ids = [c.id for c in courses]
+    
+    # Get projects from instructor's courses (or all if no filter)
+    if instructor_course_ids:
+        projects = db.query(models.CDIOProject).filter(
+            models.CDIOProject.course_id.in_(instructor_course_ids),
+            models.CDIOProject.overall_status.in_(["in_progress", "submitted"])
+        ).all()
+    else:
+        projects = db.query(models.CDIOProject).filter(
+            models.CDIOProject.overall_status.in_(["in_progress", "submitted"])
+        ).all()
+    
+    queue = []
+    for project in projects:
+        # Get course title
+        course = db.query(models.Course).filter(models.Course.id == project.course_id).first()
+        course_title = course.title if course else "Unknown Course"
+        
+        # Get student name
+        student = db.query(models.User).filter(models.User.id == project.user_id).first()
+        student_name = student.full_name if student else "Unknown Student"
+        
+        # Check each phase for pending submissions
+        if project.charter and not getattr(project.charter, 'grade', None):
+            queue.append({
+                "id": len(queue) + 1,
+                "project_id": project.id,
+                "student_name": student_name,
+                "project_title": project.title,
+                "submission_type": "charter",
+                "course_title": course_title,
+                "submitted_at": project.updated_at.isoformat() if project.updated_at else datetime.utcnow().isoformat(),
+                "status": "pending"
+            })
+        
+        if project.blueprint and not getattr(project.blueprint, 'grade', None):
+            queue.append({
+                "id": len(queue) + 1,
+                "project_id": project.id,
+                "student_name": student_name,
+                "project_title": project.title,
+                "submission_type": "design",
+                "course_title": course_title,
+                "submitted_at": project.updated_at.isoformat() if project.updated_at else datetime.utcnow().isoformat(),
+                "status": "pending"
+            })
+        
+        if project.implementation and not getattr(project.implementation, 'grade', None):
+            queue.append({
+                "id": len(queue) + 1,
+                "project_id": project.id,
+                "student_name": student_name,
+                "project_title": project.title,
+                "submission_type": "implementation",
+                "course_title": course_title,
+                "submitted_at": project.updated_at.isoformat() if project.updated_at else datetime.utcnow().isoformat(),
+                "status": "pending"
+            })
+    
+    return queue
+
+
+@app.get("/api/v1/instructor/students")
+def get_instructor_students(user_email: str = None, db: Session = Depends(get_db)):
+    """Get students enrolled in instructor's courses"""
+    # Get instructor's course IDs
+    instructor_course_ids = []
+    if user_email:
+        user = db.query(models.User).filter(models.User.email == user_email).first()
+        if user:
+            courses = db.query(models.Course).filter(
+                (models.Course.instructor_id == user.id) | (models.Course.instructor == user.full_name)
+            ).all()
+            instructor_course_ids = [c.id for c in courses]
+    
+    # Get enrollments (filtered if instructor specified)
+    if instructor_course_ids:
+        enrollments = db.query(models.Enrollment).filter(
+            models.Enrollment.course_id.in_(instructor_course_ids)
+        ).all()
+    else:
+        enrollments = db.query(models.Enrollment).all()
+    
+    students = []
+    for enrollment in enrollments:
+        user = db.query(models.User).filter(models.User.id == enrollment.user_id).first()
+        course = db.query(models.Course).filter(models.Course.id == enrollment.course_id).first()
+        
+        if user and course:
+            # Calculate progress from CDIO project if exists
+            project = db.query(models.CDIOProject).filter(
+                models.CDIOProject.user_id == user.id,
+                models.CDIOProject.course_id == course.id
+            ).first()
+            progress = project.completion_percentage if project else 0
+            
+            students.append({
+                "id": user.id,
+                "name": user.full_name or user.email.split('@')[0],
+                "email": user.email,
+                "course": course.title,
+                "status": enrollment.status or "active",
+                "enrolled_at": enrollment.enrolled_at.strftime("%Y-%m-%d") if enrollment.enrolled_at else "N/A",
+                "progress": progress,
+                "grade": "N/A"
+            })
+    
+    return students
+
 
 @app.get("/")
 def root():
@@ -2929,66 +3330,7 @@ def get_journal_entries(user_id: int = 1, db: Session = Depends(get_db)):
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
 
-# --- Auth Routes ---
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-@app.post("/api/v1/auth/login")
-def login(request: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == request.email).first()
-    
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # For demo, password check is skipped or simple
-    return {
-        "id": user.id,
-        "email": user.email,
-        "name": user.full_name,
-        "role": user.role
-    }
-
-class UserSyncRequest(BaseModel):
-    supabase_id: str
-    email: str
-    full_name: str
-    role: str = "student"
-
-@app.post("/api/v1/auth/sync-user")
-def sync_user(request: UserSyncRequest, db: Session = Depends(get_db)):
-    """
-    Sync a user from Supabase Auth to the local database.
-    Creates the user if they don't exist, or updates if they do.
-    """
-    # Check if user exists by email
-    user = db.query(models.User).filter(models.User.email == request.email).first()
-    
-    if user:
-        # Update existing user with Supabase ID if not set
-        if not user.supabase_id:
-            user.supabase_id = request.supabase_id
-            db.commit()
-            db.refresh(user)
-    else:
-        # Create new user
-        user = models.User(
-            email=request.email,
-            full_name=request.full_name,
-            role=request.role,
-            supabase_id=request.supabase_id
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    
-    return {
-        "id": user.id,
-        "email": user.email,
-        "full_name": user.full_name,
-        "role": user.role,
-        "supabase_id": user.supabase_id
-    }
+# Note: Auth routes (/api/v1/auth/login and /api/v1/auth/sync-user) are defined earlier in the file
 
 @app.get("/api/v1/users/email/{email}")
 def get_user_by_email(email: str, db: Session = Depends(get_db)):

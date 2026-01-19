@@ -11,6 +11,7 @@ interface User {
     email: string;
     name: string;
     role: string;
+    institution_id?: number;
 }
 
 interface AuthContextType {
@@ -57,7 +58,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     supabase_id: supabaseUser.id,
                     email: userData.email,
                     name: userData.full_name,
-                    role: userData.role
+                    role: userData.role,
+                    institution_id: userData.institution_id
                 };
             }
             console.error('Failed to sync user to backend');
@@ -123,15 +125,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
         try {
-            // Try Supabase Auth first
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password
-            });
+            // Check if Supabase is properly configured (not placeholder)
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+            const supabaseConfigured = supabaseUrl &&
+                supabaseUrl.includes('supabase.co') &&
+                !supabaseUrl.includes('placeholder') &&
+                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+                !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('placeholder');
 
-            if (error) {
-                // Fallback to backend demo login if Supabase fails
-                console.log('Supabase auth failed, trying backend login...');
+            let supabaseError = null;
+
+            if (supabaseConfigured) {
+                try {
+                    // Try Supabase Auth first
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email,
+                        password
+                    });
+
+                    if (!error && data.user) {
+                        const syncedUser = await syncUserToBackend(data.user);
+                        if (syncedUser) {
+                            setUser(syncedUser);
+                            localStorage.setItem('user', JSON.stringify(syncedUser));
+                        }
+                        return { success: true };
+                    }
+                    supabaseError = error;
+                } catch (networkError: any) {
+                    console.log('Supabase unavailable, using backend auth...', networkError.message);
+                    supabaseError = networkError;
+                }
+            } else {
+                console.log('Supabase not configured, using backend auth...');
+            }
+
+            // Fallback to backend demo login
+            console.log('Using backend authentication...');
+            try {
                 const response = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -144,28 +175,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         id: userData.id,
                         email: userData.email,
                         name: userData.name,
-                        role: userData.role
+                        role: userData.role,
+                        institution_id: userData.institution_id
                     };
                     setUser(user);
                     localStorage.setItem('user', JSON.stringify(user));
                     return { success: true };
                 }
-                return { success: false, error: error.message || 'Invalid email or password' };
-            }
 
-            if (data.user) {
-                const syncedUser = await syncUserToBackend(data.user);
-                if (syncedUser) {
-                    setUser(syncedUser);
-                    localStorage.setItem('user', JSON.stringify(syncedUser));
-                }
-                return { success: true };
+                // If backend also fails, show appropriate error
+                const errorData = await response.json().catch(() => ({}));
+                return {
+                    success: false,
+                    error: errorData.detail || supabaseError?.message || 'Invalid email or password'
+                };
+            } catch (backendError: any) {
+                console.error('Backend login error:', backendError);
+                return {
+                    success: false,
+                    error: supabaseError?.message || 'Unable to connect to authentication service. Please check your connection.'
+                };
             }
-
-            return { success: false, error: 'Login failed' };
         } catch (error: any) {
             console.error('Login error:', error);
-            return { success: false, error: error.message || 'An error occurred' };
+            return { success: false, error: error.message || 'An unexpected error occurred' };
         }
     };
 

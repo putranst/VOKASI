@@ -3,16 +3,28 @@
 import React, { useState, useEffect } from 'react';
 import {
     BookOpen, Sparkles, Upload, Plus, Trash2, GripVertical,
-    ChevronDown, ChevronUp, FileText, Loader2, Save, Eye, CheckCircle, AlertCircle
+    ChevronDown, ChevronUp, FileText, Loader2, Save, Eye, CheckCircle, AlertCircle,
+    MessageSquare, Target, HelpCircle, Play, Lightbulb, Users, Clock, Layout
 } from 'lucide-react';
+import { CAPSTONE_TEMPLATES, CapstoneTemplate } from '@/data/capstoneTemplates';
+
+// Teaching Action Types (matching SmartCourseWizard / MAIC)
+type TeachingActionType = 'EXPLAIN' | 'DISCUSS' | 'PRACTICE' | 'QUIZ' | 'DEMO' | 'REFLECT' | 'COLLABORATE';
+
+interface TeachingAction {
+    type: TeachingActionType;
+    title: string;
+    duration_minutes: number;
+}
 
 interface SyllabusSection {
     order: number;
     title: string;
-    iris_phase: string;  // Now uses IRIS phases
+    iris_phase: string;
     week_number?: number;
     topics: string[];
     activities: string[];
+    teaching_actions: TeachingAction[];
     assessment?: string;
     duration_hours: number;
 }
@@ -48,6 +60,16 @@ const IRIS_PHASES = [
     { id: 'scale', label: 'Scale', color: 'bg-orange-500' }
 ];
 
+const TEACHING_ACTION_CONFIG: Record<TeachingActionType, { icon: React.ReactNode; color: string; label: string }> = {
+    EXPLAIN: { icon: <BookOpen size={14} />, color: 'bg-blue-100 text-blue-700 border-blue-200', label: 'Explain' },
+    DISCUSS: { icon: <MessageSquare size={14} />, color: 'bg-purple-100 text-purple-700 border-purple-200', label: 'Discuss' },
+    PRACTICE: { icon: <Target size={14} />, color: 'bg-green-100 text-green-700 border-green-200', label: 'Practice' },
+    QUIZ: { icon: <HelpCircle size={14} />, color: 'bg-orange-100 text-orange-700 border-orange-200', label: 'Quiz' },
+    DEMO: { icon: <Play size={14} />, color: 'bg-pink-100 text-pink-700 border-pink-200', label: 'Demo' },
+    REFLECT: { icon: <Lightbulb size={14} />, color: 'bg-yellow-100 text-yellow-700 border-yellow-200', label: 'Reflect' },
+    COLLABORATE: { icon: <Users size={14} />, color: 'bg-indigo-100 text-indigo-700 border-indigo-200', label: 'Collaborate' }
+};
+
 const HEXAHELIX_SECTORS = [
     'Government', 'Academia', 'Industry', 'Civil Society', 'Media', 'Community'
 ];
@@ -55,13 +77,14 @@ const HEXAHELIX_SECTORS = [
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 export default function SyllabusManager({ courseId, courseTitle, courseDuration, onSave, onClose }: Props) {
-    const [mode, setMode] = useState<'manual' | 'ai'>('manual');
+    const [mode, setMode] = useState<'manual' | 'ai' | 'templates'>('manual');
     const [isGenerating, setIsGenerating] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [expandedSections, setExpandedSections] = useState<number[]>([]);
     const [existingSyllabusId, setExistingSyllabusId] = useState<number | null>(null);
+    const [selectedCapstoneTemplate, setSelectedCapstoneTemplate] = useState<CapstoneTemplate | null>(null);
 
     // Parse duration to weeks
     const parseDuration = (dur?: string): number => {
@@ -175,11 +198,38 @@ export default function SyllabusManager({ courseId, courseTitle, courseDuration,
                 week_number: newOrder,
                 topics: [''],
                 activities: [''],
+                teaching_actions: [],
                 assessment: '',
                 duration_hours: 3
             }]
         });
         setExpandedSections([...expandedSections, newOrder - 1]);
+    };
+
+    // Teaching action helpers
+    const addTeachingAction = (sectionIndex: number, type: TeachingActionType) => {
+        const newSections = [...syllabus.sections];
+        if (!newSections[sectionIndex].teaching_actions) {
+            newSections[sectionIndex].teaching_actions = [];
+        }
+        newSections[sectionIndex].teaching_actions.push({
+            type,
+            title: `${TEACHING_ACTION_CONFIG[type].label} activity`,
+            duration_minutes: 30
+        });
+        setSyllabus({ ...syllabus, sections: newSections });
+    };
+
+    const removeTeachingAction = (sectionIndex: number, actionIndex: number) => {
+        const newSections = [...syllabus.sections];
+        newSections[sectionIndex].teaching_actions.splice(actionIndex, 1);
+        setSyllabus({ ...syllabus, sections: newSections });
+    };
+
+    const updateTeachingAction = (sectionIndex: number, actionIndex: number, field: keyof TeachingAction, value: any) => {
+        const newSections = [...syllabus.sections];
+        (newSections[sectionIndex].teaching_actions[actionIndex] as any)[field] = value;
+        setSyllabus({ ...syllabus, sections: newSections });
     };
 
     const removeSection = (index: number) => {
@@ -245,6 +295,14 @@ export default function SyllabusManager({ courseId, courseTitle, courseDuration,
                         >
                             <Sparkles size={16} />
                             AI Assisted
+                        </button>
+                        <button
+                            onClick={() => setMode('templates')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${mode === 'templates' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+                                }`}
+                        >
+                            <Layout size={16} />
+                            Templates
                         </button>
                     </div>
                 </div>
@@ -364,6 +422,95 @@ export default function SyllabusManager({ courseId, courseTitle, courseDuration,
                                         )}
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+                    ) : mode === 'templates' ? (
+                        <div className="space-y-6">
+                            <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl p-6 border border-indigo-100">
+                                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                                    <Layout className="text-indigo-600" size={20} />
+                                    Capstone Project Templates
+                                </h3>
+                                <p className="text-sm text-gray-600 mb-4">
+                                    Choose a pre-built template to quickly set up your capstone project with deliverables and rubrics.
+                                </p>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {CAPSTONE_TEMPLATES.map(template => (
+                                        <div
+                                            key={template.id}
+                                            className={`bg-white rounded-xl p-4 border-2 transition-all cursor-pointer hover:shadow-md ${selectedCapstoneTemplate?.id === template.id
+                                                    ? 'border-indigo-500 shadow-md'
+                                                    : 'border-gray-100 hover:border-indigo-200'
+                                                }`}
+                                            onClick={() => setSelectedCapstoneTemplate(template)}
+                                        >
+                                            <div className="flex items-start justify-between mb-2">
+                                                <h4 className="font-bold text-gray-900">{template.title}</h4>
+                                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${template.difficulty === 'Beginner' ? 'bg-green-100 text-green-700' :
+                                                        template.difficulty === 'Intermediate' ? 'bg-yellow-100 text-yellow-700' :
+                                                            template.difficulty === 'Advanced' ? 'bg-red-100 text-red-700' :
+                                                                'bg-purple-100 text-purple-700'
+                                                    }`}>
+                                                    {template.difficulty}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-gray-500 mb-3 line-clamp-2">{template.description}</p>
+                                            <div className="flex items-center justify-between text-xs text-gray-500">
+                                                <span className="flex items-center gap-1">
+                                                    <Clock size={12} /> {template.estimatedWeeks} weeks
+                                                </span>
+                                                <span className="capitalize bg-gray-100 px-2 py-0.5 rounded">{template.type}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {selectedCapstoneTemplate && (
+                                    <div className="mt-6 p-4 bg-white rounded-xl border border-indigo-200">
+                                        <h4 className="font-bold text-gray-900 mb-3">
+                                            Selected: {selectedCapstoneTemplate.title}
+                                        </h4>
+                                        <div className="mb-4">
+                                            <p className="text-xs font-medium text-gray-500 mb-2">Deliverables:</p>
+                                            <ul className="text-sm text-gray-700 space-y-1">
+                                                {selectedCapstoneTemplate.deliverables.map((d, i) => (
+                                                    <li key={i} className="flex items-center gap-2">
+                                                        <CheckCircle size={14} className="text-green-500" /> {d}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                // Create sections from template IRIS phases
+                                                const newSections: SyllabusSection[] = Object.entries(selectedCapstoneTemplate.irisPhaseMapping).map(([phase, desc], idx) => ({
+                                                    order: idx + 1,
+                                                    title: `${phase.charAt(0).toUpperCase() + phase.slice(1)} Phase`,
+                                                    iris_phase: phase,
+                                                    week_number: idx + 1,
+                                                    topics: [desc],
+                                                    activities: selectedCapstoneTemplate.deliverables.slice(idx, idx + 2),
+                                                    teaching_actions: [],
+                                                    assessment: selectedCapstoneTemplate.rubricCriteria[idx]?.criterion || '',
+                                                    duration_hours: selectedCapstoneTemplate.estimatedWeeks
+                                                }));
+
+                                                setSyllabus({
+                                                    ...syllabus,
+                                                    title: `${courseTitle} - ${selectedCapstoneTemplate.title}`,
+                                                    sections: newSections,
+                                                    learning_outcomes: selectedCapstoneTemplate.deliverables.slice(0, 4)
+                                                });
+                                                setMode('manual');
+                                            }}
+                                            className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <CheckCircle size={18} />
+                                            Apply Template
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ) : (
@@ -486,9 +633,76 @@ export default function SyllabusManager({ courseId, courseTitle, courseDuration,
                                                             className="w-full p-2 border border-gray-200 rounded-lg text-sm"
                                                         />
                                                     </div>
+
+                                                    {/* Teaching Actions Section */}
+                                                    <div className="mt-4">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <label className="text-xs font-medium text-gray-700 flex items-center gap-1">
+                                                                <Sparkles size={12} className="text-primary" />
+                                                                Teaching Actions ({section.teaching_actions?.length || 0})
+                                                            </label>
+                                                            <div className="relative group">
+                                                                <button
+                                                                    type="button"
+                                                                    className="text-xs text-primary font-medium flex items-center gap-1 hover:underline"
+                                                                >
+                                                                    <Plus size={12} /> Add Action
+                                                                </button>
+                                                                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 hidden group-hover:block z-10 w-40">
+                                                                    {(Object.keys(TEACHING_ACTION_CONFIG) as TeachingActionType[]).map(actionType => (
+                                                                        <button
+                                                                            key={actionType}
+                                                                            type="button"
+                                                                            onClick={() => addTeachingAction(index, actionType)}
+                                                                            className={`w-full px-3 py-2 text-left text-xs flex items-center gap-2 hover:bg-gray-50 ${TEACHING_ACTION_CONFIG[actionType].color}`}
+                                                                        >
+                                                                            {TEACHING_ACTION_CONFIG[actionType].icon}
+                                                                            {TEACHING_ACTION_CONFIG[actionType].label}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {section.teaching_actions && section.teaching_actions.length > 0 ? (
+                                                            <div className="space-y-2">
+                                                                {section.teaching_actions.map((action, aIdx) => (
+                                                                    <div key={aIdx} className={`flex items-center gap-2 p-2 rounded-lg border ${TEACHING_ACTION_CONFIG[action.type]?.color || 'bg-gray-100'}`}>
+                                                                        {TEACHING_ACTION_CONFIG[action.type]?.icon}
+                                                                        <input
+                                                                            type="text"
+                                                                            value={action.title}
+                                                                            onChange={(e) => updateTeachingAction(index, aIdx, 'title', e.target.value)}
+                                                                            className="flex-1 bg-transparent text-sm font-medium outline-none"
+                                                                        />
+                                                                        <div className="flex items-center gap-1 text-xs">
+                                                                            <Clock size={12} />
+                                                                            <input
+                                                                                type="number"
+                                                                                value={action.duration_minutes}
+                                                                                onChange={(e) => updateTeachingAction(index, aIdx, 'duration_minutes', parseInt(e.target.value) || 0)}
+                                                                                className="w-12 bg-white/50 rounded px-1 py-0.5 text-center"
+                                                                            />
+                                                                            <span>min</span>
+                                                                        </div>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => removeTeachingAction(index, aIdx)}
+                                                                            className="p-1 hover:bg-white/50 rounded"
+                                                                        >
+                                                                            <Trash2 size={12} />
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-xs text-gray-400 italic">No teaching actions yet. Add actions like Explain, Quiz, Practice, etc.</p>
+                                                        )}
+                                                    </div>
+
                                                     <button
                                                         onClick={() => removeSection(index)}
-                                                        className="text-red-500 text-sm flex items-center gap-1 hover:underline"
+                                                        className="text-red-500 text-sm flex items-center gap-1 hover:underline mt-3"
                                                     >
                                                         <Trash2 size={14} /> Remove Section
                                                     </button>

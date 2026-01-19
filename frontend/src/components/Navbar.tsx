@@ -81,20 +81,20 @@ export const Navbar = () => {
                 </nav>
 
                 {/* Right: Auth Actions */}
-                <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+                <div className="hidden sm:flex items-center gap-2 sm:gap-3 flex-shrink-0">
                     {isAuthenticated && user ? (
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                             <InboxDrawer />
                             <NotificationPopover />
 
-                            <div className="h-6 w-px bg-gray-200 mx-1"></div>
+                            <div className="h-6 w-px bg-gray-200 mx-1 hidden md:block"></div>
 
-                            <Link href="/dashboard" className="flex items-center gap-2.5 hover:bg-gray-50 py-1.5 px-2 rounded-lg transition-colors">
-                                <div className="text-right hidden sm:block">
+                            <Link href="/dashboard" className="flex items-center gap-2 hover:bg-gray-50 py-1.5 px-2 rounded-lg transition-colors">
+                                <div className="text-right hidden md:block">
                                     <p className="text-sm font-bold text-gray-900 leading-tight">{user.name}</p>
                                     <p className="text-xs text-gray-500 capitalize">{user.role}</p>
                                 </div>
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent p-0.5">
+                                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-primary to-accent p-0.5">
                                     <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
                                         <img
                                             src={`https://ui-avatars.com/api/?name=${user.name}&background=random`}
@@ -107,7 +107,7 @@ export const Navbar = () => {
 
                             <button
                                 onClick={handleLogout}
-                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors hidden md:block"
                                 title="Sign Out"
                             >
                                 <LogOut size={18} />
@@ -115,14 +115,16 @@ export const Navbar = () => {
                         </div>
                     ) : (
                         <>
-                            <Link href="/login" className="text-gray-600 text-sm font-semibold hover:text-primary transition-colors px-3 py-2">
+                            <Link href="/login" className="text-gray-600 text-sm font-semibold hover:text-primary transition-colors px-2 sm:px-3 py-2">
                                 Log In
                             </Link>
                             <Link
                                 href="/pathways"
-                                className="bg-primary text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-primary/90 transition-all shadow-md hover:shadow-lg flex items-center gap-1.5"
+                                className="bg-primary text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold hover:bg-primary/90 transition-all shadow-md hover:shadow-lg flex items-center gap-1 sm:gap-1.5"
                             >
-                                Start Learning <ChevronRight size={16} />
+                                <span className="hidden sm:inline">Start Learning</span>
+                                <span className="sm:hidden">Start</span>
+                                <ChevronRight size={14} className="sm:w-4 sm:h-4" />
                             </Link>
                         </>
                     )}
@@ -131,7 +133,7 @@ export const Navbar = () => {
                 {/* Mobile Menu Button */}
                 <button
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="lg:hidden text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="sm:hidden text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                     {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
@@ -139,7 +141,7 @@ export const Navbar = () => {
 
             {/* Mobile Menu */}
             {isMenuOpen && (
-                <div className="lg:hidden bg-white border-t border-gray-100 py-4 px-4 shadow-lg animate-slide-up">
+                <div className="sm:hidden bg-white border-t border-gray-100 py-4 px-4 shadow-lg animate-slide-up max-h-[80vh] overflow-y-auto">
                     <div className="space-y-4">
                         {/* Learn Section */}
                         <div>

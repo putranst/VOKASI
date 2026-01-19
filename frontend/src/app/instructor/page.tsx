@@ -500,7 +500,7 @@ export default function InstructorDashboard() {
                             <div className="space-y-6">
                                 <div className="flex justify-between items-center">
                                     <h2 className="text-xl font-bold text-gray-900">My Courses</h2>
-                                    <button onClick={openCreateModal} className="px-4 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 flex items-center gap-2 transition-colors shadow-lg shadow-primary/20">
+                                    <button onClick={() => router.push('/instructor/create-course')} className="px-4 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 flex items-center gap-2 transition-colors shadow-lg shadow-primary/20">
                                         <Plus size={18} /> Create Course
                                     </button>
                                 </div>
@@ -741,6 +741,15 @@ export default function InstructorDashboard() {
                         isOpen={isCourseModalOpen}
                         onClose={() => setIsCourseModalOpen(false)}
                         onSubmit={handleSaveCourse}
+                        onEditSyllabus={(courseId, courseTitle) => {
+                            // Find course by ID and open syllabus manager
+                            const course = courses.find(c => c.id === courseId);
+                            if (course) {
+                                setSelectedCourseForSyllabus(course);
+                                setIsSyllabusModalOpen(true);
+                                setIsCourseModalOpen(false);
+                            }
+                        }}
                         initialData={editingCourse}
                         isEditing={!!editingCourse}
                     />

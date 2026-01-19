@@ -21,6 +21,9 @@ import { CareerExplorer } from '@/components/CareerExplorer';
 import { CAREER_PATHWAYS } from '@/components/careerData';
 import { IRISProgressTracker } from '@/components/ui/IRISProgressTracker';
 import { LearningStreak } from '@/components/ui/LearningStreak';
+import { EkspedisiAINusantara } from '@/components/EkspedisiAINusantara';
+import { ActiveProjectCard } from '@/components/ActiveProjectCard';
+import { WeeklyGoalRing } from '@/components/ui/WeeklyGoalRing';
 
 interface DashboardData {
     enrolled_courses: DashboardCourseProgress[];
@@ -265,103 +268,194 @@ export default function DashboardPage() {
                                     </div>
                                 )}
 
-                                {/* Stats Grid */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                                                <BookOpen size={20} />
-                                            </div>
-                                            <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">+2 this week</span>
+                                {/* Stats Grid - Polished with Gradients */}
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-8">
+                                    {/* Weekly Goal Ring */}
+                                    <div className="bg-white p-3 sm:p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center gap-2 sm:gap-4 min-w-0">
+                                        <WeeklyGoalRing
+                                            current={data?.learning_streak?.current_streak || 3}
+                                            goal={7}
+                                            label="Days/Week"
+                                            size="sm"
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-gray-500 text-xs sm:text-sm font-medium truncate">Weekly Goal</p>
+                                            <h3 className="text-sm sm:text-lg font-black text-gray-900 truncate">{data?.learning_streak?.current_streak || 3}/7 days</h3>
                                         </div>
-                                        <p className="text-gray-500 text-sm font-medium">Enrolled Courses</p>
-                                        <h3 className="text-2xl font-black text-gray-900">{data?.enrolled_courses.length || 0}</h3>
                                     </div>
 
-                                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
-                                                <Award size={20} />
+                                    {/* Enrolled Courses */}
+                                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-3 sm:p-6 rounded-2xl border border-blue-100 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] min-w-0">
+                                        <div className="flex items-center justify-between mb-2 sm:mb-3">
+                                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                                                <BookOpen size={16} className="sm:hidden" />
+                                                <BookOpen size={18} className="hidden sm:block" />
                                             </div>
-                                            <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">{data?.credentials.length || 0} Earned</span>
+                                            <span className="text-[10px] sm:text-xs font-bold text-blue-600 bg-white/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">+2</span>
                                         </div>
-                                        <p className="text-gray-500 text-sm font-medium">Credentials</p>
-                                        <h3 className="text-2xl font-black text-gray-900">{data?.credentials.length || 0}</h3>
+                                        <p className="text-blue-600/80 text-xs sm:text-sm font-medium truncate">Courses</p>
+                                        <h3 className="text-xl sm:text-2xl font-black text-blue-900">{data?.enrolled_courses.length || 0}</h3>
                                     </div>
 
-                                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
-                                                <TrendingUp size={20} />
+                                    {/* Credentials */}
+                                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-3 sm:p-6 rounded-2xl border border-purple-100 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] min-w-0">
+                                        <div className="flex items-center justify-between mb-2 sm:mb-3">
+                                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-purple-200">
+                                                <Award size={16} className="sm:hidden" />
+                                                <Award size={18} className="hidden sm:block" />
                                             </div>
-                                            <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">+5%</span>
+                                            <span className="text-[10px] sm:text-xs font-bold text-purple-600 bg-white/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">{data?.credentials.length || 0}</span>
                                         </div>
-                                        <p className="text-gray-500 text-sm font-medium">Average Progress</p>
-                                        <h3 className="text-2xl font-black text-gray-900">{data?.average_progress || 0}%</h3>
+                                        <p className="text-purple-600/80 text-xs sm:text-sm font-medium truncate">Credentials</p>
+                                        <h3 className="text-xl sm:text-2xl font-black text-purple-900">{data?.credentials.length || 0}</h3>
+                                    </div>
+
+                                    {/* Average Progress */}
+                                    <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-3 sm:p-6 rounded-2xl border border-amber-100 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] min-w-0">
+                                        <div className="flex items-center justify-between mb-2 sm:mb-3">
+                                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-amber-200">
+                                                <TrendingUp size={16} className="sm:hidden" />
+                                                <TrendingUp size={18} className="hidden sm:block" />
+                                            </div>
+                                            <span className="text-[10px] sm:text-xs font-bold text-green-600 bg-white/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">+5%</span>
+                                        </div>
+                                        <p className="text-amber-600/80 text-xs sm:text-sm font-medium truncate">Progress</p>
+                                        <h3 className="text-xl sm:text-2xl font-black text-amber-900">{data?.average_progress || 0}%</h3>
                                     </div>
                                 </div>
 
-                                {/* Learning Streak + IRIS Progress Row */}
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                                    {/* Learning Streak */}
-                                    <div className="lg:col-span-1">
-                                        <LearningStreak
-                                            currentStreak={data?.learning_streak?.current_streak || 3}
-                                            longestStreak={data?.learning_streak?.longest_streak || 7}
-                                            thisWeek={data?.learning_streak?.this_week || [true, true, true, false, false, false, false]}
-                                            totalXp={data?.learning_streak?.total_xp || 450}
-                                        />
+                                {/* Your Active Project - Unified Block */}
+                                {data?.enrolled_courses && data.enrolled_courses.length > 0 && (
+                                    <div className="mb-8">
+                                        {(() => {
+                                            const activeCourse = data.enrolled_courses[0];
+                                            const phase = activeCourse.progress > 75 ? 'scale' : activeCourse.progress > 50 ? 'iterate' : activeCourse.progress > 25 ? 'realize' : 'immerse';
+                                            return (
+                                                <ActiveProjectCard
+                                                    courseId={activeCourse.course_id}
+                                                    courseTitle={activeCourse.title}
+                                                    courseImage={activeCourse.image}
+                                                    instructor={'TSEA Faculty'}
+                                                    progress={activeCourse.progress}
+                                                    currentPhase={phase as 'immerse' | 'realize' | 'iterate' | 'scale'}
+                                                    sfiaLevel={2}
+                                                    targetSfiaLevel={3}
+                                                    estimatedCompletion="2 weeks"
+                                                    totalModules={10}
+                                                    completedModules={Math.round((activeCourse.progress / 100) * 10)}
+                                                    lastActivity="Today"
+                                                />
+                                            );
+                                        })()}
                                     </div>
+                                )}
 
-                                    {/* IRIS Project Progress */}
-                                    <div className="lg:col-span-2">
-                                        <IRISProgressTracker
-                                            projects={data?.iris_projects || data?.enrolled_courses?.slice(0, 2).map(c => {
-                                                const phase = c.progress > 75 ? 'scale' : c.progress > 50 ? 'iterate' : c.progress > 25 ? 'realize' : 'immerse';
-                                                return {
-                                                    project_id: c.course_id,
-                                                    course_id: c.course_id,
-                                                    project_title: `${c.title} Project`,
-                                                    current_phase: phase as 'immerse' | 'realize' | 'iterate' | 'scale' | 'completed',
-                                                    completion_percentage: c.progress,
-                                                    sfia_target_level: 3
-                                                };
-                                            }) || []}
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Continue Learning */}
-                                <div className="mb-10">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <h3 className="text-lg font-bold text-gray-900">Continue Learning</h3>
-                                        <Link href="/courses" className="text-sm font-bold text-primary hover:underline flex items-center gap-1">
-                                            Browse All Courses <ArrowRight size={14} />
+                                {/* Empty State for No Active Project */}
+                                {(!data?.enrolled_courses || data.enrolled_courses.length === 0) && (
+                                    <div className="mb-8 bg-white p-8 rounded-2xl border border-dashed border-gray-200 text-center">
+                                        <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <BookOpen size={24} className="text-blue-600" />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-gray-900 mb-2">Start Your Learning Journey</h3>
+                                        <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                                            Enroll in a course to begin your IRIS project and track your progress toward mastery.
+                                        </p>
+                                        <Link
+                                            href="/courses"
+                                            className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm"
+                                        >
+                                            <Sparkles size={16} />
+                                            Explore Courses
                                         </Link>
                                     </div>
+                                )}
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {data?.enrolled_courses.map((course) => (
-                                            <CourseProgressCard key={course.course_id} course={course} />
-                                        ))}
-                                        {(!data?.enrolled_courses || data.enrolled_courses.length === 0) && (
-                                            <div className="col-span-full bg-white p-8 rounded-2xl border border-dashed border-gray-200 text-center">
-                                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
-                                                    <BookOpen size={24} />
-                                                </div>
-                                                <h3 className="text-lg font-bold text-gray-900 mb-2">No active courses</h3>
-                                                <p className="text-gray-500 mb-6">You haven't enrolled in any courses yet.</p>
-                                                <Link href="/courses" className="bg-primary text-white px-6 py-2.5 rounded-lg font-bold hover:bg-primary/90 transition-colors">
-                                                    Explore Courses
-                                                </Link>
+                                {/* Ekspedisi AI Nusantara Competition */}
+                                <div className="mb-8">
+                                    <EkspedisiAINusantara
+                                        userProvince={'Jawa Timur'}
+                                        provinceRank={5}
+                                        rankChange="up"
+                                        changeAmount={2}
+                                        totalXP={data?.learning_streak?.total_xp || 12450}
+                                        totalLearners={847}
+                                        badgesEarned={data?.credentials?.length || 3}
+                                        onViewLeaderboard={() => console.log('View leaderboard')}
+                                        onContribute={() => console.log('Contribute')}
+                                    />
+                                </div>
+
+                                {/* Quick Stats Row */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center text-orange-600">
+                                                🔥
                                             </div>
-                                        )}
+                                            <div>
+                                                <p className="text-2xl font-black text-gray-900">{data?.learning_streak?.current_streak || 3}</p>
+                                                <p className="text-xs text-gray-500 font-medium">Day Streak</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center text-purple-600">
+                                                ⚡
+                                            </div>
+                                            <div>
+                                                <p className="text-2xl font-black text-gray-900">{data?.learning_streak?.total_xp || 450}</p>
+                                                <p className="text-xs text-gray-500 font-medium">Total XP</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center text-blue-600">
+                                                📚
+                                            </div>
+                                            <div>
+                                                <p className="text-2xl font-black text-gray-900">{data?.total_learning_hours || 42}h</p>
+                                                <p className="text-xs text-gray-500 font-medium">Learning</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center text-emerald-600">
+                                                🏆
+                                            </div>
+                                            <div>
+                                                <p className="text-2xl font-black text-gray-900">{data?.credentials?.length || 0}</p>
+                                                <p className="text-xs text-gray-500 font-medium">Credentials</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
+
+                                {/* Continue Learning - Additional Courses */}
+                                {data?.enrolled_courses && data.enrolled_courses.length > 1 && (
+                                    <div className="mb-8">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-lg font-bold text-gray-900">Other Active Courses</h3>
+                                            <Link href="/courses" className="text-sm font-bold text-primary hover:underline flex items-center gap-1">
+                                                Browse All <ArrowRight size={14} />
+                                            </Link>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {data.enrolled_courses.slice(1).map((course) => (
+                                                <CourseProgressCard key={course.course_id} course={course} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Recommended For You */}
                                 <div>
-                                    <h3 className="text-lg font-bold text-gray-900 mb-6">Recommended For You</h3>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-bold text-gray-900">Recommended For You</h3>
+                                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">AI Curated</span>
+                                    </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                         {data?.recommended_courses.map((course) => (
                                             <CourseCard key={course.id} course={course} />

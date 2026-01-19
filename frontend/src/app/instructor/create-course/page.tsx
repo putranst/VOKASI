@@ -4,16 +4,17 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/ui/Logo';
-import { ArrowLeft, Sparkles, BookOpen, FileEdit } from 'lucide-react';
+import { ArrowLeft, Sparkles, BookOpen, FileEdit, Wand2 } from 'lucide-react';
 import { CourseCreationForm } from '@/components/CourseCreationForm';
 import { AICourseGenerator } from '@/components/AICourseGenerator';
+import { SmartCourseWizard } from '@/components/SmartCourseWizard';
 
 import { useAuth } from '@/lib/AuthContext';
 
 export default function CreateCoursePage() {
     const router = useRouter();
     const { user } = useAuth();
-    const [mode, setMode] = useState<'ai' | 'manual'>('manual');
+    const [mode, setMode] = useState<'smart' | 'ai' | 'manual'>('smart');
     const [showSuccess, setShowSuccess] = useState(false);
 
     const handleManualSubmit = async (formData: any) => {
@@ -49,6 +50,13 @@ export default function CreateCoursePage() {
         }
     };
 
+    const handleSmartCourseCreated = (courseData: any) => {
+        setShowSuccess(true);
+        setTimeout(() => {
+            router.push('/instructor');
+        }, 2000);
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 text-slate-800 font-sans">
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
@@ -81,7 +89,35 @@ export default function CreateCoursePage() {
                 </div>
 
                 {/* Mode Selector */}
-                <div className="flex justify-center gap-4 mb-12">
+                <div className="flex flex-wrap justify-center gap-4 mb-12">
+                    {/* Smart Wizard - NEW! */}
+                    <button
+                        onClick={() => setMode('smart')}
+                        className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-bold transition-all relative ${mode === 'smart'
+                            ? 'bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white shadow-lg shadow-purple-200'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:border-purple-300'
+                            }`}
+                    >
+                        <Wand2 size={20} />
+                        Smart Wizard
+                        <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold rounded-full">
+                            NEW
+                        </span>
+                    </button>
+
+                    {/* AI Generation */}
+                    <button
+                        onClick={() => setMode('ai')}
+                        className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-bold transition-all ${mode === 'ai'
+                            ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-200'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:border-purple-300'
+                            }`}
+                    >
+                        <Sparkles size={20} />
+                        AI from Topic
+                    </button>
+
+                    {/* Manual Form */}
                     <button
                         onClick={() => setMode('manual')}
                         className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-bold transition-all ${mode === 'manual'
@@ -92,24 +128,44 @@ export default function CreateCoursePage() {
                         <FileEdit size={20} />
                         Manual Form
                     </button>
-                    <button
-                        onClick={() => setMode('ai')}
-                        className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-bold transition-all ${mode === 'ai'
-                            ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-200'
-                            : 'bg-white text-gray-600 border border-gray-200 hover:border-purple/30'
-                            }`}
-                    >
-                        <Sparkles size={20} />
-                        AI Generation
-                    </button>
                 </div>
 
-                {mode === 'manual' ? (
+                {/* Mode Description */}
+                <div className="text-center mb-8">
+                    {mode === 'smart' && (
+                        <p className="text-gray-500 max-w-2xl mx-auto">
+                            <span className="font-semibold text-purple-600">Alexandria AI:</span> Upload your slides, PDFs, or images and let AI extract the structure,
+                            generate teaching agendas with activities, quizzes, and publish instantly.
+                        </p>
+                    )}
+                    {mode === 'ai' && (
+                        <p className="text-gray-500 max-w-2xl mx-auto">
+                            Enter a topic and AI will generate a complete IRIS-aligned course structure.
+                        </p>
+                    )}
+                    {mode === 'manual' && (
+                        <p className="text-gray-500 max-w-2xl mx-auto">
+                            Fill out the form manually to create a new course with full control.
+                        </p>
+                    )}
+                </div>
+
+                {/* Render Selected Mode */}
+                {mode === 'smart' && (
+                    <SmartCourseWizard
+                        onCourseCreated={handleSmartCourseCreated}
+                        onCancel={() => router.push('/instructor')}
+                    />
+                )}
+
+                {mode === 'manual' && (
                     <CourseCreationForm
                         onSubmit={handleManualSubmit}
                         onCancel={() => router.push('/instructor')}
                     />
-                ) : (
+                )}
+
+                {mode === 'ai' && (
                     <AICourseGenerator
                         onCourseGenerated={(courseData) => {
                             // Submit the AI-generated course with user info
@@ -132,3 +188,4 @@ export default function CreateCoursePage() {
         </div>
     );
 }
+

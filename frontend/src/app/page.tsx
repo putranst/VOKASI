@@ -28,16 +28,16 @@ export default function Home() {
 
       {/* Trusted Partner Logos - Enhanced */}
       <div className="border-y border-gray-200 bg-white">
-        <div className="max-w-[70rem] mx-auto px-4 py-10">
-          <div className="text-center mb-6">
-            <p className="text-sm font-bold text-gray-500 uppercase tracking-wide">Trusted by World-Class Institutions</p>
+        <div className="max-w-[70rem] mx-auto px-4 py-6 sm:py-10">
+          <div className="text-center mb-4 sm:mb-6">
+            <p className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">Trusted by World-Class Institutions</p>
           </div>
-          <div className="flex flex-wrap justify-center md:justify-between items-center gap-8 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700">
-            <span className="text-xl font-serif font-bold text-accent">Tsinghua University</span>
-            <span className="text-xl font-sans font-black text-[#1a1a1a] tracking-tighter">MIT<span className="font-light">Sloan</span></span>
-            <span className="text-xl font-bold text-primary">United in Diversity</span>
-            <span className="text-xl font-mono font-bold text-gray-600">GOVTECH</span>
-            <span className="text-xl font-bold text-green-700 tracking-tight">UN SDSN</span>
+          <div className="flex gap-4 sm:gap-8 overflow-x-auto scrollbar-hide pb-2 sm:pb-0 sm:flex-wrap sm:justify-center md:justify-between items-center opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700">
+            <span className="text-base sm:text-xl font-serif font-bold text-accent whitespace-nowrap">Tsinghua University</span>
+            <span className="text-base sm:text-xl font-sans font-black text-[#1a1a1a] tracking-tighter whitespace-nowrap">MIT<span className="font-light">Sloan</span></span>
+            <span className="text-base sm:text-xl font-bold text-primary whitespace-nowrap">United in Diversity</span>
+            <span className="text-base sm:text-xl font-mono font-bold text-gray-600 whitespace-nowrap">GOVTECH</span>
+            <span className="text-base sm:text-xl font-bold text-green-700 tracking-tight whitespace-nowrap">UN SDSN</span>
           </div>
         </div>
       </div>

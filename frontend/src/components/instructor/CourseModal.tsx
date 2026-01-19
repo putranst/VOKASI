@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Upload, Link, Sparkles, Loader2, Image as ImageIcon } from 'lucide-react';
+import { X, Upload, Link, Sparkles, Loader2, Image as ImageIcon, BookOpen } from 'lucide-react';
 
 export interface CourseFormData {
     id?: number;
@@ -15,11 +15,12 @@ interface CourseModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (course: CourseFormData) => void;
+    onEditSyllabus?: (courseId: number, courseTitle: string) => void;
     initialData?: CourseFormData | null;
     isEditing: boolean;
 }
 
-export const CourseModal: React.FC<CourseModalProps> = ({ isOpen, onClose, onSubmit, initialData, isEditing }) => {
+export const CourseModal: React.FC<CourseModalProps> = ({ isOpen, onClose, onSubmit, onEditSyllabus, initialData, isEditing }) => {
     const [formData, setFormData] = useState<CourseFormData>({
         title: '',
         description: '',
@@ -127,16 +128,28 @@ export const CourseModal: React.FC<CourseModalProps> = ({ isOpen, onClose, onSub
 
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold text-gray-900">{isEditing ? 'Edit Course' : 'Create New Course'}</h2>
-                    {!isEditing && (
-                        <button
-                            type="button"
-                            onClick={() => setShowAIPanel(!showAIPanel)}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${showAIPanel ? 'bg-primary text-white' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}
-                        >
-                            <Sparkles size={16} />
-                            AI Assist
-                        </button>
-                    )}
+                    <div className="flex gap-2">
+                        {isEditing && initialData?.id && onEditSyllabus && (
+                            <button
+                                type="button"
+                                onClick={() => onEditSyllabus(initialData.id!, formData.title)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors bg-green-100 text-green-700 hover:bg-green-200"
+                            >
+                                <BookOpen size={16} />
+                                Edit Syllabus
+                            </button>
+                        )}
+                        {!isEditing && (
+                            <button
+                                type="button"
+                                onClick={() => setShowAIPanel(!showAIPanel)}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${showAIPanel ? 'bg-primary text-white' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}
+                            >
+                                <Sparkles size={16} />
+                                AI Assist
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* AI Generation Panel */}

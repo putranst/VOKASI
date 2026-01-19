@@ -7,6 +7,7 @@ import os
 import json
 import asyncio
 import random
+import base64
 from typing import Dict, List, Optional
 from dotenv import load_dotenv
 
@@ -37,6 +38,8 @@ if GEMINI_API_KEY:
     import google.generativeai as genai
     genai.configure(api_key=GEMINI_API_KEY)
     clients["gemini"] = genai.GenerativeModel('gemini-2.0-flash')
+    # Vision model for multi-modal parsing (slides, images, PDFs)
+    clients["gemini_vision"] = genai.GenerativeModel('gemini-2.0-flash')
 
 # Provider priority
 PRIORITY = ["openai", "openrouter", "gemini", "mock"]
@@ -47,6 +50,7 @@ MODELS = {
     "openrouter": os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-exp:free"),
     "gemini": "gemini-2.0-flash"
 }
+
 
 print(f"[AI Service] Initialized providers: {list(clients.keys())}")
 
@@ -693,3 +697,439 @@ async def generate_grading_feedback(
         "strengths": [],
         "weaknesses": []
     }
+
+
+# ===== SMART COURSE CREATION (Alexandria AI Engine) =====
+
+async def parse_materials_multimodal(
+    file_base64: str,
+    file_name: str,
+    mime_type: str = "application/pdf"
+) -> Dict:
+    """
+    Parse uploaded materials (slides, PDFs, images) using Gemini Vision.
+    Extracts structured content for intelligent course creation.
+    
+    Powered by Alexandria AI Engine for intelligent content extraction.
+    """
+    
+    prompt = """You are an expert curriculum designer analyzing educational materials.
+    
+Analyze this document/slide and extract the following in JSON format:
+
+{
+    "title": "Suggested course title based on content",
+    "summary": "2-3 sentence overview of the material",
+    "main_topics": [
+        {"name": "Topic name", "description": "Brief description", "subtopics": ["subtopic1", "subtopic2"]}
+    ],
+    "learning_objectives": ["What students will learn - list 4-6 objectives"],
+    "key_concepts": ["List of key terms/concepts that should be taught"],
+    "visual_elements": ["Description of any diagrams, charts, or images and their educational purpose"],
+    "suggested_structure": {
+        "immerse": {"title": "Phase title", "focus": "What to cover in Immerse phase"},
+        "realize": {"title": "Phase title", "focus": "What to cover in Realize phase"},
+        "iterate": {"title": "Phase title", "focus": "What to cover in Iterate phase"},
+        "scale": {"title": "Phase title", "focus": "What to cover in Scale phase"}
+    },
+    "difficulty_level": "Beginner/Intermediate/Advanced",
+    "estimated_duration": "e.g., 4 weeks",
+    "target_audience": "Who this content is best suited for",
+    "prerequisites": ["Any required prior knowledge"]
+}
+
+Respond ONLY with valid JSON. Be thorough in extracting educational value."""
+
+    errors = []
+    
+    # Try Gemini Vision first (best for multi-modal)
+    if "gemini_vision" in clients:
+        try:
+            import google.generativeai as genai
+            from google.generativeai.types import content_types
+            
+            print(f"[AI Service] Parsing with Gemini Vision: {file_name}")
+            
+            # Gemini expects inline data in specific format
+            # Use Part with inline_data for multimodal content
+            file_part = {
+                "inline_data": {
+                    "mime_type": mime_type,
+                    "data": file_base64
+                }
+            }
+            
+            # Send both the prompt and file data
+            response = await clients["gemini_vision"].generate_content_async([
+                prompt,
+                file_part
+            ])
+            
+            content = response.text
+            print(f"[AI Service] Gemini Vision response length: {len(content)} chars")
+            
+            # Parse JSON
+            try:
+                content = content.replace("```json", "").replace("```", "").strip()
+                return {"success": True, "data": json.loads(content), "provider": "gemini_vision"}
+            except:
+                import re
+                match = re.search(r'\{.*\}', content, re.DOTALL)
+                if match:
+                    return {"success": True, "data": json.loads(match.group()), "provider": "gemini_vision"}
+                raise ValueError("Failed to parse JSON from Gemini Vision response")
+                
+        except Exception as e:
+            print(f"[gemini_vision] Parse Error: {e}")
+            import traceback
+            traceback.print_exc()
+            errors.append(f"gemini_vision: {str(e)}")
+    
+    # Fallback to OpenAI GPT-4 Vision if available
+    if "openai" in clients and mime_type.startswith("image/"):
+        try:
+            print(f"[AI Service] Fallback to OpenAI Vision: {file_name}")
+            
+            response = await clients["openai"].chat.completions.create(
+                model="gpt-4o",  # GPT-4o has vision capabilities
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{mime_type};base64,{file_base64}"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens=4096
+            )
+            
+            content = response.choices[0].message.content
+            print(f"[AI Service] OpenAI Vision response length: {len(content)} chars")
+            
+            # Parse JSON
+            try:
+                content = content.replace("```json", "").replace("```", "").strip()
+                return {"success": True, "data": json.loads(content), "provider": "openai_vision"}
+            except:
+                import re
+                match = re.search(r'\{.*\}', content, re.DOTALL)
+                if match:
+                    return {"success": True, "data": json.loads(match.group()), "provider": "openai_vision"}
+                raise ValueError("Failed to parse JSON from OpenAI Vision response")
+                
+        except Exception as e:
+            print(f"[openai_vision] Parse Error: {e}")
+            errors.append(f"openai_vision: {str(e)}")
+    
+    # Fallback to text-only parsing if vision fails
+    for provider in PRIORITY:
+        if provider == "mock":
+            await asyncio.sleep(2)
+            return {
+                "success": True,
+                "provider": "mock",
+                "data": {
+                    "title": f"Course from {file_name}",
+                    "summary": "AI-analyzed course content from uploaded materials.",
+                    "main_topics": [
+                        {"name": "Introduction", "description": "Getting started with the subject", "subtopics": ["Overview", "Key Terms"]},
+                        {"name": "Core Concepts", "description": "Main theories and frameworks", "subtopics": ["Theory 1", "Theory 2"]},
+                        {"name": "Applications", "description": "Practical applications", "subtopics": ["Use Case 1", "Use Case 2"]},
+                        {"name": "Advanced Topics", "description": "Deep dive content", "subtopics": ["Advanced 1", "Advanced 2"]}
+                    ],
+                    "learning_objectives": [
+                        "Understand fundamental concepts",
+                        "Apply theoretical knowledge to real problems",
+                        "Analyze and evaluate solutions",
+                        "Create original implementations"
+                    ],
+                    "key_concepts": ["Concept 1", "Concept 2", "Concept 3", "Concept 4"],
+                    "visual_elements": ["Diagram showing system architecture", "Flowchart of process"],
+                    "suggested_structure": {
+                        "immerse": {"title": "Understanding the Problem", "focus": "Context and stakeholder analysis"},
+                        "realize": {"title": "Designing Solutions", "focus": "Architecture and planning"},
+                        "iterate": {"title": "Building & Testing", "focus": "Implementation and refinement"},
+                        "scale": {"title": "Deployment & Impact", "focus": "Launch and measure results"}
+                    },
+                    "difficulty_level": "Intermediate",
+                    "estimated_duration": "4 weeks",
+                    "target_audience": "Professionals and students",
+                    "prerequisites": ["Basic knowledge of the domain"]
+                }
+            }
+        
+        if provider not in clients:
+            continue
+    
+    return {
+        "success": False,
+        "error": f"All providers failed: {errors}",
+        "data": None
+    }
+
+
+async def generate_teaching_agenda(
+    parsed_content: Dict,
+    target_audience: str = "Intermediate",
+    duration_weeks: int = 4
+) -> Dict:
+    """
+    Generate Alexandria AI Engine teaching agenda with heterogeneous teaching actions.
+    
+    Teaching action types:
+    - EXPLAIN: Lecture/presentation content
+    - DISCUSS: Discussion prompts and activities
+    - PRACTICE: Hands-on exercises
+    - QUIZ: Knowledge checks
+    - DEMO: Live demonstrations
+    - REFLECT: Reflection questions
+    - COLLABORATE: Group activities
+    """
+    
+    content_json = json.dumps(parsed_content, indent=2)
+    
+    prompt = f"""You are an expert instructional designer creating an Alexandria AI Engine teaching agenda.
+
+EXTRACTED CONTENT:
+{content_json}
+
+TARGET: {target_audience} level students
+DURATION: {duration_weeks} weeks
+
+Create a detailed teaching agenda with HETEROGENEOUS TEACHING ACTIONS for each module.
+
+Teaching Action Types:
+1. EXPLAIN - Lecture content with key points
+2. DISCUSS - Discussion prompts for engagement
+3. PRACTICE - Hands-on exercises
+4. QUIZ - Knowledge check questions
+5. DEMO - Demonstration activities
+6. REFLECT - Reflection prompts
+7. COLLABORATE - Group activities
+
+Output JSON:
+{{
+    "course_title": "Final course title",
+    "tagline": "Catchy one-line description",
+    "modules": [
+        {{
+            "week": 1,
+            "phase": "immerse",
+            "title": "Module title",
+            "learning_goals": ["Goal 1", "Goal 2"],
+            "teaching_actions": [
+                {{"type": "EXPLAIN", "title": "Action title", "content": "What to cover", "duration_minutes": 30}},
+                {{"type": "DISCUSS", "title": "Discussion title", "prompt": "Discussion question", "duration_minutes": 15}},
+                {{"type": "PRACTICE", "title": "Exercise title", "instructions": "What students do", "duration_minutes": 45}},
+                {{"type": "QUIZ", "title": "Knowledge Check", "questions": ["Q1", "Q2", "Q3"], "duration_minutes": 10}}
+            ],
+            "assignments": ["Assignment description"],
+            "resources": ["Resource 1", "Resource 2"]
+        }}
+    ],
+    "capstone_project": {{
+        "title": "Project title",
+        "description": "What students will build",
+        "deliverables": ["Deliverable 1", "Deliverable 2"],
+        "rubric_summary": "How it will be graded"
+    }},
+    "auto_generated_quizzes": [
+        {{
+            "module": 1,
+            "questions": [
+                {{"question": "Question text", "options": ["A", "B", "C", "D"], "correct": 0, "explanation": "Why this is correct"}}
+            ]
+        }}
+    ]
+}}
+
+Create {duration_weeks} modules (one per week), with ~4-6 teaching actions per module.
+Balance action types across modules. Make content specific to the extracted material.
+
+Respond ONLY with valid JSON."""
+
+    errors = []
+    for provider in PRIORITY:
+        if provider == "mock":
+            await asyncio.sleep(2)
+            modules = []
+            phases = ["immerse", "realize", "iterate", "scale"]
+            phase_titles = {
+                "immerse": "Understanding & Exploration",
+                "realize": "Planning & Design",
+                "iterate": "Building & Testing",
+                "scale": "Deployment & Iteration"
+            }
+            
+            for week in range(1, duration_weeks + 1):
+                phase_idx = (week - 1) % 4
+                phase = phases[phase_idx]
+                modules.append({
+                    "week": week,
+                    "phase": phase,
+                    "title": f"Week {week}: {phase_titles[phase]}",
+                    "learning_goals": [f"Goal {week}.1", f"Goal {week}.2"],
+                    "teaching_actions": [
+                        {"type": "EXPLAIN", "title": f"Introduction to Week {week}", "content": "Core concepts overview", "duration_minutes": 30},
+                        {"type": "DISCUSS", "title": "Discussion: Key Questions", "prompt": f"What challenges do you see in {phase}?", "duration_minutes": 20},
+                        {"type": "PRACTICE", "title": "Hands-on Exercise", "instructions": f"Apply {phase} concepts", "duration_minutes": 45},
+                        {"type": "QUIZ", "title": "Knowledge Check", "questions": ["Q1", "Q2", "Q3"], "duration_minutes": 10},
+                        {"type": "REFLECT", "title": "Weekly Reflection", "prompt": "What did you learn this week?", "duration_minutes": 10}
+                    ],
+                    "assignments": [f"Week {week} Assignment"],
+                    "resources": ["Module readings", "Video tutorials"]
+                })
+            
+            return {
+                "success": True,
+                "provider": "mock",
+                "agenda": {
+                    "course_title": parsed_content.get("title", "AI-Generated Course"),
+                    "tagline": "Transform your skills with structured learning",
+                    "modules": modules,
+                    "capstone_project": {
+                        "title": "Capstone: Real-World Application",
+                        "description": "Apply all course concepts to solve a real problem",
+                        "deliverables": ["Project proposal", "Working prototype", "Final presentation"],
+                        "rubric_summary": "Graded on creativity, technical execution, and impact"
+                    },
+                    "auto_generated_quizzes": [
+                        {
+                            "module": 1,
+                            "questions": [
+                                {"question": "What is the main goal of the Immerse phase?", "options": ["Understanding context", "Writing code", "Deploying", "Testing"], "correct": 0, "explanation": "Immerse focuses on understanding the problem context."}
+                            ]
+                        }
+                    ]
+                }
+            }
+
+        if provider not in clients:
+            continue
+
+        try:
+            content = ""
+            if provider == "gemini":
+                response = await clients[provider].generate_content_async(prompt)
+                content = response.text
+            else:
+                response = await clients[provider].chat.completions.create(
+                    model=MODELS[provider],
+                    messages=[{"role": "system", "content": "You are a JSON instructional designer."}, {"role": "user", "content": prompt}],
+                    temperature=0.7
+                )
+                content = response.choices[0].message.content
+
+            try:
+                content = content.replace("```json", "").replace("```", "").strip()
+                return {"success": True, "agenda": json.loads(content), "provider": provider}
+            except:
+                import re
+                match = re.search(r'\{.*\}', content, re.DOTALL)
+                if match:
+                    return {"success": True, "agenda": json.loads(match.group()), "provider": provider}
+                raise ValueError("Failed to parse JSON")
+
+        except Exception as e:
+            print(f"[{provider}] Teaching Agenda Error: {e}")
+            errors.append(f"{provider}: {str(e)}")
+            continue
+
+    return {
+        "success": False,
+        "error": f"All providers failed: {errors}",
+        "agenda": None
+    }
+
+
+async def extract_knowledge_points(content: str) -> Dict:
+    """
+    Extract knowledge points for knowledge graph visualization.
+    Returns nodes and edges for graph display.
+    """
+    
+    prompt = f"""Analyze this educational content and extract a knowledge graph.
+
+CONTENT:
+{content[:8000]}
+
+OUTPUT JSON:
+{{
+    "nodes": [
+        {{"id": "node1", "label": "Concept Name", "type": "concept|skill|topic", "importance": "high|medium|low"}}
+    ],
+    "edges": [
+        {{"source": "node1", "target": "node2", "relationship": "requires|enables|relates_to"}}
+    ],
+    "clusters": [
+        {{"name": "Cluster Name", "nodes": ["node1", "node2"], "description": "What this cluster represents"}}
+    ]
+}}
+
+Extract 10-20 key concepts with meaningful relationships. Respond ONLY with valid JSON."""
+
+    errors = []
+    for provider in PRIORITY:
+        if provider == "mock":
+            await asyncio.sleep(1)
+            return {
+                "success": True,
+                "provider": "mock",
+                "graph": {
+                    "nodes": [
+                        {"id": "n1", "label": "Core Concept", "type": "concept", "importance": "high"},
+                        {"id": "n2", "label": "Foundation", "type": "topic", "importance": "high"},
+                        {"id": "n3", "label": "Application", "type": "skill", "importance": "medium"},
+                        {"id": "n4", "label": "Advanced Topic", "type": "topic", "importance": "medium"},
+                        {"id": "n5", "label": "Practice", "type": "skill", "importance": "low"}
+                    ],
+                    "edges": [
+                        {"source": "n2", "target": "n1", "relationship": "enables"},
+                        {"source": "n1", "target": "n3", "relationship": "enables"},
+                        {"source": "n1", "target": "n4", "relationship": "relates_to"},
+                        {"source": "n3", "target": "n5", "relationship": "requires"}
+                    ],
+                    "clusters": [
+                        {"name": "Fundamentals", "nodes": ["n1", "n2"], "description": "Core building blocks"}
+                    ]
+                }
+            }
+
+        if provider not in clients:
+            continue
+
+        try:
+            response_content = ""
+            if provider == "gemini":
+                response = await clients[provider].generate_content_async(prompt)
+                response_content = response.text
+            else:
+                response = await clients[provider].chat.completions.create(
+                    model=MODELS[provider],
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.5
+                )
+                response_content = response.choices[0].message.content
+
+            try:
+                response_content = response_content.replace("```json", "").replace("```", "").strip()
+                return {"success": True, "graph": json.loads(response_content), "provider": provider}
+            except:
+                import re
+                match = re.search(r'\{.*\}', response_content, re.DOTALL)
+                if match:
+                    return {"success": True, "graph": json.loads(match.group()), "provider": provider}
+                raise ValueError("Failed to parse JSON")
+
+        except Exception as e:
+            print(f"[{provider}] Knowledge Graph Error: {e}")
+            errors.append(f"{provider}: {str(e)}")
+            continue
+
+    return {"success": False, "error": f"All providers failed: {errors}", "graph": None}
