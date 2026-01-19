@@ -1225,6 +1225,162 @@ Which aspect would you like me to develop further?"""
     }
 
 
+class EnhancedSocraticRequest(BaseModel):
+    user_message: str
+    phase: str = "immerse"
+    context: Optional[Dict] = None
+    user_role: str = "student"  # 'student' or 'instructor'
+    scaffolding_level: str = "guided"  # 'exploration', 'guided', 'independent'
+    conversation_history: Optional[List[Dict]] = None
+    question_quality: str = "good"  # 'needs_work', 'good', 'excellent'
+
+@app.post("/api/v1/ai/socratic-enhanced")
+async def enhanced_socratic_chat(request: EnhancedSocraticRequest):
+    """
+    Enhanced Socratic Tutor with scaffolding based on SocraticAI research.
+    
+    Features:
+    - Question quality-aware responses
+    - Scaffolding levels (exploration, guided, independent)
+    - Phase-aware guidance (IRIS framework)
+    - Dual-role support (student/instructor)
+    """
+    from services.openai_service import clients, PRIORITY
+    
+    # Socratic questioning strategies
+    strategies = {
+        'clarifying': "What do you mean by that? Can you be more specific?",
+        'probing': "Why do you think that's the case? What evidence supports this?",
+        'assumptions': "What are you assuming here? Is that always true?",
+        'consequences': "What might be the implications of this approach?",
+        'viewpoints': "How might someone else see this differently?"
+    }
+    
+    # Build system prompt based on role and scaffolding level
+    if request.user_role == "instructor":
+        system_prompt = """You are a Socratic course development assistant helping instructors create better learning experiences.
+
+Your approach:
+- Ask probing questions to help instructors think deeper about their course design
+- Suggest improvements aligned with IRIS (Immerse-Realize-Iterate-Scale) framework
+- Help with learning outcomes, assessments, and engagement strategies
+- Never give direct answers for pedagogical choices - guide through questions
+
+Be supportive but challenging. Push for excellence in course design."""
+    else:
+        scaffolding_prompts = {
+            'exploration': "Be very open and encouraging. Ask broad questions. Let the learner explore freely.",
+            'guided': "Provide structured guidance through questions. If the learner is stuck, offer hints. Praise good thinking.",
+            'independent': "Challenge the learner. Ask tough questions. Expect well-formulated answers. Push for deeper thinking."
+        }
+        
+        system_prompt = f"""You are a Socratic Tutor for the {request.phase} phase of learning.
+
+CORE PRINCIPLE: Never give direct answers. Guide through questions.
+
+{scaffolding_prompts.get(request.scaffolding_level, scaffolding_prompts['guided'])}
+
+Socratic Techniques to Use:
+1. Clarifying Questions: "What do you mean by...?"
+2. Probing Questions: "Why do you think...?"
+3. Assumption Testing: "What if the opposite were true?"
+4. Consequence Exploration: "What would happen if...?"
+5. Viewpoint Shifting: "How might others see this?"
+
+Question Quality Response (current: {request.question_quality}):
+- needs_work: Ask for clarification and context before engaging
+- good: Engage with Socratic questions
+- excellent: Challenge with deeper probing questions
+
+End each response with a thought-provoking question."""
+
+    prompt = f"""{system_prompt}
+
+PHASE: {request.phase}
+USER MESSAGE: {request.user_message}
+
+Respond as a Socratic tutor. Remember: guide, don't tell."""
+
+    for provider in PRIORITY:
+        if provider == "mock":
+            # Generate intelligent mock responses based on scaffolding level
+            if request.question_quality == "needs_work":
+                response = """I'd like to help you explore this! Before I can guide you effectively, could you share:
+
+1. **What specific aspect** are you trying to understand?
+2. **What do you already know** about this topic?
+3. **Where exactly** are you feeling stuck?
+
+The more context you give me, the better questions I can ask to help you discover the answers yourself. 🤔"""
+            elif request.user_role == "instructor":
+                response = f"""That's an interesting approach for your {request.phase} phase content! Let me ask you some questions to deepen your thinking:
+
+**About Learning Outcomes:**
+• What specific skills should learners demonstrate by the end of this section?
+• How will you know they've achieved mastery?
+
+**About Engagement:**
+• How can you make this more interactive or hands-on?
+• What real-world examples could bring this concept to life?
+
+*What aspect would you like to explore further?*"""
+            else:
+                strategy = list(strategies.values())[hash(request.user_message) % len(strategies)]
+                response = f"""🤔 That's a thoughtful question! Let me help you think through this...
+
+{strategy}
+
+Also consider: How does this connect to what you learned in earlier sections?
+
+*Take a moment to reflect before responding. The goal isn't speed—it's deep understanding.*"""
+            
+            return {
+                "success": True,
+                "response": response,
+                "scaffolding_level": request.scaffolding_level,
+                "provider": "mock"
+            }
+        
+        if provider not in clients:
+            continue
+            
+        try:
+            if provider == "gemini":
+                response = await clients[provider].generate_content_async(prompt)
+                return {
+                    "success": True,
+                    "response": response.text.strip(),
+                    "scaffolding_level": request.scaffolding_level,
+                    "provider": provider
+                }
+            else:
+                response = await clients[provider].chat.completions.create(
+                    model="gpt-4o" if provider == "openai" else "google/gemini-2.0-flash-exp:free",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": request.user_message}
+                    ],
+                    max_tokens=500,
+                    temperature=0.7
+                )
+                return {
+                    "success": True,
+                    "response": response.choices[0].message.content.strip(),
+                    "scaffolding_level": request.scaffolding_level,
+                    "provider": provider
+                }
+        except Exception as e:
+            print(f"[{provider}] Enhanced Socratic Error: {e}")
+            continue
+    
+    return {
+        "success": False,
+        "response": "I'm having trouble connecting. Please try rephrasing your question.",
+        "scaffolding_level": request.scaffolding_level,
+        "provider": "error"
+    }
+
+
 @app.get("/api/v1/courses", response_model=List[schemas.Course])
 def get_courses(db: Session = Depends(get_db)):
     """Get all courses"""
