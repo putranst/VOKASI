@@ -831,36 +831,60 @@ Respond ONLY with valid JSON. Be thorough in extracting educational value."""
     for provider in PRIORITY:
         if provider == "mock":
             await asyncio.sleep(2)
+            
+            # Extract intelligent content from filename
+            import re
+            base_name = file_name.rsplit('.', 1)[0] if '.' in file_name else file_name
+            # Clean up filename: replace hyphens/underscores with spaces, title case
+            clean_title = re.sub(r'[-_]', ' ', base_name).strip()
+            # Extract key themes from the filename
+            words = clean_title.split()
+            key_themes = [w.title() for w in words if len(w) > 3][:5]
+            
+            # Generate intelligent topics based on themes
+            if len(key_themes) >= 2:
+                main_topic = ' '.join(key_themes[:3])
+                topics = [
+                    {"name": f"Foundations of {key_themes[0]}", "description": f"Core principles and fundamentals of {key_themes[0].lower()}", "subtopics": ["Key Principles", "Historical Context", "Core Terminology"]},
+                    {"name": f"{key_themes[1] if len(key_themes) > 1 else main_topic} Fundamentals", "description": f"Essential concepts and frameworks", "subtopics": ["Conceptual Framework", "Best Practices", "Industry Standards"]},
+                    {"name": f"Applied {main_topic}", "description": f"Practical applications and real-world scenarios", "subtopics": ["Case Studies", "Implementation Strategies", "Tools & Techniques"]},
+                    {"name": f"Advanced {key_themes[0]} Strategies", "description": f"Deep dive into advanced concepts and mastery", "subtopics": ["Advanced Methods", "Optimization", "Future Trends"]}
+                ]
+            else:
+                main_topic = clean_title or "Course Content"
+                topics = [
+                    {"name": "Introduction & Overview", "description": "Getting started with foundational knowledge", "subtopics": ["Overview", "Key Terms", "Learning Goals"]},
+                    {"name": "Core Concepts & Theories", "description": "Essential frameworks and theoretical foundations", "subtopics": ["Main Theory", "Supporting Concepts", "Practical Framework"]},
+                    {"name": "Practical Applications", "description": "Hands-on application of concepts", "subtopics": ["Real-World Examples", "Implementation Guide", "Best Practices"]},
+                    {"name": "Advanced Topics & Mastery", "description": "Deep expertise and leadership-level content", "subtopics": ["Expert Techniques", "Innovation", "Future Directions"]}
+                ]
+            
             return {
                 "success": True,
                 "provider": "mock",
                 "data": {
-                    "title": f"Course from {file_name}",
-                    "summary": "AI-analyzed course content from uploaded materials.",
-                    "main_topics": [
-                        {"name": "Introduction", "description": "Getting started with the subject", "subtopics": ["Overview", "Key Terms"]},
-                        {"name": "Core Concepts", "description": "Main theories and frameworks", "subtopics": ["Theory 1", "Theory 2"]},
-                        {"name": "Applications", "description": "Practical applications", "subtopics": ["Use Case 1", "Use Case 2"]},
-                        {"name": "Advanced Topics", "description": "Deep dive content", "subtopics": ["Advanced 1", "Advanced 2"]}
-                    ],
+                    "title": f"{main_topic}",
+                    "summary": f"A comprehensive curriculum covering {main_topic.lower()}, designed to take participants from foundational understanding to practical mastery through structured learning experiences.",
+                    "main_topics": topics,
                     "learning_objectives": [
-                        "Understand fundamental concepts",
-                        "Apply theoretical knowledge to real problems",
-                        "Analyze and evaluate solutions",
-                        "Create original implementations"
+                        f"Understand the fundamental principles of {main_topic.lower()}",
+                        f"Apply theoretical knowledge to real-world {key_themes[0].lower() if key_themes else 'professional'} challenges",
+                        "Develop critical analysis and problem-solving skills",
+                        f"Create implementation strategies for {key_themes[1].lower() if len(key_themes) > 1 else 'organizational'} contexts",
+                        "Evaluate and optimize solutions based on industry best practices"
                     ],
-                    "key_concepts": ["Concept 1", "Concept 2", "Concept 3", "Concept 4"],
-                    "visual_elements": ["Diagram showing system architecture", "Flowchart of process"],
+                    "key_concepts": key_themes if key_themes else ["Strategy", "Framework", "Implementation", "Analysis"],
+                    "visual_elements": ["Framework diagrams", "Process flowcharts", "Case study illustrations"],
                     "suggested_structure": {
-                        "immerse": {"title": "Understanding the Problem", "focus": "Context and stakeholder analysis"},
-                        "realize": {"title": "Designing Solutions", "focus": "Architecture and planning"},
-                        "iterate": {"title": "Building & Testing", "focus": "Implementation and refinement"},
-                        "scale": {"title": "Deployment & Impact", "focus": "Launch and measure results"}
+                        "immerse": {"title": "Understanding the Landscape", "focus": f"Context, stakeholder analysis, and {main_topic.lower()} foundations"},
+                        "realize": {"title": "Designing Solutions", "focus": "Strategic planning, architecture, and roadmap development"},
+                        "iterate": {"title": "Building & Testing", "focus": "Implementation, feedback loops, and continuous improvement"},
+                        "scale": {"title": "Deployment & Impact", "focus": "Launch strategies, measurement, and sustainable growth"}
                     },
                     "difficulty_level": "Intermediate",
                     "estimated_duration": "4 weeks",
-                    "target_audience": "Professionals and students",
-                    "prerequisites": ["Basic knowledge of the domain"]
+                    "target_audience": "Professionals and emerging leaders",
+                    "prerequisites": [f"Basic understanding of {key_themes[0].lower() if key_themes else 'the domain'}"]
                 }
             }
         

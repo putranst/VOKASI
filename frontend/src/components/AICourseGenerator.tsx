@@ -32,6 +32,7 @@ export function AICourseGenerator({ onCourseGenerated }: AICourseGeneratorProps)
     const [generatedCourse, setGeneratedCourse] = useState<GeneratedCourse | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [editedCourse, setEditedCourse] = useState<GeneratedCourse | null>(null);
+    const [expandedModules, setExpandedModules] = useState<Record<number, boolean>>({});
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -199,22 +200,72 @@ export function AICourseGenerator({ onCourseGenerated }: AICourseGeneratorProps)
                             </div>
                         </div>
 
-                        {/* Modules Preview */}
+                        {/* Modules Preview - Expandable */}
                         {editedCourse.modules && editedCourse.modules.length > 0 && (
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-3">Course Modules</label>
                                 <div className="space-y-2">
-                                    {editedCourse.modules.map((module, idx) => (
-                                        <div key={idx} className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center font-bold text-sm">
-                                                {idx + 1}
+                                    {editedCourse.modules.map((module, idx) => {
+                                        const isExpanded = expandedModules[idx] || false;
+                                        return (
+                                            <div key={idx} className="bg-gray-50 rounded-xl overflow-hidden border border-gray-100">
+                                                <button
+                                                    onClick={() => setExpandedModules(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                                                    className="w-full p-4 flex items-center gap-3 hover:bg-gray-100 transition-colors text-left"
+                                                >
+                                                    <div className="w-8 h-8 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                                        {idx + 1}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        {isEditing ? (
+                                                            <input
+                                                                type="text"
+                                                                value={module.title}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onChange={(e) => {
+                                                                    const updatedModules = [...(editedCourse.modules || [])];
+                                                                    updatedModules[idx] = { ...module, title: e.target.value };
+                                                                    setEditedCourse({ ...editedCourse, modules: updatedModules });
+                                                                }}
+                                                                className="w-full font-semibold text-gray-900 bg-white border border-gray-200 rounded px-2 py-1"
+                                                            />
+                                                        ) : (
+                                                            <p className="font-semibold text-gray-900">{module.title}</p>
+                                                        )}
+                                                    </div>
+                                                    <ChevronDown
+                                                        size={18}
+                                                        className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                                    />
+                                                </button>
+
+                                                {/* Expanded Content */}
+                                                {isExpanded && (
+                                                    <div className="px-4 pb-4 pt-0 border-t border-gray-100">
+                                                        <div className="ml-11">
+                                                            {isEditing ? (
+                                                                <textarea
+                                                                    value={module.content}
+                                                                    onChange={(e) => {
+                                                                        const updatedModules = [...(editedCourse.modules || [])];
+                                                                        updatedModules[idx] = { ...module, content: e.target.value };
+                                                                        setEditedCourse({ ...editedCourse, modules: updatedModules });
+                                                                    }}
+                                                                    rows={4}
+                                                                    className="w-full text-sm text-gray-600 bg-white border border-gray-200 rounded-lg p-3 mt-2 resize-none"
+                                                                    placeholder="Module content and learning materials..."
+                                                                />
+                                                            ) : (
+                                                                <p className="text-sm text-gray-600 mt-2 leading-relaxed">
+                                                                    {module.content || 'Click "Edit" to add content for this module.'}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <div>
-                                                <p className="font-semibold text-gray-900">{module.title}</p>
-                                                <p className="text-sm text-gray-500">{module.content}</p>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
