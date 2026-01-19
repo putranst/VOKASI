@@ -29,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${lato.variable} ${plusJakartaSans.variable} antialiased`}
+        className={`${lato.variable} ${plusJakartaSans.variable} antialiased overflow-x-hidden`}
       >
         <Providers>
           {children}

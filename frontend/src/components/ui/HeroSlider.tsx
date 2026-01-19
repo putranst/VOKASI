@@ -98,7 +98,7 @@ export const HeroSlider = () => {
     const currentT6Data = t6SubSlides[currentSubSlide];
 
     return (
-        <section className="relative overflow-hidden">
+        <section className="relative overflow-hidden max-w-[100vw]">
             {/* Main Slide Navigation Arrows */}
             <button
                 onClick={prevMainSlide}
@@ -317,9 +317,9 @@ export const HeroSlider = () => {
                     <div className="relative z-10 max-w-[70rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
                         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                             {/* Left Content */}
-                            <div className="space-y-5">
+                            <div className="space-y-5 overflow-hidden">
                                 {/* Sub-slide tabs */}
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
                                     {t6SubSlides.map((slide, idx) => (
                                         <button
                                             key={idx}
@@ -335,10 +335,10 @@ export const HeroSlider = () => {
                                 </div>
 
                                 <div className="space-y-4" key={currentSubSlide}>
-                                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 leading-[1.1]">
+                                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 leading-[1.1] break-words">
                                         {currentT6Data.title}
                                     </h1>
-                                    <p className="text-base lg:text-lg text-slate-600 leading-relaxed max-w-md">
+                                    <p className="text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed max-w-md">
                                         {currentT6Data.description}
                                     </p>
                                 </div>
