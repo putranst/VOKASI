@@ -98,32 +98,32 @@ export const HeroSlider = () => {
     const currentT6Data = t6SubSlides[currentSubSlide];
 
     return (
-        <section className="relative overflow-hidden max-w-[100vw]">
-            {/* Main Slide Navigation Arrows */}
+        <section className="relative overflow-hidden w-full max-w-[100vw] bg-[#0f172a]">
+            {/* Main Slide Navigation Arrows - Hidden on Mobile for cleaner look? Keeping for now but adjusting pos */}
             <button
                 onClick={prevMainSlide}
-                className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-30 p-2 md:p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all shadow-lg group"
+                className="absolute left-2 md:left-8 top-1/2 -translate-y-1/2 z-30 p-2 md:p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all shadow-lg group hidden md:block"
                 aria-label="Previous slide"
             >
                 <ChevronLeft size={24} className="group-hover:-translate-x-0.5 transition-transform" />
             </button>
             <button
                 onClick={nextMainSlide}
-                className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-30 p-2 md:p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all shadow-lg group"
+                className="absolute right-2 md:right-8 top-1/2 -translate-y-1/2 z-30 p-2 md:p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all shadow-lg group hidden md:block"
                 aria-label="Next slide"
             >
                 <ChevronRight size={24} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
 
             {/* Main Slide Indicators */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3">
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3">
                 {mainSlides.map((_, idx) => (
                     <button
                         key={idx}
                         onClick={() => setCurrentMainSlide(idx)}
-                        className={`h-2 rounded-full transition-all duration-500 ${idx === currentMainSlide
-                            ? 'w-8 bg-white'
-                            : 'w-2 bg-white/40 hover:bg-white/60'
+                        className={`h-1.5 md:h-2 rounded-full transition-all duration-500 ${idx === currentMainSlide
+                            ? 'w-6 md:w-8 bg-white'
+                            : 'w-1.5 md:w-2 bg-white/40 hover:bg-white/60'
                             }`}
                         aria-label={`Go to slide ${idx + 1}`}
                     />
@@ -131,19 +131,17 @@ export const HeroSlider = () => {
             </div>
 
             {/* ============================================ */}
-            {/* Slide 1: Ekspedisi AI Nusantara - EXACT CLONE */}
+            {/* Slide 1: Ekspedisi AI Nusantara             */}
             {/* ============================================ */}
             <div
                 className={`transition-all duration-700 ease-out ${currentMainSlide === 0
-                    ? 'opacity-100 translate-x-0'
-                    : 'opacity-0 absolute inset-0 translate-x-[-100%]'
+                    ? 'opacity-100 translate-x-0 relative'
+                    : 'opacity-0 absolute inset-0 translate-x-[-100%] pointer-events-none'
                     }`}
             >
-                {/* Hero Section - Exact clone from ekspedisi.html */}
                 <section
-                    className="relative flex items-center text-white overflow-hidden"
+                    className="relative flex items-center text-white overflow-hidden min-h-[calc(100vh-64px)] py-12 md:py-0"
                     style={{
-                        height: 'calc(100vh - 64px)', // Account for navbar height
                         backgroundColor: '#0f172a',
                         backgroundImage: `
                             radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
@@ -153,47 +151,49 @@ export const HeroSlider = () => {
                         fontFamily: 'var(--font-jakarta), "Plus Jakarta Sans", sans-serif'
                     }}
                 >
-                    {/* Indonesia Map Background */}
-                    <div className="absolute inset-0 z-0 opacity-20 pointer-events-none flex items-center justify-center">
+                    {/* Indonesia Map Background - Strictly contained */}
+                    <div className="absolute inset-0 z-0 opacity-20 pointer-events-none flex items-center justify-center overflow-hidden">
                         <img
                             src="https://ekspedisi.tsea.asia/id.png"
                             alt="Peta Indonesia"
-                            className="w-full max-w-6xl object-contain invert px-4"
+                            className="w-[150%] max-w-none md:w-full md:max-w-6xl object-contain invert px-4"
                         />
                     </div>
 
                     {/* Animated Floating Orbs */}
                     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
                         <div
-                            className="absolute top-10 left-10 w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"
+                            className="absolute top-10 left-10 w-40 md:w-64 h-40 md:h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"
                             style={{ animation: 'float 6s ease-in-out infinite' }}
                         />
                         <div
-                            className="absolute top-20 right-10 w-64 h-64 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"
+                            className="absolute top-20 right-10 w-40 md:w-64 h-40 md:h-64 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"
                             style={{ animation: 'float 6s ease-in-out infinite', animationDelay: '2s' }}
                         />
                     </div>
 
-                    <div className="max-w-[70rem] mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-8 lg:gap-12 items-center w-full py-8">
+                    <div className="max-w-[70rem] mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-8 lg:gap-12 items-center w-full">
                         {/* Left Content */}
-                        <div className="space-y-6">
+                        <div className="space-y-6 md:space-y-8 text-center lg:text-left mt-8 lg:mt-0">
                             {/* Badge */}
-                            <div
-                                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm text-sm font-medium"
-                                style={{ color: '#f59e0b' }}
-                            >
-                                <span className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                                </span>
-                                Tsinghua SEA & UID Initiative
+                            <div className="flex justify-center lg:justify-start">
+                                <div
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm text-sm font-medium"
+                                    style={{ color: '#f59e0b' }}
+                                >
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                                    </span>
+                                    Tsinghua SEA & UID Initiative
+                                </div>
                             </div>
 
-                            {/* Animated Title - Toggles between English and Indonesian */}
-                            <div className="h-28 sm:h-32 lg:h-36 relative">
+                            {/* Animated Title */}
+                            <div className="h-32 sm:h-36 relative">
                                 {/* English Title */}
                                 <h1
-                                    className={`absolute inset-0 text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight transition-all duration-700 ease-in-out ${showEnglish
+                                    className={`absolute inset-0 text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight transition-all duration-700 ease-in-out ${showEnglish
                                         ? 'opacity-100 translate-y-0'
                                         : 'opacity-0 translate-y-4 pointer-events-none'
                                         }`}
@@ -206,7 +206,7 @@ export const HeroSlider = () => {
 
                                 {/* Indonesian Title */}
                                 <h1
-                                    className={`absolute inset-0 text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight transition-all duration-700 ease-in-out ${!showEnglish
+                                    className={`absolute inset-0 text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight transition-all duration-700 ease-in-out ${!showEnglish
                                         ? 'opacity-100 translate-y-0'
                                         : 'opacity-0 translate-y-4 pointer-events-none'
                                         }`}
@@ -219,27 +219,33 @@ export const HeroSlider = () => {
                             </div>
 
                             {/* Description */}
-                            <p className="text-base lg:text-lg text-slate-300 max-w-md leading-relaxed">
+                            <p className="text-lg text-slate-300 max-w-lg mx-auto lg:mx-0 leading-relaxed">
                                 Transforming abstract digital potential into real-world solutions.
-                                38 Provinces. 12 Months. <br />
-                                <span className="text-cyan-400 font-semibold">National Survivability & Sovereignty.</span>
+                                38 Provinces. 12 Months. <br className="hidden md:block" />
+                                <span className="text-cyan-400 font-semibold block mt-1">National Survivability & Sovereignty.</span>
                             </p>
 
-                            {/* Single CTA Button */}
-                            <div className="pt-2">
+                            {/* CTA Button - Full width on mobile */}
+                            <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                                 <a
                                     href="https://ekspedisi.tsea.asia"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="group inline-flex bg-white text-slate-900 px-6 py-3 rounded-full font-bold transition-all hover:bg-slate-200 items-center gap-2"
+                                    className="w-full sm:w-auto text-center bg-white text-slate-900 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:bg-slate-200 flex items-center justify-center gap-2 shadow-lg shadow-white/5"
                                 >
                                     Join the Initiative
-                                    <ArrowRight className="group-hover:translate-x-1 transition-transform" size={18} />
+                                    <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
                                 </a>
+                                <Link
+                                    href="/hexahelix"
+                                    className="w-full sm:w-auto text-center px-8 py-4 rounded-xl font-bold text-lg text-white border border-white/20 hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                                >
+                                    Learn More
+                                </Link>
                             </div>
                         </div>
 
-                        {/* Right Content - Stats Card */}
+                        {/* Right Content - Stats Card (Hidden on very small screens if needed, but keeping for now) */}
                         <div className="relative hidden lg:block">
                             <div
                                 className="relative z-10 p-6 rounded-2xl border-t border-l border-white/20 shadow-2xl"
@@ -296,17 +302,16 @@ export const HeroSlider = () => {
             </div>
 
             {/* ============================================ */}
-            {/* Slide 2: T6 Learning Platform */}
+            {/* Slide 2: T6 Learning Platform               */}
             {/* ============================================ */}
             <div
                 className={`transition-all duration-700 ease-out ${currentMainSlide === 1
-                    ? 'opacity-100 translate-x-0'
-                    : 'opacity-0 absolute inset-0 translate-x-[100%]'
+                    ? 'opacity-100 translate-x-0 relative'
+                    : 'opacity-0 absolute inset-0 translate-x-[100%] pointer-events-none'
                     }`}
             >
                 <div
-                    className="relative bg-slate-50 overflow-hidden flex items-center"
-                    style={{ height: 'calc(100vh - 64px)' }}
+                    className="relative bg-slate-50 overflow-hidden flex items-center min-h-[calc(100vh-64px)] py-12 md:py-0"
                 >
                     {/* Abstract Background */}
                     <div className="absolute inset-0 bg-white">
@@ -314,17 +319,17 @@ export const HeroSlider = () => {
                         <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-gradient-to-br from-primary/5 to-accent/5 rounded-full blur-3xl z-0" />
                     </div>
 
-                    <div className="relative z-10 max-w-[70rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+                    <div className="relative z-10 max-w-[70rem] mx-auto px-4 sm:px-6 lg:px-8 w-full">
                         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                             {/* Left Content */}
-                            <div className="space-y-5 overflow-hidden">
-                                {/* Sub-slide tabs */}
-                                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+                            <div className="space-y-6 md:space-y-8 overflow-hidden text-center lg:text-left">
+                                {/* Sub-slide tabs - Simplified for mobile */}
+                                <div className="flex justify-center lg:justify-start gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
                                     {t6SubSlides.map((slide, idx) => (
                                         <button
                                             key={idx}
                                             onClick={() => setCurrentSubSlide(idx)}
-                                            className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all uppercase tracking-wider ${idx === currentSubSlide
+                                            className={`text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-full transition-all uppercase tracking-wider whitespace-nowrap ${idx === currentSubSlide
                                                 ? 'bg-gray-900 text-white shadow-lg'
                                                 : 'bg-white text-gray-500 border border-gray-200 hover:border-gray-400'
                                                 }`}
@@ -335,33 +340,33 @@ export const HeroSlider = () => {
                                 </div>
 
                                 <div className="space-y-4" key={currentSubSlide}>
-                                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 leading-[1.1] break-words">
+                                    <h1 className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1] break-words">
                                         {currentT6Data.title}
                                     </h1>
-                                    <p className="text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed max-w-md">
+                                    <p className="text-lg text-slate-600 leading-relaxed max-w-xl mx-auto lg:mx-0">
                                         {currentT6Data.description}
                                     </p>
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                                <div className="flex flex-col sm:flex-row gap-4 pt-2 justify-center lg:justify-start">
                                     <Link
                                         href={currentT6Data.primaryCta.href}
-                                        className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                                        className="bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-xl hover:shadow-2xl flex items-center justify-center gap-2 w-full sm:w-auto"
                                     >
                                         {currentT6Data.primaryCta.text}
-                                        <ArrowRight size={18} />
+                                        <ArrowRight size={20} />
                                     </Link>
                                     <Link
                                         href={currentT6Data.secondaryCta.href}
-                                        className="bg-white hover:bg-gray-50 text-slate-700 border-2 border-gray-200 px-6 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+                                        className="bg-white hover:bg-gray-50 text-slate-700 border-2 border-gray-200 px-8 py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 w-full sm:w-auto"
                                     >
-                                        <PlayCircle size={18} />
+                                        <PlayCircle size={20} />
                                         {currentT6Data.secondaryCta.text}
                                     </Link>
                                 </div>
 
                                 {/* Sub-slide indicators */}
-                                <div className="flex gap-2 pt-2">
+                                <div className="flex justify-center lg:justify-start gap-2 pt-2">
                                     {t6SubSlides.map((_, idx) => (
                                         <div
                                             key={idx}
