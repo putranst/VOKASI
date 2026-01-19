@@ -990,6 +990,69 @@ async def smart_upload_materials(
     }
 
 
+class AISuggestRequest(BaseModel):
+    context: str
+    course_title: str = ""
+    module_title: str = ""
+
+@app.post("/api/v1/ai/suggest-content")
+async def ai_suggest_content(request: AISuggestRequest):
+    """
+    Get AI-powered content suggestions for the course editor.
+    Provides contextual recommendations based on current content.
+    """
+    from services.openai_service import clients, PRIORITY
+    
+    prompt = f"""You are Alexandria AI, an expert instructional designer. Provide a brief, actionable suggestion to improve the following course content.
+
+CONTEXT:
+Course: {request.course_title or 'Untitled Course'}
+Module: {request.module_title or 'Current Module'}
+Current Content: {request.context[:500]}
+
+Provide ONE concise suggestion (1-2 sentences) to make this content more engaging, clear, or educationally effective.
+Focus on practical improvements like:
+- Adding examples or case studies
+- Including interactive elements
+- Clarifying complex concepts
+- Adding visual aids or multimedia
+- Incorporating assessment checkpoints
+
+Respond with just the suggestion, no preamble."""
+
+    for provider in PRIORITY:
+        if provider == "mock":
+            suggestions = [
+                "Consider adding a real-world case study to illustrate this concept and help learners connect theory to practice.",
+                "Add an interactive quiz checkpoint here to reinforce learning before moving to the next section.",
+                "Include a video demonstration or diagram to visualize this process for visual learners.",
+                "Break this section into smaller chunks with reflection prompts between each concept.",
+                "Add a Socratic AI checkpoint where students can ask questions about this material."
+            ]
+            import random
+            return {"success": True, "suggestion": random.choice(suggestions), "provider": "mock"}
+        
+        if provider not in clients:
+            continue
+            
+        try:
+            if provider == "gemini":
+                response = await clients[provider].generate_content_async(prompt)
+                return {"success": True, "suggestion": response.text.strip(), "provider": provider}
+            else:
+                response = await clients[provider].chat.completions.create(
+                    model="gpt-4o" if provider == "openai" else "google/gemini-2.0-flash-exp:free",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=150
+                )
+                return {"success": True, "suggestion": response.choices[0].message.content.strip(), "provider": provider}
+        except Exception as e:
+            print(f"[{provider}] AI Suggest Error: {e}")
+            continue
+    
+    return {"success": False, "suggestion": "Unable to generate suggestion at this time.", "provider": "error"}
+
+
 @app.get("/api/v1/courses", response_model=List[schemas.Course])
 def get_courses(db: Session = Depends(get_db)):
     """Get all courses"""
