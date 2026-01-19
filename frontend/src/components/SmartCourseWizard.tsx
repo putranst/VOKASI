@@ -113,15 +113,112 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
     const [error, setError] = useState<string | null>(null);
     const [courseThumbnail, setCourseThumbnail] = useState<string>('');
 
-    // Preset thumbnails based on common course topics
-    const PRESET_THUMBNAILS = [
-        'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800', // Education
-        'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800', // Technology
-        'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800', // Business
-        'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800', // Team
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800', // Design
-        'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800', // AI/Tech
-    ];
+    // Comprehensive thumbnail library organized by category/topic
+    const THUMBNAIL_LIBRARY: Record<string, string[]> = {
+        leadership: [
+            'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800', // Team meeting
+            'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800', // Leadership presentation
+            'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800', // Executive meeting
+            'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800', // Strategy session
+            'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800', // Team collaboration
+            'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800', // Business meeting
+        ],
+        sustainability: [
+            'https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?w=800', // Green leaves
+            'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=800', // Wind energy
+            'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800', // Solar panels
+            'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800', // Nature
+            'https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?w=800', // Ocean
+            'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800', // Forest
+        ],
+        technology: [
+            'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800', // Code
+            'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800', // AI/Circuits
+            'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800', // Tech circuit
+            'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800', // Robot
+            'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800', // Data matrix
+            'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800', // Programming
+        ],
+        business: [
+            'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800', // Business planning
+            'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800', // Analytics
+            'https://images.unsplash.com/photo-1553484771-371a605b060b?w=800', // Office
+            'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800', // Professional
+            'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800', // Corporate building
+            'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800', // Business team
+        ],
+        education: [
+            'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800', // Learning
+            'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800', // Classroom
+            'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=800', // Students
+            'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800', // Graduation
+            'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800', // Books
+            'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800', // Campus
+        ],
+        mindfulness: [
+            'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800', // Meditation
+            'https://images.unsplash.com/photo-1545389336-cf090694435e?w=800', // Yoga
+            'https://images.unsplash.com/photo-1528716321680-815a8cdb8cbe?w=800', // Zen
+            'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=800', // Peaceful
+            'https://images.unsplash.com/photo-1508672019048-805c876b67e2?w=800', // Nature calm
+            'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=800', // Wellness
+        ],
+        health: [
+            'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800', // Fitness
+            'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=800', // Healthy food
+            'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800', // Healthcare
+            'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?w=800', // Medical
+            'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800', // Workout
+            'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800', // Yoga pose
+        ],
+        finance: [
+            'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800', // Trading
+            'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800', // Finance charts
+            'https://images.unsplash.com/photo-1579532537598-459ecdaf39cc?w=800', // Money growth
+            'https://images.unsplash.com/photo-1559526324-593bc073d938?w=800', // Investment
+            'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=800', // Stock market
+            'https://images.unsplash.com/photo-1565514020179-026b92b2d192?w=800', // Financial planning
+        ],
+        default: [
+            'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800', // General meeting
+            'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800', // Team collaboration
+            'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800', // Workshop
+            'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800', // Learning group
+            'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800', // Classroom
+            'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800', // Study
+        ]
+    };
+
+    // Function to detect category from parsed content
+    const detectCategory = (): string => {
+        if (!parsedContent && !teachingAgenda) return 'default';
+
+        const text = [
+            parsedContent?.title || '',
+            parsedContent?.summary || '',
+            teachingAgenda?.course_title || '',
+            teachingAgenda?.tagline || '',
+            ...(parsedContent?.key_concepts || []),
+        ].join(' ').toLowerCase();
+
+        // Category detection keywords
+        if (/leadership|leader|manage|executive|conscious|ceo|director|governance/.test(text)) return 'leadership';
+        if (/sustain|green|environment|carbon|climate|eco|renewable|energy/.test(text)) return 'sustainability';
+        if (/mindful|meditation|wellness|conscious|awareness|mental|stress|balance/.test(text)) return 'mindfulness';
+        if (/health|medical|fitness|nutrition|wellness|diet|exercise/.test(text)) return 'health';
+        if (/finance|invest|trading|money|capital|banking|fintech|stock/.test(text)) return 'finance';
+        if (/ai|machine learning|data|code|programming|software|tech|digital|cyber/.test(text)) return 'technology';
+        if (/business|startup|entrepreneur|marketing|sales|strategy|mba/.test(text)) return 'business';
+        if (/education|teach|learn|school|university|academic|student/.test(text)) return 'education';
+
+        return 'default';
+    };
+
+    // Get thumbnails based on detected category
+    const getContextualThumbnails = (): string[] => {
+        const category = detectCategory();
+        return THUMBNAIL_LIBRARY[category] || THUMBNAIL_LIBRARY.default;
+    };
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -830,7 +927,7 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
-                    {PRESET_THUMBNAILS.map((url, idx) => (
+                    {getContextualThumbnails().map((url, idx) => (
                         <button
                             key={idx}
                             onClick={() => setCourseThumbnail(url)}
@@ -885,7 +982,7 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                     </>
                 )}
             </button>
-        </div>
+        </div >
     );
 
     return (
