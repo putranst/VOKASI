@@ -2,10 +2,10 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import {
-    Upload, FileText, Sparkles, ChevronRight, ChevronLeft,
+    Upload, FileText, Sparkles, ChevronRight, ChevronLeft, ChevronDown,
     Check, Loader2, X, Eye, Edit3, Wand2, BookOpen,
     Brain, Target, Clock, Users, Layers, Play, MessageSquare,
-    HelpCircle, Lightbulb, CheckCircle2, Trash2, Image
+    HelpCircle, Lightbulb, CheckCircle2, Trash2, Image, Plus
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -112,6 +112,7 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
     const [targetAudience, setTargetAudience] = useState('Intermediate');
     const [error, setError] = useState<string | null>(null);
     const [courseThumbnail, setCourseThumbnail] = useState<string>('');
+    const [expandedActions, setExpandedActions] = useState<Record<string, boolean>>({});
 
     // Comprehensive thumbnail library organized by category/topic
     const THUMBNAIL_LIBRARY: Record<string, string[]> = {
@@ -509,126 +510,313 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
         </div>
     );
 
-    const renderStep2 = () => (
-        <div className="space-y-6">
-            <div className="text-center mb-6">
-                <h2 className="text-2xl font-black text-gray-900 mb-2">Content Analysis</h2>
-                <p className="text-gray-500">Review AI-extracted structure and customize</p>
-            </div>
+    const renderStep2 = () => {
+        // Helper to update parsed content
+        const updateParsedContent = (updates: Partial<ParsedContent>) => {
+            if (!parsedContent) return;
+            setParsedContent({ ...parsedContent, ...updates });
+        };
 
-            {parsedContent && (
-                <div className="space-y-6">
-                    {/* Course Title */}
-                    <div className="p-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl">
-                        <h3 className="text-xl font-black text-gray-900">{parsedContent.title}</h3>
-                        <p className="text-gray-600 mt-2">{parsedContent.summary}</p>
-                        <div className="flex flex-wrap gap-2 mt-4">
-                            <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                                {parsedContent.difficulty_level}
-                            </span>
-                            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                                {parsedContent.estimated_duration}
-                            </span>
-                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                                {parsedContent.target_audience}
-                            </span>
-                        </div>
-                    </div>
+        const updateTopic = (idx: number, field: 'name' | 'description', value: string) => {
+            if (!parsedContent) return;
+            const topics = [...parsedContent.main_topics];
+            topics[idx] = { ...topics[idx], [field]: value };
+            setParsedContent({ ...parsedContent, main_topics: topics });
+        };
 
-                    {/* Topics */}
-                    <div className="p-6 bg-white border border-gray-200 rounded-2xl">
-                        <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <Layers size={18} /> Main Topics
-                        </h4>
-                        <div className="grid gap-3">
-                            {parsedContent.main_topics.map((topic, idx) => (
-                                <div key={idx} className="p-4 bg-gray-50 rounded-xl">
-                                    <p className="font-semibold text-gray-800">{topic.name}</p>
-                                    <p className="text-sm text-gray-500 mt-1">{topic.description}</p>
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                        {topic.subtopics.map((sub, i) => (
-                                            <span key={i} className="px-2 py-0.5 bg-gray-200 text-gray-600 rounded text-xs">
-                                                {sub}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+        const updateSubtopic = (topicIdx: number, subIdx: number, value: string) => {
+            if (!parsedContent) return;
+            const topics = [...parsedContent.main_topics];
+            const subtopics = [...topics[topicIdx].subtopics];
+            subtopics[subIdx] = value;
+            topics[topicIdx] = { ...topics[topicIdx], subtopics };
+            setParsedContent({ ...parsedContent, main_topics: topics });
+        };
 
-                    {/* Learning Objectives */}
-                    <div className="p-6 bg-white border border-gray-200 rounded-2xl">
-                        <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <Target size={18} /> Learning Objectives
-                        </h4>
-                        <ul className="space-y-2">
-                            {parsedContent.learning_objectives.map((obj, idx) => (
-                                <li key={idx} className="flex items-start gap-2 text-gray-700">
-                                    <CheckCircle2 size={18} className="text-green-500 mt-0.5 flex-shrink-0" />
-                                    {obj}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+        const addSubtopic = (topicIdx: number) => {
+            if (!parsedContent) return;
+            const topics = [...parsedContent.main_topics];
+            topics[topicIdx].subtopics.push('New subtopic');
+            setParsedContent({ ...parsedContent, main_topics: topics });
+        };
 
-                    {/* Configuration */}
-                    <div className="p-6 bg-white border border-gray-200 rounded-2xl">
-                        <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <Clock size={18} /> Course Configuration
-                        </h4>
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-2">Duration (weeks)</label>
-                                <select
-                                    value={durationWeeks}
-                                    onChange={(e) => setDurationWeeks(parseInt(e.target.value))}
-                                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500"
-                                >
-                                    {[2, 4, 6, 8, 12].map(w => (
-                                        <option key={w} value={w}>{w} weeks</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-2">Target Audience</label>
-                                <select
-                                    value={targetAudience}
-                                    onChange={(e) => setTargetAudience(e.target.value)}
-                                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500"
-                                >
-                                    {['Beginner', 'Intermediate', 'Advanced', 'Executive'].map(level => (
-                                        <option key={level} value={level}>{level}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
+        const removeSubtopic = (topicIdx: number, subIdx: number) => {
+            if (!parsedContent) return;
+            const topics = [...parsedContent.main_topics];
+            topics[topicIdx].subtopics.splice(subIdx, 1);
+            setParsedContent({ ...parsedContent, main_topics: topics });
+        };
+
+        const addTopic = () => {
+            if (!parsedContent) return;
+            setParsedContent({
+                ...parsedContent,
+                main_topics: [...parsedContent.main_topics, { name: 'New Topic', description: 'Topic description...', subtopics: [] }]
+            });
+        };
+
+        const removeTopic = (idx: number) => {
+            if (!parsedContent) return;
+            const topics = parsedContent.main_topics.filter((_, i) => i !== idx);
+            setParsedContent({ ...parsedContent, main_topics: topics });
+        };
+
+        const updateObjective = (idx: number, value: string) => {
+            if (!parsedContent) return;
+            const objectives = [...parsedContent.learning_objectives];
+            objectives[idx] = value;
+            setParsedContent({ ...parsedContent, learning_objectives: objectives });
+        };
+
+        const addObjective = () => {
+            if (!parsedContent) return;
+            setParsedContent({
+                ...parsedContent,
+                learning_objectives: [...parsedContent.learning_objectives, 'New learning objective']
+            });
+        };
+
+        const removeObjective = (idx: number) => {
+            if (!parsedContent) return;
+            const objectives = parsedContent.learning_objectives.filter((_, i) => i !== idx);
+            setParsedContent({ ...parsedContent, learning_objectives: objectives });
+        };
+
+        return (
+            <div className="space-y-6">
+                <div className="text-center mb-6">
+                    <h2 className="text-2xl font-black text-gray-900 mb-2">Content Analysis</h2>
+                    <p className="text-gray-500">Review and customize AI-extracted curriculum structure</p>
+                    <div className="inline-flex items-center gap-2 mt-2 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm">
+                        <Edit3 size={14} />
+                        <span>All fields are editable</span>
                     </div>
                 </div>
-            )}
 
-            {/* Generate Button */}
-            <button
-                onClick={handleGenerateAgenda}
-                disabled={isProcessing}
-                className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-xl
-                         hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed
-                         flex items-center justify-center gap-3 transition-all duration-300"
-            >
-                {isProcessing ? (
-                    <>
-                        <Loader2 className="animate-spin" size={20} />
-                        {processingStatus}
-                    </>
-                ) : (
-                    <>
-                        <Sparkles size={20} />
-                        Generate Teaching Agenda
-                    </>
+                {parsedContent && (
+                    <div className="space-y-6">
+                        {/* Editable Course Header */}
+                        <div className="p-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl space-y-4">
+                            <div>
+                                <label className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Course Title</label>
+                                <input
+                                    type="text"
+                                    value={parsedContent.title}
+                                    onChange={(e) => updateParsedContent({ title: e.target.value })}
+                                    className="w-full text-xl font-black text-gray-900 bg-transparent border-b-2 border-purple-200 
+                                             focus:border-purple-500 focus:outline-none py-2 mt-1"
+                                    placeholder="Course Title"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Course Description</label>
+                                <textarea
+                                    value={parsedContent.summary}
+                                    onChange={(e) => updateParsedContent({ summary: e.target.value })}
+                                    rows={3}
+                                    className="w-full text-gray-600 bg-transparent border border-purple-200 rounded-lg
+                                             focus:border-purple-500 focus:outline-none p-3 mt-1 resize-none"
+                                    placeholder="Describe what students will learn..."
+                                />
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                                <div className="flex-1 min-w-[150px]">
+                                    <label className="text-xs font-semibold text-gray-500">Difficulty</label>
+                                    <select
+                                        value={parsedContent.difficulty_level}
+                                        onChange={(e) => updateParsedContent({ difficulty_level: e.target.value })}
+                                        className="w-full mt-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500"
+                                    >
+                                        {['Beginner', 'Intermediate', 'Advanced', 'Executive'].map(level => (
+                                            <option key={level} value={level}>{level}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="flex-1 min-w-[150px]">
+                                    <label className="text-xs font-semibold text-gray-500">Target Audience</label>
+                                    <input
+                                        type="text"
+                                        value={parsedContent.target_audience}
+                                        onChange={(e) => updateParsedContent({ target_audience: e.target.value })}
+                                        className="w-full mt-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500"
+                                        placeholder="e.g., Professionals and students"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Editable Main Topics */}
+                        <div className="p-6 bg-white border border-gray-200 rounded-2xl">
+                            <div className="flex items-center justify-between mb-4">
+                                <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                                    <Layers size={18} /> Main Topics & Modules
+                                </h4>
+                                <button
+                                    onClick={addTopic}
+                                    className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                                >
+                                    + Add Topic
+                                </button>
+                            </div>
+                            <div className="space-y-4">
+                                {parsedContent.main_topics.map((topic, idx) => (
+                                    <div key={idx} className="p-4 bg-gray-50 rounded-xl border border-gray-100 group">
+                                        <div className="flex items-start gap-3">
+                                            <div className="flex-1 space-y-3">
+                                                <div>
+                                                    <label className="text-xs text-gray-400">Topic Name</label>
+                                                    <input
+                                                        type="text"
+                                                        value={topic.name}
+                                                        onChange={(e) => updateTopic(idx, 'name', e.target.value)}
+                                                        className="w-full font-semibold text-gray-800 bg-transparent border-b border-transparent
+                                                                 hover:border-gray-300 focus:border-purple-500 focus:outline-none py-1"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs text-gray-400">Description</label>
+                                                    <textarea
+                                                        value={topic.description}
+                                                        onChange={(e) => updateTopic(idx, 'description', e.target.value)}
+                                                        rows={2}
+                                                        className="w-full text-sm text-gray-600 bg-white border border-gray-200 rounded-lg
+                                                                 focus:border-purple-500 focus:outline-none p-2 resize-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs text-gray-400">Subtopics / Key Concepts</label>
+                                                    <div className="flex flex-wrap gap-2 mt-1">
+                                                        {topic.subtopics.map((sub, i) => (
+                                                            <div key={i} className="flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-lg group/sub">
+                                                                <input
+                                                                    type="text"
+                                                                    value={sub}
+                                                                    onChange={(e) => updateSubtopic(idx, i, e.target.value)}
+                                                                    className="text-xs bg-transparent focus:outline-none w-auto min-w-[80px]"
+                                                                    style={{ width: `${Math.max(sub.length * 7, 80)}px` }}
+                                                                />
+                                                                <button
+                                                                    onClick={() => removeSubtopic(idx, i)}
+                                                                    className="opacity-0 group-hover/sub:opacity-100 text-gray-400 hover:text-red-500"
+                                                                >
+                                                                    <X size={12} />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                        <button
+                                                            onClick={() => addSubtopic(idx)}
+                                                            className="px-2 py-1 text-xs bg-gray-100 text-gray-500 rounded-lg hover:bg-gray-200"
+                                                        >
+                                                            + Add
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => removeTopic(idx)}
+                                                className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-opacity"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Editable Learning Objectives */}
+                        <div className="p-6 bg-white border border-gray-200 rounded-2xl">
+                            <div className="flex items-center justify-between mb-4">
+                                <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                                    <Target size={18} /> Learning Objectives
+                                </h4>
+                                <button
+                                    onClick={addObjective}
+                                    className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                                >
+                                    + Add Objective
+                                </button>
+                            </div>
+                            <div className="space-y-2">
+                                {parsedContent.learning_objectives.map((obj, idx) => (
+                                    <div key={idx} className="flex items-start gap-2 group">
+                                        <CheckCircle2 size={18} className="text-green-500 mt-2 flex-shrink-0" />
+                                        <input
+                                            type="text"
+                                            value={obj}
+                                            onChange={(e) => updateObjective(idx, e.target.value)}
+                                            className="flex-1 text-gray-700 bg-transparent border-b border-transparent
+                                                     hover:border-gray-300 focus:border-green-500 focus:outline-none py-1"
+                                        />
+                                        <button
+                                            onClick={() => removeObjective(idx)}
+                                            className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-opacity"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Course Configuration */}
+                        <div className="p-6 bg-white border border-gray-200 rounded-2xl">
+                            <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <Clock size={18} /> Course Configuration
+                            </h4>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-600 mb-2">Duration (weeks)</label>
+                                    <select
+                                        value={durationWeeks}
+                                        onChange={(e) => setDurationWeeks(parseInt(e.target.value))}
+                                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500"
+                                    >
+                                        {[2, 4, 6, 8, 12].map(w => (
+                                            <option key={w} value={w}>{w} weeks</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-600 mb-2">Target Audience Level</label>
+                                    <select
+                                        value={targetAudience}
+                                        onChange={(e) => setTargetAudience(e.target.value)}
+                                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500"
+                                    >
+                                        {['Beginner', 'Intermediate', 'Advanced', 'Executive'].map(level => (
+                                            <option key={level} value={level}>{level}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
-            </button>
-        </div>
-    );
+
+                {/* Generate Button */}
+                <button
+                    onClick={handleGenerateAgenda}
+                    disabled={isProcessing}
+                    className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-xl
+                             hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed
+                             flex items-center justify-center gap-3 transition-all duration-300"
+                >
+                    {isProcessing ? (
+                        <>
+                            <Loader2 className="animate-spin" size={20} />
+                            {processingStatus}
+                        </>
+                    ) : (
+                        <>
+                            <Sparkles size={20} />
+                            Generate Teaching Agenda
+                        </>
+                    )}
+                </button>
+            </div>
+        );
+    };
 
     const renderStep3 = () => {
         // Editing handlers
@@ -663,12 +851,79 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
         const addAction = (moduleIdx: number, type: TeachingAction['type']) => {
             if (!teachingAgenda) return;
             const updated = { ...teachingAgenda };
+            const defaultContent = {
+                EXPLAIN: { content: 'Key concepts and explanations to cover...', prompt: '', instructions: '', questions: [] },
+                DISCUSS: { content: '', prompt: 'Discussion question or topic to explore...', instructions: '', questions: [] },
+                PRACTICE: { content: '', prompt: '', instructions: 'Step-by-step exercise instructions...', questions: [] },
+                QUIZ: { content: '', prompt: '', instructions: '', questions: ['Question 1?', 'Question 2?'] },
+                DEMO: { content: 'What will be demonstrated and key takeaways...', prompt: '', instructions: '', questions: [] },
+                REFLECT: { content: '', prompt: 'Reflection prompt for students...', instructions: '', questions: [] },
+                COLLABORATE: { content: '', prompt: '', instructions: 'Group activity instructions and expected outcomes...', questions: [] },
+            };
             updated.modules[moduleIdx].teaching_actions.push({
                 type,
                 title: `New ${type.toLowerCase()} activity`,
-                duration_minutes: 30
+                duration_minutes: 30,
+                ...defaultContent[type]
             });
             setTeachingAgenda(updated);
+        };
+
+        const updateActionContent = (moduleIdx: number, actionIdx: number, field: 'content' | 'prompt' | 'instructions', value: string) => {
+            if (!teachingAgenda) return;
+            const updated = { ...teachingAgenda };
+            updated.modules[moduleIdx].teaching_actions[actionIdx][field] = value;
+            setTeachingAgenda(updated);
+        };
+
+        const updateActionQuestion = (moduleIdx: number, actionIdx: number, qIdx: number, value: string) => {
+            if (!teachingAgenda) return;
+            const updated = { ...teachingAgenda };
+            const questions = [...(updated.modules[moduleIdx].teaching_actions[actionIdx].questions || [])];
+            questions[qIdx] = value;
+            updated.modules[moduleIdx].teaching_actions[actionIdx].questions = questions;
+            setTeachingAgenda(updated);
+        };
+
+        const addQuestion = (moduleIdx: number, actionIdx: number) => {
+            if (!teachingAgenda) return;
+            const updated = { ...teachingAgenda };
+            const questions = [...(updated.modules[moduleIdx].teaching_actions[actionIdx].questions || [])];
+            questions.push('New question?');
+            updated.modules[moduleIdx].teaching_actions[actionIdx].questions = questions;
+            setTeachingAgenda(updated);
+        };
+
+        const removeQuestion = (moduleIdx: number, actionIdx: number, qIdx: number) => {
+            if (!teachingAgenda) return;
+            const updated = { ...teachingAgenda };
+            const questions = [...(updated.modules[moduleIdx].teaching_actions[actionIdx].questions || [])];
+            questions.splice(qIdx, 1);
+            updated.modules[moduleIdx].teaching_actions[actionIdx].questions = questions;
+            setTeachingAgenda(updated);
+        };
+
+        const toggleActionExpand = (moduleIdx: number, actionIdx: number) => {
+            const key = `${moduleIdx}-${actionIdx}`;
+            setExpandedActions(prev => ({ ...prev, [key]: !prev[key] }));
+        };
+
+        const isActionExpanded = (moduleIdx: number, actionIdx: number) => {
+            return expandedActions[`${moduleIdx}-${actionIdx}`] || false;
+        };
+
+        // Helper to get placeholder text based on action type
+        const getContentLabel = (type: TeachingAction['type']) => {
+            switch (type) {
+                case 'EXPLAIN': return { label: 'Explanation Content', placeholder: 'Key concepts, definitions, and explanations to deliver...' };
+                case 'DISCUSS': return { label: 'Discussion Prompt', placeholder: 'Questions or topics for group discussion...' };
+                case 'PRACTICE': return { label: 'Exercise Instructions', placeholder: 'Step-by-step hands-on activity instructions...' };
+                case 'QUIZ': return { label: 'Quiz Questions', placeholder: '' };
+                case 'DEMO': return { label: 'Demo Content', placeholder: 'What to demonstrate and key points to highlight...' };
+                case 'REFLECT': return { label: 'Reflection Prompt', placeholder: 'Guiding questions for self-reflection...' };
+                case 'COLLABORATE': return { label: 'Collaboration Instructions', placeholder: 'Group work guidelines and expected deliverables...' };
+                default: return { label: 'Content', placeholder: 'Activity content...' };
+            }
         };
 
         const updateCourseTitle = (newTitle: string) => {
@@ -738,37 +993,114 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                                         <span className="text-sm text-gray-400 ml-4">Week {module.week}</span>
                                     </div>
 
-                                    {/* Editable Teaching Actions */}
-                                    <div className="space-y-2">
-                                        {module.teaching_actions.map((action, actionIdx) => (
-                                            <div key={actionIdx}
-                                                className={`flex items-center gap-3 p-3 rounded-xl border group ${TEACHING_ACTION_COLORS[action.type]}`}>
-                                                {TEACHING_ACTION_ICONS[action.type]}
-                                                <input
-                                                    type="text"
-                                                    value={action.title}
-                                                    onChange={(e) => updateActionTitle(idx, actionIdx, e.target.value)}
-                                                    className="flex-1 font-medium bg-transparent border-b border-transparent 
-                                                             hover:border-current focus:border-current focus:outline-none"
-                                                />
-                                                <input
-                                                    type="number"
-                                                    value={action.duration_minutes}
-                                                    onChange={(e) => updateActionDuration(idx, actionIdx, parseInt(e.target.value) || 0)}
-                                                    className="w-12 text-xs text-center bg-white/50 rounded px-1 py-0.5"
-                                                    min={5}
-                                                    max={180}
-                                                />
-                                                <span className="text-xs opacity-70">min</span>
-                                                <button
-                                                    onClick={() => deleteAction(idx, actionIdx)}
-                                                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-opacity"
-                                                    title="Remove action"
-                                                >
-                                                    <Trash2 size={14} className="text-red-500" />
-                                                </button>
-                                            </div>
-                                        ))}
+                                    {/* Editable Teaching Actions - Expandable */}
+                                    <div className="space-y-3">
+                                        {module.teaching_actions.map((action, actionIdx) => {
+                                            const expanded = isActionExpanded(idx, actionIdx);
+                                            const contentInfo = getContentLabel(action.type);
+
+                                            return (
+                                                <div key={actionIdx}
+                                                    className={`rounded-xl border overflow-hidden ${TEACHING_ACTION_COLORS[action.type]}`}>
+                                                    {/* Header - always visible */}
+                                                    <div className="flex items-center gap-3 p-3 group">
+                                                        <button
+                                                            onClick={() => toggleActionExpand(idx, actionIdx)}
+                                                            className="flex-shrink-0 p-1 hover:bg-white/30 rounded transition-colors"
+                                                        >
+                                                            <ChevronDown
+                                                                size={16}
+                                                                className={`transition-transform ${expanded ? 'rotate-180' : ''}`}
+                                                            />
+                                                        </button>
+                                                        {TEACHING_ACTION_ICONS[action.type]}
+                                                        <input
+                                                            type="text"
+                                                            value={action.title}
+                                                            onChange={(e) => updateActionTitle(idx, actionIdx, e.target.value)}
+                                                            className="flex-1 font-medium bg-transparent border-b border-transparent 
+                                                                     hover:border-current focus:border-current focus:outline-none"
+                                                        />
+                                                        <input
+                                                            type="number"
+                                                            value={action.duration_minutes}
+                                                            onChange={(e) => updateActionDuration(idx, actionIdx, parseInt(e.target.value) || 0)}
+                                                            className="w-12 text-xs text-center bg-white/50 rounded px-1 py-0.5"
+                                                            min={5}
+                                                            max={180}
+                                                        />
+                                                        <span className="text-xs opacity-70">min</span>
+                                                        <button
+                                                            onClick={() => deleteAction(idx, actionIdx)}
+                                                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-opacity"
+                                                            title="Remove action"
+                                                        >
+                                                            <Trash2 size={14} className="text-red-500" />
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Expanded Content */}
+                                                    {expanded && (
+                                                        <div className="px-4 pb-4 pt-2 bg-white/50 border-t border-current/10">
+                                                            {action.type === 'QUIZ' ? (
+                                                                // Quiz-specific: editable questions list
+                                                                <div className="space-y-2">
+                                                                    <label className="text-xs font-semibold text-gray-600 uppercase">
+                                                                        {contentInfo.label}
+                                                                    </label>
+                                                                    {(action.questions || []).map((q, qIdx) => (
+                                                                        <div key={qIdx} className="flex items-start gap-2 group/q">
+                                                                            <span className="text-xs text-gray-400 mt-2">Q{qIdx + 1}.</span>
+                                                                            <input
+                                                                                type="text"
+                                                                                value={q}
+                                                                                onChange={(e) => updateActionQuestion(idx, actionIdx, qIdx, e.target.value)}
+                                                                                className="flex-1 text-sm bg-white border border-gray-200 rounded-lg px-3 py-2
+                                                                                         focus:border-purple-500 focus:outline-none"
+                                                                            />
+                                                                            <button
+                                                                                onClick={() => removeQuestion(idx, actionIdx, qIdx)}
+                                                                                className="opacity-0 group-hover/q:opacity-100 p-1 text-gray-400 hover:text-red-500"
+                                                                            >
+                                                                                <Trash2 size={14} />
+                                                                            </button>
+                                                                        </div>
+                                                                    ))}
+                                                                    <button
+                                                                        onClick={() => addQuestion(idx, actionIdx)}
+                                                                        className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 mt-2"
+                                                                    >
+                                                                        <Plus size={14} /> Add Question
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                // Other types: single textarea
+                                                                <div className="space-y-2">
+                                                                    <label className="text-xs font-semibold text-gray-600 uppercase">
+                                                                        {contentInfo.label}
+                                                                    </label>
+                                                                    <textarea
+                                                                        value={action.content || action.prompt || action.instructions || ''}
+                                                                        onChange={(e) => {
+                                                                            const field = action.type === 'DISCUSS' || action.type === 'REFLECT'
+                                                                                ? 'prompt'
+                                                                                : action.type === 'PRACTICE' || action.type === 'COLLABORATE'
+                                                                                    ? 'instructions'
+                                                                                    : 'content';
+                                                                            updateActionContent(idx, actionIdx, field, e.target.value);
+                                                                        }}
+                                                                        rows={4}
+                                                                        className="w-full text-sm bg-white border border-gray-200 rounded-lg p-3
+                                                                                 focus:border-purple-500 focus:outline-none resize-none"
+                                                                        placeholder={contentInfo.placeholder}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
 
                                         {/* Add Action Dropdown */}
                                         <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-dashed border-gray-200">
