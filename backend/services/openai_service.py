@@ -309,7 +309,10 @@ async def validate_design(blueprint: Dict) -> Dict:
     return {"validation_score": 0, "suggestions": []}
 
 async def generate_course_structure(topic: str, target_audience: str = "Beginner", material_content: str = "") -> Dict:
-    """Generate a CDIO-based course structure, optionally using provided materials"""
+    """
+    Generate a CDIO/IRIS-based course structure with detailed module content.
+    Optionally uses provided instructor materials to personalize content.
+    """
     
     context_prompt = ""
     if material_content:
@@ -318,41 +321,146 @@ async def generate_course_structure(topic: str, target_audience: str = "Beginner
         The instructor has provided the following content. You MUST incorporate the key concepts, terminology, and themes from this material into the course structure.
         
         --- MATERIAL START ---
-        {material_content[:10000]} 
+        {material_content[:12000]} 
         --- MATERIAL END ---
-        (Note: Material truncated to first 10000 chars)
         """
 
-    prompt = f"""You are an expert curriculum designer. Create a course structure for "{topic}" targeting {target_audience}s.
-    The course MUST follow the CDIO (Conceive, Design, Implement, Operate) framework.
-    {context_prompt}
+    prompt = f"""You are Alexandria AI, an expert curriculum designer. Create a comprehensive course structure for "{topic}" targeting {target_audience} learners.
     
-    Output a JSON object with:
-    1. "title": Catchy course title.
-    2. "description": Brief summary.
-    3. "modules": A list of 4 modules, one for each CDIO phase.
-       Each module should have:
-       - "phase": "Conceive", "Design", "Implement", or "Operate"
-       - "title": Module title
-       - "topics": List of 3-4 key topics/lessons
-    4. "capstone_project": A description of the main project students will build.
-    
-    Respond ONLY with valid JSON."""
+The course MUST follow both CDIO (Conceive, Design, Implement, Operate) and IRIS (Immerse, Realize, Iterate, Scale) frameworks.
+{context_prompt}
+
+OUTPUT FORMAT (valid JSON only):
+{{
+    "title": "Compelling course title that captures the essence of {topic}",
+    "description": "2-3 sentence course description highlighting key learning outcomes and value proposition",
+    "level": "{target_audience}",
+    "duration": "4 weeks",
+    "category": "Category based on topic",
+    "image": "https://images.unsplash.com/photo-RELEVANT-IMAGE?w=800",
+    "modules": [
+        {{
+            "phase": "Conceive",
+            "iris_phase": "Immerse", 
+            "title": "Module 1: Understanding & Context",
+            "content": "Detailed 2-3 sentence description of what students will learn in this module, including specific skills and knowledge they will gain.",
+            "topics": ["Topic 1: Specific topic name", "Topic 2: Another topic", "Topic 3: Third topic"],
+            "learning_goals": ["Students will be able to...", "Students will understand..."],
+            "activities": [
+                {{"type": "lecture", "title": "Introduction to {topic}", "duration_minutes": 30}},
+                {{"type": "discussion", "title": "Real-world applications", "duration_minutes": 20}},
+                {{"type": "exercise", "title": "Hands-on exploration", "duration_minutes": 40}}
+            ]
+        }},
+        {{
+            "phase": "Design",
+            "iris_phase": "Realize",
+            "title": "Module 2: Planning & Architecture",
+            "content": "Detailed description of design phase content...",
+            "topics": ["Topic 1", "Topic 2", "Topic 3"],
+            "learning_goals": ["..."],
+            "activities": [...]
+        }},
+        {{
+            "phase": "Implement",
+            "iris_phase": "Iterate",
+            "title": "Module 3: Building & Testing",
+            "content": "Detailed description of implementation phase content...",
+            "topics": ["Topic 1", "Topic 2", "Topic 3"],
+            "learning_goals": ["..."],
+            "activities": [...]
+        }},
+        {{
+            "phase": "Operate",
+            "iris_phase": "Scale",
+            "title": "Module 4: Deployment & Growth",
+            "content": "Detailed description of operations phase content...",
+            "topics": ["Topic 1", "Topic 2", "Topic 3"],
+            "learning_goals": ["..."],
+            "activities": [...]
+        }}
+    ],
+    "capstone_project": "Comprehensive description of the capstone project that ties together all modules. Describe what students will build, the skills they'll apply, and the expected deliverables."
+}}
+
+IMPORTANT: 
+- Make the content SPECIFIC to {topic}, not generic
+- Include real, actionable learning activities
+- The 'content' field for each module should be 2-3 detailed sentences
+- Topics should be specific and relevant to {topic}
+
+Respond ONLY with valid JSON."""
 
     errors = []
     for provider in PRIORITY:
         if provider == "mock":
             await asyncio.sleep(2)
+            # Generate intelligent mock based on topic
+            words = topic.split()
+            key_word = words[0] if words else "Course"
+            
             return {
-                "title": f"Mastering {topic}",
-                "description": f"A comprehensive guide to {topic} using CDIO.",
+                "title": f"Mastering {topic}: From Concept to Scale",
+                "description": f"A comprehensive {target_audience.lower()}-level course on {topic}. Learn to understand, design, implement, and deploy real-world solutions through hands-on projects and expert guidance.",
+                "level": target_audience,
+                "duration": "4 weeks",
+                "category": topic.split()[0] if topic.split() else "General",
+                "image": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800",
                 "modules": [
-                    {"phase": "Conceive", "title": "Understanding the Problem", "topics": ["Market Analysis", "User Needs", "Requirement Gathering"]},
-                    {"phase": "Design", "title": "Architecting the Solution", "topics": ["System Design", "Prototyping", "Tech Stack Selection"]},
-                    {"phase": "Implement", "title": "Building the Product", "topics": ["Coding Best Practices", "Core Features", "Testing"]},
-                    {"phase": "Operate", "title": "Deployment & Maintenance", "topics": ["CI/CD", "Monitoring", "User Feedback"]}
+                    {
+                        "phase": "Conceive", 
+                        "iris_phase": "Immerse",
+                        "title": f"Understanding {key_word} Fundamentals",
+                        "content": f"Immerse yourself in the world of {topic}. Understand the landscape, key players, and fundamental concepts that drive innovation in this field. Build a solid foundation for practical application.",
+                        "topics": [f"{key_word} Fundamentals", "Market & Landscape Analysis", "Core Concepts & Terminology", "Real-World Case Studies"],
+                        "learning_goals": [f"Understand the core principles of {topic}", "Analyze the current market landscape", "Identify key stakeholders and use cases"],
+                        "activities": [
+                            {"type": "lecture", "title": f"Introduction to {topic}", "duration_minutes": 45},
+                            {"type": "discussion", "title": "Industry trends and opportunities", "duration_minutes": 30},
+                            {"type": "exercise", "title": "Stakeholder mapping exercise", "duration_minutes": 45}
+                        ]
+                    },
+                    {
+                        "phase": "Design",
+                        "iris_phase": "Realize",
+                        "title": f"Designing {key_word} Solutions",
+                        "content": f"Transform your understanding into actionable plans. Learn to architect solutions, create prototypes, and develop implementation roadmaps for {topic} projects.",
+                        "topics": ["Solution Architecture", "Prototype Development", "Technical Planning", "Resource Allocation"],
+                        "learning_goals": ["Design scalable solution architectures", "Create functional prototypes", "Develop project implementation plans"],
+                        "activities": [
+                            {"type": "lecture", "title": "Architecture patterns and best practices", "duration_minutes": 40},
+                            {"type": "exercise", "title": "Design your solution", "duration_minutes": 60},
+                            {"type": "quiz", "title": "Design principles check", "duration_minutes": 15}
+                        ]
+                    },
+                    {
+                        "phase": "Implement",
+                        "iris_phase": "Iterate",
+                        "title": f"Building & Testing {key_word} Projects",
+                        "content": f"Get hands-on with implementation. Build functional solutions, conduct rigorous testing, and iterate based on feedback. Apply industry best practices throughout development.",
+                        "topics": ["Implementation Best Practices", "Quality Assurance & Testing", "Iteration & Refinement", "Performance Optimization"],
+                        "learning_goals": ["Implement solutions using best practices", "Conduct comprehensive testing", "Iterate based on feedback"],
+                        "activities": [
+                            {"type": "lecture", "title": "Implementation strategies", "duration_minutes": 30},
+                            {"type": "exercise", "title": "Build your solution", "duration_minutes": 90},
+                            {"type": "demo", "title": "Peer review and feedback", "duration_minutes": 30}
+                        ]
+                    },
+                    {
+                        "phase": "Operate",
+                        "iris_phase": "Scale",
+                        "title": f"Deploying & Scaling {key_word} Solutions",
+                        "content": f"Launch your solution to the real world. Learn deployment strategies, monitoring, and optimization techniques. Prepare for growth and sustainable operation.",
+                        "topics": ["Deployment Strategies", "Monitoring & Analytics", "Scaling & Growth", "Sustainability Planning"],
+                        "learning_goals": ["Deploy solutions effectively", "Set up monitoring and analytics", "Plan for scale and sustainability"],
+                        "activities": [
+                            {"type": "lecture", "title": "Deployment and DevOps", "duration_minutes": 35},
+                            {"type": "exercise", "title": "Deploy your project", "duration_minutes": 50},
+                            {"type": "reflect", "title": "Lessons learned & next steps", "duration_minutes": 25}
+                        ]
+                    }
                 ],
-                "capstone_project": f"Build a fully functional {topic} application."
+                "capstone_project": f"Build and deploy a complete {topic} solution that addresses a real-world problem. Your project will demonstrate mastery of all four CDIO phases: from initial concept through to operational deployment. Final deliverables include a working prototype, technical documentation, and a presentation showcasing your solution's impact."
             }
 
         if provider not in clients:
@@ -366,15 +474,23 @@ async def generate_course_structure(topic: str, target_audience: str = "Beginner
             else:
                 response = await clients[provider].chat.completions.create(
                     model=MODELS[provider],
-                    messages=[{"role": "system", "content": "You are a JSON generator."}, {"role": "user", "content": prompt}],
-                    temperature=0.7
+                    messages=[
+                        {"role": "system", "content": "You are Alexandria AI, an expert curriculum designer. Output only valid JSON."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=4000
                 )
                 content = response.choices[0].message.content
 
             # Parse JSON
             try:
                 content = content.replace("```json", "").replace("```", "").strip()
-                return json.loads(content)
+                result = json.loads(content)
+                # Ensure required fields
+                if "modules" not in result:
+                    result["modules"] = []
+                return result
             except:
                 import re
                 match = re.search(r'\{.*\}', content, re.DOTALL)

@@ -870,6 +870,16 @@ class SmartAgendaRequest(BaseModel):
 class SmartKnowledgeGraphRequest(BaseModel):
     content: str
 
+class InternationalSyllabusRequest(BaseModel):
+    course_title: str
+    course_description: str
+    duration_weeks: int = 4
+    level: str = "Intermediate"
+    material_content: str = ""
+
+# Import syllabus generator
+from services import syllabus_generator
+
 @app.post("/api/v1/courses/smart-create/parse")
 async def smart_parse_materials(request: SmartParseRequest):
     """
@@ -908,6 +918,35 @@ async def smart_extract_knowledge_graph(request: SmartKnowledgeGraphRequest):
     Returns nodes and edges for graph visualization.
     """
     result = await openai_service.extract_knowledge_points(content=request.content)
+    return result
+
+
+@app.post("/api/v1/courses/smart-create/international-syllabus")
+async def generate_international_syllabus_endpoint(request: InternationalSyllabusRequest):
+    """
+    Generate an international-standard syllabus aligned with:
+    - MIT OpenCourseWare structure
+    - CDIO Framework (Conceive-Design-Implement-Operate)
+    - IRIS Framework (Immerse-Realize-Iterate-Scale)
+    - Bloom's Taxonomy learning objectives
+    
+    Powered by Alexandria AI Engine.
+    """
+    # Get the Gemini client for AI generation
+    from services.openai_service import clients
+    
+    ai_client = clients.get("gemini")
+    provider = "gemini" if ai_client else "mock"
+    
+    result = await syllabus_generator.generate_international_syllabus(
+        course_title=request.course_title,
+        course_description=request.course_description,
+        duration_weeks=request.duration_weeks,
+        level=request.level,
+        material_content=request.material_content,
+        ai_client=ai_client,
+        provider=provider
+    )
     return result
 
 
