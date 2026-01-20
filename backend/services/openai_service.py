@@ -1020,77 +1020,435 @@ async def generate_teaching_agenda(
     duration_weeks: int = 4
 ) -> Dict:
     """
-    Generate Alexandria AI Engine teaching agenda with heterogeneous teaching actions.
+    Generate MIT OCW-Standard Enterprise Curriculum with Alexandria AI Engine.
+    
+    Produces international-standard output with:
+    - Bloom's Taxonomy learning objectives
+    - IRIS/CDIO framework alignment
+    - SFIA competency mapping
+    - Detailed session schedules
+    - Assignment rubrics
+    - Instructor support notes
     
     Teaching action types:
     - EXPLAIN: Lecture/presentation content
-    - DISCUSS: Discussion prompts and activities
-    - PRACTICE: Hands-on exercises
-    - QUIZ: Knowledge checks
+    - DISCUSS: Discussion prompts and case studies
+    - PRACTICE: Hands-on labs and exercises
+    - QUIZ: Formative knowledge checks
     - DEMO: Live demonstrations
-    - REFLECT: Reflection questions
-    - COLLABORATE: Group activities
+    - REFLECT: Metacognitive reflection prompts
+    - COLLABORATE: Group activities and peer learning
     """
     
     content_json = json.dumps(parsed_content, indent=2)
     
-    prompt = f"""You are an expert instructional designer creating an Alexandria AI Engine teaching agenda.
+    # SFIA competency reference for AI/Tech courses
+    sfia_reference = """
+SFIA Competency Levels:
+- Level 1 (Follow): Basic awareness, follows instructions
+- Level 2 (Assist): Applies skills with guidance
+- Level 3 (Apply): Applies skills independently
+- Level 4 (Enable): Designs approaches, mentors others
+- Level 5 (Advise): Strategic influence, organizational impact
 
-EXTRACTED CONTENT:
+Common SFIA Skills for Tech Courses:
+- PROG (Programming/Software Development)
+- DTAN (Data Analysis)
+- MLAI (Machine Learning/AI)
+- SCTY (Information Security)
+- ARCH (Solution Architecture)
+- TEST (Testing)
+- DESN (Systems Design)
+"""
+
+    # Bloom's Taxonomy reference
+    blooms_reference = """
+Bloom's Taxonomy Verbs by Level:
+1. REMEMBER: Define, List, Identify, Recall, Name, Recognize
+2. UNDERSTAND: Explain, Describe, Summarize, Compare, Interpret, Classify
+3. APPLY: Implement, Execute, Use, Demonstrate, Solve, Calculate
+4. ANALYZE: Analyze, Differentiate, Examine, Distinguish, Compare, Contrast
+5. EVALUATE: Assess, Critique, Justify, Recommend, Judge, Validate
+6. CREATE: Design, Develop, Construct, Produce, Build, Formulate
+
+Level Guidelines:
+- Beginner courses: Focus on Remember, Understand, Apply (Levels 1-3)
+- Intermediate courses: Focus on Apply, Analyze, Evaluate (Levels 3-5)
+- Advanced courses: Focus on Analyze, Evaluate, Create (Levels 4-6)
+"""
+
+    prompt = f"""You are Alexandria AI, an expert MIT-trained curriculum designer creating enterprise-grade course syllabi.
+
+═══════════════════════════════════════════════════════════════════════════════
+MISSION: Create an MIT OpenCourseWare-standard curriculum that rivals the best
+         university courses in the world. This is NOT a template - be SPECIFIC.
+═══════════════════════════════════════════════════════════════════════════════
+
+EXTRACTED COURSE CONTENT:
 {content_json}
 
-TARGET: {target_audience} level students
+TARGET AUDIENCE: {target_audience} level students
 DURATION: {duration_weeks} weeks
 
-Create a detailed teaching agenda with HETEROGENEOUS TEACHING ACTIONS for each module.
+{blooms_reference}
 
-Teaching Action Types:
-1. EXPLAIN - Lecture content with key points
-2. DISCUSS - Discussion prompts for engagement
-3. PRACTICE - Hands-on exercises
-4. QUIZ - Knowledge check questions
-5. DEMO - Demonstration activities
-6. REFLECT - Reflection prompts
-7. COLLABORATE - Group activities
+{sfia_reference}
 
-Output JSON:
+═══════════════════════════════════════════════════════════════════════════════
+REQUIREMENTS (MIT OCW STANDARD):
+═══════════════════════════════════════════════════════════════════════════════
+
+1. LEARNING OBJECTIVES must use Bloom's Taxonomy verbs appropriately:
+   - Each module needs 3-5 specific, measurable objectives
+   - Match verb complexity to the target audience level
+   - Include the assessment method for each objective
+
+2. SESSION SCHEDULE must be detailed:
+   - Include timing in minutes for each activity
+   - Use all 7 teaching action types across the course
+   - Balance theory (40%) with practice (60%)
+
+3. READINGS must be specific:
+   - Required readings with chapter/page references
+   - Optional deep-dive materials
+   - Online resources and tools
+
+4. ASSIGNMENTS must include rubrics:
+   - Clear deliverables
+   - Weighted grading criteria
+   - Due dates by week
+
+5. SFIA COMPETENCY MAPPING:
+   - Map course to 2-4 relevant SFIA skills
+   - Specify target level (1-5) for each
+   - Include evidence requirements
+
+6. INSTRUCTOR NOTES:
+   - Common student misconceptions
+   - Engagement strategies
+   - Differentiation for struggling/advanced students
+
+═══════════════════════════════════════════════════════════════════════════════
+OUTPUT JSON SCHEMA (MIT OCW ENTERPRISE STANDARD):
+═══════════════════════════════════════════════════════════════════════════════
+
 {{
-    "course_title": "Final course title",
-    "tagline": "Catchy one-line description",
+    "course_code": "T6-XXX-101",
+    "course_title": "Specific course title from content",
+    "tagline": "Compelling one-line description that sells the course",
+    "description": "2-3 paragraph detailed course description",
+    "level": "{target_audience}",
+    "credits": 3,
+    "duration_weeks": {duration_weeks},
+    "prerequisites": ["Prerequisite 1", "Prerequisite 2"],
+    
+    "program_learning_outcomes": [
+        {{
+            "id": "LO1",
+            "objective": "By course completion, students will be able to [Bloom's verb] [specific skill]",
+            "blooms_level": "apply",
+            "blooms_verb": "implement",
+            "assessment_method": "Capstone Project",
+            "sfia_skills": ["PROG", "DTAN"]
+        }},
+        {{
+            "id": "LO2",
+            "objective": "Students will be able to [Bloom's verb] [specific skill]",
+            "blooms_level": "analyze",
+            "blooms_verb": "evaluate",
+            "assessment_method": "Case Study Analysis",
+            "sfia_skills": ["ARCH"]
+        }}
+    ],
+    
+    "sfia_competency_map": [
+        {{
+            "skill_code": "PROG",
+            "skill_name": "Programming/Software Development",
+            "target_level": 3,
+            "level_name": "Apply",
+            "evidence_required": ["Working code submissions", "Technical documentation"],
+            "modules_addressed": [1, 2, 3]
+        }}
+    ],
+    
     "modules": [
         {{
             "week": 1,
-            "phase": "immerse",
-            "title": "Module title",
-            "learning_goals": ["Goal 1", "Goal 2"],
-            "teaching_actions": [
-                {{"type": "EXPLAIN", "title": "Action title", "content": "What to cover", "duration_minutes": 30}},
-                {{"type": "DISCUSS", "title": "Discussion title", "prompt": "Discussion question", "duration_minutes": 15}},
-                {{"type": "PRACTICE", "title": "Exercise title", "instructions": "What students do", "duration_minutes": 45}},
-                {{"type": "QUIZ", "title": "Knowledge Check", "questions": ["Q1", "Q2", "Q3"], "duration_minutes": 10}}
+            "iris_phase": "immerse",
+            "cdio_phase": "conceive",
+            "title": "Week 1: [Specific Module Title]",
+            "subtitle": "Understanding [specific topic] context",
+            "duration_hours": 3,
+            
+            "learning_objectives": [
+                {{
+                    "id": "M1-LO1",
+                    "text": "[Bloom's verb] the key concepts of [topic]",
+                    "blooms_level": "understand",
+                    "blooms_verb": "explain"
+                }},
+                {{
+                    "id": "M1-LO2", 
+                    "text": "[Bloom's verb] [specific skill] to [context]",
+                    "blooms_level": "apply",
+                    "blooms_verb": "demonstrate"
+                }}
             ],
-            "assignments": ["Assignment description"],
-            "resources": ["Resource 1", "Resource 2"]
+            
+            "session_schedule": [
+                {{
+                    "order": 1,
+                    "type": "EXPLAIN",
+                    "title": "Lecture: [Specific Topic]",
+                    "description": "Detailed content coverage description",
+                    "duration_minutes": 45,
+                    "key_points": ["Point 1", "Point 2", "Point 3"],
+                    "materials": ["Slides", "Whiteboard"]
+                }},
+                {{
+                    "order": 2,
+                    "type": "DISCUSS",
+                    "title": "Case Study: [Real-world example]",
+                    "description": "Analysis of [specific case]",
+                    "duration_minutes": 20,
+                    "discussion_prompts": ["Question 1?", "Question 2?"],
+                    "facilitation_notes": "Encourage diverse perspectives"
+                }},
+                {{
+                    "order": 3,
+                    "type": "DEMO",
+                    "title": "Live Demo: [Specific tool/technique]",
+                    "description": "Instructor demonstrates [specific skill]",
+                    "duration_minutes": 25,
+                    "tools_used": ["Tool 1", "Tool 2"],
+                    "key_takeaways": ["Takeaway 1", "Takeaway 2"]
+                }},
+                {{
+                    "order": 4,
+                    "type": "PRACTICE",
+                    "title": "Hands-on Lab: [Specific exercise]",
+                    "description": "Students practice [specific skill]",
+                    "duration_minutes": 50,
+                    "instructions": ["Step 1", "Step 2", "Step 3"],
+                    "expected_output": "What students should produce",
+                    "common_pitfalls": ["Pitfall 1", "Pitfall 2"]
+                }},
+                {{
+                    "order": 5,
+                    "type": "QUIZ",
+                    "title": "Knowledge Check",
+                    "description": "Formative assessment of module concepts",
+                    "duration_minutes": 15,
+                    "question_count": 5,
+                    "passing_threshold": 70
+                }},
+                {{
+                    "order": 6,
+                    "type": "REFLECT",
+                    "title": "Weekly Reflection",
+                    "description": "Metacognitive synthesis",
+                    "duration_minutes": 10,
+                    "reflection_prompts": [
+                        "What concept was most challenging and why?",
+                        "How does this connect to your prior knowledge?"
+                    ]
+                }}
+            ],
+            
+            "readings": {{
+                "required": [
+                    {{
+                        "title": "Book/Article Title",
+                        "author": "Author Name",
+                        "chapters": "Chapters 1-2",
+                        "pages": "pp. 1-45",
+                        "url": "https://example.com if online"
+                    }}
+                ],
+                "optional": [
+                    {{
+                        "title": "Deep Dive Resource",
+                        "description": "For advanced learners",
+                        "url": "https://example.com"
+                    }}
+                ]
+            }},
+            
+            "assignment": {{
+                "title": "Assignment 1: [Specific Title]",
+                "description": "Detailed description of what students will do",
+                "learning_outcomes_addressed": ["LO1", "LO2"],
+                "deliverables": ["Deliverable 1", "Deliverable 2"],
+                "due_week": 2,
+                "weight_percent": 15,
+                "rubric": [
+                    {{
+                        "criterion": "Technical Accuracy",
+                        "weight": 40,
+                        "excellent": "All requirements met with exceptional quality",
+                        "proficient": "All requirements met",
+                        "developing": "Most requirements met",
+                        "beginning": "Few requirements met"
+                    }},
+                    {{
+                        "criterion": "Documentation",
+                        "weight": 30,
+                        "excellent": "Clear, comprehensive documentation",
+                        "proficient": "Adequate documentation",
+                        "developing": "Partial documentation",
+                        "beginning": "Minimal documentation"
+                    }},
+                    {{
+                        "criterion": "Problem-Solving",
+                        "weight": 30,
+                        "excellent": "Creative, efficient solutions",
+                        "proficient": "Functional solutions",
+                        "developing": "Basic solutions with issues",
+                        "beginning": "Incomplete solutions"
+                    }}
+                ]
+            }},
+            
+            "resources": {{
+                "software_tools": ["Tool 1", "Tool 2"],
+                "online_resources": ["Resource 1 URL", "Resource 2 URL"],
+                "lab_materials": ["Lab guide", "Dataset/VM"]
+            }}
         }}
     ],
+    
     "capstone_project": {{
-        "title": "Project title",
-        "description": "What students will build",
-        "deliverables": ["Deliverable 1", "Deliverable 2"],
-        "rubric_summary": "How it will be graded"
+        "title": "Capstone: [Specific Project Title]",
+        "description": "Comprehensive description of the final project",
+        "learning_outcomes_addressed": ["LO1", "LO2", "LO3", "LO4"],
+        "sfia_skills_demonstrated": ["PROG", "ARCH", "DTAN"],
+        "milestones": [
+            {{
+                "name": "Project Proposal",
+                "due_week": 1,
+                "weight_percent": 10,
+                "deliverables": ["Problem statement", "Proposed solution", "Timeline"]
+            }},
+            {{
+                "name": "Design Document",
+                "due_week": 2,
+                "weight_percent": 20,
+                "deliverables": ["Architecture diagram", "Technical specifications"]
+            }},
+            {{
+                "name": "Working Prototype",
+                "due_week": 3,
+                "weight_percent": 40,
+                "deliverables": ["Functional code", "Test results", "Documentation"]
+            }},
+            {{
+                "name": "Final Presentation",
+                "due_week": {duration_weeks},
+                "weight_percent": 30,
+                "deliverables": ["Live demo", "Presentation slides", "Reflection report"]
+            }}
+        ],
+        "rubric": {{
+            "technical_excellence": 35,
+            "innovation_creativity": 20,
+            "presentation_communication": 20,
+            "documentation": 15,
+            "teamwork_collaboration": 10
+        }}
     }},
+    
+    "assessment_strategy": {{
+        "formative": [
+            "Weekly knowledge check quizzes (not graded)",
+            "In-class polling and discussions",
+            "Peer code reviews"
+        ],
+        "summative": {{
+            "assignments": 35,
+            "quizzes": 15,
+            "capstone_project": 40,
+            "participation": 10
+        }},
+        "grading_scale": {{
+            "A": "90-100",
+            "B": "80-89",
+            "C": "70-79",
+            "D": "60-69",
+            "F": "0-59"
+        }}
+    }},
+    
+    "instructor_notes": {{
+        "common_misconceptions": [
+            {{
+                "concept": "[Specific concept]",
+                "misconception": "Students often think...",
+                "correction_strategy": "Address by..."
+            }}
+        ],
+        "engagement_hooks": [
+            "Use [specific current event] to introduce [topic]",
+            "Start with [surprising fact] to capture attention"
+        ],
+        "differentiation": {{
+            "struggling_learners": [
+                "Provide step-by-step lab guides",
+                "Pair with peer mentors",
+                "Offer office hours"
+            ],
+            "advanced_learners": [
+                "Assign extension challenges",
+                "Independent research project option",
+                "Peer teaching opportunities"
+            ]
+        }},
+        "technology_requirements": [
+            "Laptop with [specs]",
+            "Software: [list]",
+            "Internet access for [resources]"
+        ]
+    }},
+    
     "auto_generated_quizzes": [
         {{
             "module": 1,
             "questions": [
-                {{"question": "Question text", "options": ["A", "B", "C", "D"], "correct": 0, "explanation": "Why this is correct"}}
+                {{
+                    "question": "Specific question based on module content?",
+                    "options": ["A) Option A", "B) Option B", "C) Option C", "D) Option D"],
+                    "correct": 0,
+                    "explanation": "Detailed explanation of why this is correct",
+                    "blooms_level": "understand"
+                }}
             ]
         }}
-    ]
+    ],
+    
+    "_metadata": {{
+        "framework": "IRIS + CDIO",
+        "standard": "MIT OCW Enterprise",
+        "blooms_taxonomy": true,
+        "sfia_aligned": true,
+        "version": "2.0"
+    }}
 }}
 
-Create {duration_weeks} modules (one per week), with ~4-6 teaching actions per module.
-Balance action types across modules. Make content specific to the extracted material.
+═══════════════════════════════════════════════════════════════════════════════
+CRITICAL REQUIREMENTS:
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Generate EXACTLY {duration_weeks} modules (one per week)
+2. Distribute IRIS phases evenly: immerse → realize → iterate → scale
+3. Each module must have 5-7 teaching actions with specific content
+4. Include at least 2 required readings per module with real references
+5. Each assignment must have a complete rubric with 3-4 criteria
+6. Map at least 2 SFIA competencies to the course
+7. Include 3+ specific instructor notes per category
+8. Generate 3-5 quiz questions per module
+
+BE SPECIFIC. Reference actual tools, frameworks, and real-world examples.
+Use the extracted content to create DOMAIN-SPECIFIC curriculum, not generic templates.
 
 Respond ONLY with valid JSON."""
 
@@ -1098,55 +1456,422 @@ Respond ONLY with valid JSON."""
     for provider in PRIORITY:
         if provider == "mock":
             await asyncio.sleep(2)
+            
+            # Extract title from parsed content
+            course_title = parsed_content.get("title", "Enterprise Skills Course")
+            main_topics = parsed_content.get("main_topics", [])
+            
+            # Generate enterprise-grade mock modules
             modules = []
             phases = ["immerse", "realize", "iterate", "scale"]
+            cdio_phases = ["conceive", "design", "implement", "operate"]
             phase_titles = {
                 "immerse": "Understanding & Exploration",
-                "realize": "Planning & Design",
+                "realize": "Planning & Architecture",
                 "iterate": "Building & Testing",
-                "scale": "Deployment & Iteration"
+                "scale": "Deployment & Optimization"
+            }
+            phase_subtitles = {
+                "immerse": "Deep dive into context and stakeholder needs",
+                "realize": "Designing solutions and technical architecture",
+                "iterate": "Hands-on development and iterative refinement",
+                "scale": "Production deployment and continuous improvement"
+            }
+            
+            blooms_by_phase = {
+                "immerse": [("understand", "explain"), ("remember", "identify"), ("understand", "describe")],
+                "realize": [("apply", "design"), ("analyze", "differentiate"), ("apply", "demonstrate")],
+                "iterate": [("apply", "implement"), ("analyze", "debug"), ("evaluate", "test")],
+                "scale": [("evaluate", "assess"), ("create", "optimize"), ("apply", "deploy")]
             }
             
             for week in range(1, duration_weeks + 1):
                 phase_idx = (week - 1) % 4
                 phase = phases[phase_idx]
+                cdio = cdio_phases[phase_idx]
+                
+                # Get topic from parsed content if available
+                topic_name = main_topics[week-1]["name"] if week <= len(main_topics) else f"Module {week}"
+                topic_desc = main_topics[week-1].get("description", "") if week <= len(main_topics) else ""
+                
+                # Generate learning objectives with proper Bloom's verbs
+                blooms_verbs = blooms_by_phase.get(phase, [("apply", "implement")])
+                learning_objectives = []
+                for i, (level, verb) in enumerate(blooms_verbs[:3]):
+                    learning_objectives.append({
+                        "id": f"M{week}-LO{i+1}",
+                        "text": f"{verb.capitalize()} the key concepts of {topic_name}" if i == 0 else f"{verb.capitalize()} {topic_name} principles in practical contexts",
+                        "blooms_level": level,
+                        "blooms_verb": verb
+                    })
+                
+                # Generate session schedule
+                session_schedule = [
+                    {
+                        "order": 1,
+                        "type": "EXPLAIN",
+                        "title": f"Lecture: Introduction to {topic_name}",
+                        "description": f"Comprehensive overview of {topic_name} fundamentals and industry applications",
+                        "duration_minutes": 45,
+                        "key_points": [
+                            f"Core concepts of {topic_name}",
+                            "Industry best practices and standards",
+                            "Real-world applications and case studies"
+                        ],
+                        "materials": ["Slides", "Reference documentation", "Industry examples"]
+                    },
+                    {
+                        "order": 2,
+                        "type": "DISCUSS",
+                        "title": f"Case Study: {topic_name} in Practice",
+                        "description": f"Analysis of real-world {topic_name} implementation",
+                        "duration_minutes": 20,
+                        "discussion_prompts": [
+                            f"What challenges did the organization face with {topic_name}?",
+                            "How would you approach this problem differently?"
+                        ],
+                        "facilitation_notes": "Encourage diverse perspectives and connect to student experiences"
+                    },
+                    {
+                        "order": 3,
+                        "type": "DEMO",
+                        "title": f"Live Demo: {topic_name} Implementation",
+                        "description": f"Instructor demonstrates {topic_name} techniques",
+                        "duration_minutes": 25,
+                        "tools_used": ["Development environment", "Framework tools", "Testing utilities"],
+                        "key_takeaways": ["Step-by-step approach", "Common patterns", "Best practices"]
+                    },
+                    {
+                        "order": 4,
+                        "type": "PRACTICE",
+                        "title": f"Hands-on Lab: {topic_name} Exercise",
+                        "description": f"Students apply {topic_name} concepts in guided practice",
+                        "duration_minutes": 50,
+                        "instructions": [
+                            "Set up your development environment",
+                            f"Implement the core {topic_name} functionality",
+                            "Test and validate your solution"
+                        ],
+                        "expected_output": f"Working {topic_name} implementation with documentation",
+                        "common_pitfalls": ["Configuration errors", "Missing dependencies", "Scope creep"]
+                    },
+                    {
+                        "order": 5,
+                        "type": "QUIZ",
+                        "title": "Knowledge Check",
+                        "description": f"Formative assessment of {topic_name} concepts",
+                        "duration_minutes": 15,
+                        "question_count": 5,
+                        "passing_threshold": 70
+                    },
+                    {
+                        "order": 6,
+                        "type": "REFLECT",
+                        "title": "Weekly Reflection",
+                        "description": "Metacognitive synthesis of learning",
+                        "duration_minutes": 10,
+                        "reflection_prompts": [
+                            f"What was most challenging about {topic_name} and why?",
+                            "How does this connect to your prior knowledge?",
+                            "What questions do you still have?"
+                        ]
+                    }
+                ]
+                
+                # Generate assignment with rubric
+                assignment = {
+                    "title": f"Assignment {week}: {topic_name} Implementation",
+                    "description": f"Apply {topic_name} concepts to create a practical solution for a real-world scenario",
+                    "learning_outcomes_addressed": [f"LO{(week-1) % 4 + 1}", f"LO{(week) % 4 + 1}"],
+                    "deliverables": [
+                        f"{topic_name} design document",
+                        "Implementation code/artifacts",
+                        "Testing documentation"
+                    ],
+                    "due_week": week + 1 if week < duration_weeks else week,
+                    "weight_percent": round(35 / duration_weeks),
+                    "rubric": [
+                        {
+                            "criterion": "Technical Accuracy",
+                            "weight": 40,
+                            "excellent": "All requirements met with exceptional quality and innovation",
+                            "proficient": "All requirements met with good quality",
+                            "developing": "Most requirements met with acceptable quality",
+                            "beginning": "Few requirements met, significant gaps"
+                        },
+                        {
+                            "criterion": "Documentation Quality",
+                            "weight": 30,
+                            "excellent": "Clear, comprehensive, professional documentation",
+                            "proficient": "Adequate documentation covering key points",
+                            "developing": "Partial documentation with gaps",
+                            "beginning": "Minimal or missing documentation"
+                        },
+                        {
+                            "criterion": "Problem-Solving Approach",
+                            "weight": 30,
+                            "excellent": "Creative, efficient solutions with clear reasoning",
+                            "proficient": "Functional solutions with good approach",
+                            "developing": "Basic solutions with some issues",
+                            "beginning": "Incomplete or non-functional solutions"
+                        }
+                    ]
+                }
+                
+                # Generate readings
+                readings = {
+                    "required": [
+                        {
+                            "title": f"Enterprise {topic_name} - Official Documentation",
+                            "author": "Industry Consortium",
+                            "chapters": "Chapters 1-3",
+                            "pages": "pp. 1-45",
+                            "url": "https://docs.example.com"
+                        },
+                        {
+                            "title": f"Best Practices in {topic_name}",
+                            "author": "Professional Association",
+                            "chapters": "Chapter 2",
+                            "pages": "pp. 20-35",
+                            "url": "https://resources.example.com"
+                        }
+                    ],
+                    "optional": [
+                        {
+                            "title": f"Advanced {topic_name} Techniques",
+                            "description": "For students who want to go deeper",
+                            "url": "https://advanced.example.com"
+                        }
+                    ]
+                }
+                
                 modules.append({
                     "week": week,
-                    "phase": phase,
-                    "title": f"Week {week}: {phase_titles[phase]}",
-                    "learning_goals": [f"Goal {week}.1", f"Goal {week}.2"],
-                    "teaching_actions": [
-                        {"type": "EXPLAIN", "title": f"Introduction to Week {week}", "content": "Core concepts overview", "duration_minutes": 30},
-                        {"type": "DISCUSS", "title": "Discussion: Key Questions", "prompt": f"What challenges do you see in {phase}?", "duration_minutes": 20},
-                        {"type": "PRACTICE", "title": "Hands-on Exercise", "instructions": f"Apply {phase} concepts", "duration_minutes": 45},
-                        {"type": "QUIZ", "title": "Knowledge Check", "questions": ["Q1", "Q2", "Q3"], "duration_minutes": 10},
-                        {"type": "REFLECT", "title": "Weekly Reflection", "prompt": "What did you learn this week?", "duration_minutes": 10}
-                    ],
-                    "assignments": [f"Week {week} Assignment"],
-                    "resources": ["Module readings", "Video tutorials"]
+                    "iris_phase": phase,
+                    "cdio_phase": cdio,
+                    "title": f"Week {week}: {topic_name}",
+                    "subtitle": phase_subtitles[phase],
+                    "duration_hours": 3,
+                    "learning_objectives": learning_objectives,
+                    "session_schedule": session_schedule,
+                    "readings": readings,
+                    "assignment": assignment,
+                    "resources": {
+                        "software_tools": ["VS Code", "Git", "Docker"],
+                        "online_resources": ["Official documentation", "Video tutorials"],
+                        "lab_materials": ["Lab environment access", "Sample datasets"]
+                    }
                 })
             
+            # Generate enterprise-grade response
             return {
                 "success": True,
                 "provider": "mock",
                 "agenda": {
-                    "course_title": parsed_content.get("title", "AI-Generated Course"),
-                    "tagline": "Transform your skills with structured learning",
+                    "course_code": f"T6-{course_title[:3].upper()}-101",
+                    "course_title": course_title,
+                    "tagline": f"Master {course_title.lower()} through hands-on, project-based learning",
+                    "description": f"This comprehensive {duration_weeks}-week course provides in-depth training in {course_title}. Students will gain practical skills through hands-on labs, real-world case studies, and a capstone project that demonstrates mastery.",
+                    "level": target_audience,
+                    "credits": 3,
+                    "duration_weeks": duration_weeks,
+                    "prerequisites": ["Basic computer literacy", "Familiarity with foundational concepts"],
+                    
+                    "program_learning_outcomes": [
+                        {
+                            "id": "LO1",
+                            "objective": f"Explain the fundamental concepts and principles of {course_title}",
+                            "blooms_level": "understand",
+                            "blooms_verb": "explain",
+                            "assessment_method": "Quizzes and assignments",
+                            "sfia_skills": ["KNOW", "LEDA"]
+                        },
+                        {
+                            "id": "LO2",
+                            "objective": f"Apply {course_title} methodologies to solve real-world problems",
+                            "blooms_level": "apply",
+                            "blooms_verb": "implement",
+                            "assessment_method": "Hands-on labs and assignments",
+                            "sfia_skills": ["PROG", "DTAN"]
+                        },
+                        {
+                            "id": "LO3",
+                            "objective": f"Analyze and evaluate {course_title} solutions for effectiveness",
+                            "blooms_level": "evaluate",
+                            "blooms_verb": "assess",
+                            "assessment_method": "Case studies and peer reviews",
+                            "sfia_skills": ["ARCH", "TEST"]
+                        },
+                        {
+                            "id": "LO4",
+                            "objective": f"Design and create innovative {course_title} solutions",
+                            "blooms_level": "create",
+                            "blooms_verb": "design",
+                            "assessment_method": "Capstone project",
+                            "sfia_skills": ["DESN", "INOV"]
+                        }
+                    ],
+                    
+                    "sfia_competency_map": [
+                        {
+                            "skill_code": "PROG",
+                            "skill_name": "Programming/Software Development",
+                            "target_level": 3,
+                            "level_name": "Apply",
+                            "evidence_required": ["Working code submissions", "Technical documentation"],
+                            "modules_addressed": list(range(1, duration_weeks + 1))
+                        },
+                        {
+                            "skill_code": "DTAN",
+                            "skill_name": "Data Analytics",
+                            "target_level": 2,
+                            "level_name": "Assist",
+                            "evidence_required": ["Data analysis reports", "Visualization outputs"],
+                            "modules_addressed": [2, 3, duration_weeks]
+                        }
+                    ],
+                    
                     "modules": modules,
+                    
                     "capstone_project": {
-                        "title": "Capstone: Real-World Application",
-                        "description": "Apply all course concepts to solve a real problem",
-                        "deliverables": ["Project proposal", "Working prototype", "Final presentation"],
-                        "rubric_summary": "Graded on creativity, technical execution, and impact"
+                        "title": f"Capstone: {course_title} Real-World Application",
+                        "description": f"Apply all course concepts to build a comprehensive {course_title.lower()} solution for a real-world scenario. Students will work through the complete IRIS lifecycle.",
+                        "learning_outcomes_addressed": ["LO1", "LO2", "LO3", "LO4"],
+                        "sfia_skills_demonstrated": ["PROG", "ARCH", "DTAN"],
+                        "milestones": [
+                            {
+                                "name": "Project Proposal",
+                                "due_week": 1,
+                                "weight_percent": 10,
+                                "deliverables": ["Problem statement", "Proposed solution", "Timeline"]
+                            },
+                            {
+                                "name": "Design Document",
+                                "due_week": 2,
+                                "weight_percent": 20,
+                                "deliverables": ["Architecture diagram", "Technical specifications"]
+                            },
+                            {
+                                "name": "Working Prototype",
+                                "due_week": max(3, duration_weeks - 1),
+                                "weight_percent": 40,
+                                "deliverables": ["Functional code", "Test results", "Documentation"]
+                            },
+                            {
+                                "name": "Final Presentation",
+                                "due_week": duration_weeks,
+                                "weight_percent": 30,
+                                "deliverables": ["Live demo", "Presentation slides", "Reflection report"]
+                            }
+                        ],
+                        "rubric": {
+                            "technical_excellence": 35,
+                            "innovation_creativity": 20,
+                            "presentation_communication": 20,
+                            "documentation": 15,
+                            "teamwork_collaboration": 10
+                        }
                     },
+                    
+                    "assessment_strategy": {
+                        "formative": [
+                            "Weekly knowledge check quizzes",
+                            "In-class polling and discussions",
+                            "Peer code reviews"
+                        ],
+                        "summative": {
+                            "assignments": 35,
+                            "quizzes": 15,
+                            "capstone_project": 40,
+                            "participation": 10
+                        },
+                        "grading_scale": {
+                            "A": "90-100",
+                            "B": "80-89",
+                            "C": "70-79",
+                            "D": "60-69",
+                            "F": "0-59"
+                        }
+                    },
+                    
+                    "instructor_notes": {
+                        "common_misconceptions": [
+                            {
+                                "concept": "Foundational concepts",
+                                "misconception": "Students often confuse terminology in early modules",
+                                "correction_strategy": "Use consistent terminology glossary and concept maps"
+                            },
+                            {
+                                "concept": "Implementation details",
+                                "misconception": "Students may skip testing and validation steps",
+                                "correction_strategy": "Emphasize test-driven development from week 1"
+                            }
+                        ],
+                        "engagement_hooks": [
+                            "Use recent industry news to introduce each week's topic",
+                            "Start with surprising statistics or case studies",
+                            "Connect concepts to student career aspirations"
+                        ],
+                        "differentiation": {
+                            "struggling_learners": [
+                                "Provide step-by-step lab guides",
+                                "Pair with peer mentors",
+                                "Offer additional office hours"
+                            ],
+                            "advanced_learners": [
+                                "Assign extension challenges",
+                                "Independent research project option",
+                                "Peer teaching opportunities"
+                            ]
+                        },
+                        "technology_requirements": [
+                            "Laptop with 8GB+ RAM",
+                            "Software: VS Code, Git, Docker",
+                            "Stable internet connection"
+                        ]
+                    },
+                    
                     "auto_generated_quizzes": [
                         {
-                            "module": 1,
+                            "module": week,
                             "questions": [
-                                {"question": "What is the main goal of the Immerse phase?", "options": ["Understanding context", "Writing code", "Deploying", "Testing"], "correct": 0, "explanation": "Immerse focuses on understanding the problem context."}
+                                {
+                                    "question": f"What is a key principle of the {phases[(week-1) % 4].capitalize()} phase?",
+                                    "options": [
+                                        "Understanding context and stakeholder needs",
+                                        "Random implementation without planning",
+                                        "Skipping documentation",
+                                        "Ignoring user feedback"
+                                    ],
+                                    "correct": 0,
+                                    "explanation": f"The {phases[(week-1) % 4].capitalize()} phase focuses on systematic approaches aligned with IRIS methodology.",
+                                    "blooms_level": "understand"
+                                },
+                                {
+                                    "question": f"Which Bloom's taxonomy level is most associated with the {phases[(week-1) % 4].capitalize()} phase?",
+                                    "options": [
+                                        blooms_by_phase[phases[(week-1) % 4]][0][0].capitalize(),
+                                        "Memorization only",
+                                        "Random guessing",
+                                        "None of the above"
+                                    ],
+                                    "correct": 0,
+                                    "explanation": f"The {phases[(week-1) % 4].capitalize()} phase emphasizes {blooms_by_phase[phases[(week-1) % 4]][0][0]} level cognitive skills.",
+                                    "blooms_level": "remember"
+                                }
                             ]
                         }
-                    ]
+                        for week in range(1, duration_weeks + 1)
+                    ],
+                    
+                    "_metadata": {
+                        "framework": "IRIS + CDIO",
+                        "standard": "MIT OCW Enterprise",
+                        "blooms_taxonomy": True,
+                        "sfia_aligned": True,
+                        "version": "2.0",
+                        "generated_by": "Alexandria AI (Mock Mode)"
+                    }
                 }
             }
 
