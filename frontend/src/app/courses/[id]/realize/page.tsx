@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import IRISStepper from '@/components/ui/IRISStepper';
 import { useAuth } from '@/lib/AuthContext';
+import { EnhancedSocraticTutor } from '@/components/EnhancedSocraticTutor';
 import { Brain, Target, BookOpen, MessageSquare, PenTool, Send, CheckCircle, HelpCircle } from 'lucide-react';
 
 
@@ -236,27 +237,18 @@ export default function RealizePage() {
 
                     {/* Sidebar */}
                     <div className="space-y-6">
-                        {/* IRIS Guidance */}
-                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-                            <h3 className="flex items-center gap-2 font-bold text-gray-900 mb-4">
-                                <HelpCircle size={18} className="text-purple-600" />
-                                Guiding Questions
-                            </h3>
-                            <ul className="space-y-3 text-sm text-gray-600">
-                                <li className="flex items-start gap-2">
-                                    <span className="text-purple-600">•</span>
-                                    What do you already know (Q) about this problem?
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="text-purple-600">•</span>
-                                    What programmed knowledge (P) do you need?
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="text-purple-600">•</span>
-                                    How does this map to SFIA Level 2, 3, or 4?
-                                </li>
-                            </ul>
-                        </div>
+                        {/* Enhanced Socratic Tutor */}
+                        <EnhancedSocraticTutor
+                            courseId={String(courseId)}
+                            phase="realize"
+                            context={{
+                                gapAnalysis: formData.gap_analysis,
+                                learningPlan: formData.learning_plan,
+                                sfiaAssessment: formData.sfia_assessment
+                            }}
+                            userRole="student"
+                            className="h-[500px]"
+                        />
                     </div>
                 </div>
             </div>

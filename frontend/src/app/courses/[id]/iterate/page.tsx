@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import IRISStepper from '@/components/ui/IRISStepper';
 import { useAuth } from '@/lib/AuthContext';
+import { EnhancedSocraticTutor } from '@/components/EnhancedSocraticTutor';
 import { RefreshCw, Lightbulb, BarChart3, Code, FileText, Send, CheckCircle, Plus } from 'lucide-react';
 
 
@@ -252,24 +253,18 @@ export default function IteratePage() {
 
                     {/* Sidebar */}
                     <div className="space-y-6">
-                        {/* IRIS Guidance */}
-                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-                            <h3 className="font-bold text-gray-900 mb-4">Guiding Questions</h3>
-                            <ul className="space-y-3 text-sm text-gray-600">
-                                <li className="flex items-start gap-2">
-                                    <span className="text-amber-600">•</span>
-                                    What hypothesis are you testing?
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="text-amber-600">•</span>
-                                    How will you measure effectiveness?
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="text-amber-600">•</span>
-                                    What did you learn from this iteration?
-                                </li>
-                            </ul>
-                        </div>
+                        {/* Enhanced Socratic Tutor */}
+                        <EnhancedSocraticTutor
+                            courseId={String(courseId)}
+                            phase="iterate"
+                            context={{
+                                hypothesis: formData.hypothesis,
+                                learnings: formData.learnings,
+                                iterationNumber: currentIteration + 1
+                            }}
+                            userRole="student"
+                            className="h-[500px]"
+                        />
 
                         {/* BML Cycle Guide */}
                         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">

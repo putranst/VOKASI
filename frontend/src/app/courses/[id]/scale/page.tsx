@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import IRISStepper from '@/components/ui/IRISStepper';
 import { useAuth } from '@/lib/AuthContext';
+import { EnhancedSocraticTutor } from '@/components/EnhancedSocraticTutor';
 import { TrendingUp, Building2, Users, BarChart3, Award, Send, CheckCircle, ExternalLink } from 'lucide-react';
 
 
@@ -290,24 +291,18 @@ export default function ScalePage() {
 
                     {/* Sidebar */}
                     <div className="space-y-6">
-                        {/* IRIS Guidance */}
-                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-                            <h3 className="font-bold text-gray-900 mb-4">Guiding Questions</h3>
-                            <ul className="space-y-3 text-sm text-gray-600">
-                                <li className="flex items-start gap-2">
-                                    <span className="text-green-600">•</span>
-                                    How did you hand off the solution?
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="text-green-600">•</span>
-                                    What training did you provide?
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="text-green-600">•</span>
-                                    What measurable impact achieved?
-                                </li>
-                            </ul>
-                        </div>
+                        {/* Enhanced Socratic Tutor */}
+                        <EnhancedSocraticTutor
+                            courseId={String(courseId)}
+                            phase="scale"
+                            context={{
+                                deploymentUrl: formData.deployment_url,
+                                institutionalHandoff: formData.institutional_handoff,
+                                impactMetrics: formData.impact_metrics
+                            }}
+                            userRole="student"
+                            className="h-[500px]"
+                        />
 
                         {/* Credential Preview */}
                         <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 text-white">

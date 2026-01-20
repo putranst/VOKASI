@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import IRISStepper from '@/components/ui/IRISStepper';
 import { useAuth } from '@/lib/AuthContext';
-import { Eye, Users, Building2, Target, FileText, Sparkles, Send, CheckCircle, HelpCircle } from 'lucide-react';
+import { EnhancedSocraticTutor } from '@/components/EnhancedSocraticTutor';
+import { Eye, Users, Building2, Target, FileText, Sparkles, Send, CheckCircle, HelpCircle, Brain } from 'lucide-react';
 
 export default function ImmersePage() {
     const params = useParams();
@@ -226,27 +227,18 @@ export default function ImmersePage() {
 
                     {/* Sidebar */}
                     <div className="space-y-6">
-                        {/* IRIS Guidance */}
-                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-                            <h3 className="flex items-center gap-2 font-bold text-gray-900 mb-4">
-                                <HelpCircle size={18} className="text-primary" />
-                                Guiding Questions
-                            </h3>
-                            <ul className="space-y-3 text-sm text-gray-600">
-                                <li className="flex items-start gap-2">
-                                    <span className="text-primary">•</span>
-                                    What problem have you observed in your institutional anchor?
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="text-primary">•</span>
-                                    Who are the stakeholders affected by this problem?
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="text-primary">•</span>
-                                    What SFIA competencies will you develop?
-                                </li>
-                            </ul>
-                        </div>
+                        {/* Enhanced Socratic Tutor */}
+                        <EnhancedSocraticTutor
+                            courseId={String(courseId)}
+                            phase="immerse"
+                            context={{
+                                problemContext: formData.problem_context,
+                                stakeholders: formData.stakeholder_map,
+                                institution: formData.institutional_anchor
+                            }}
+                            userRole="student"
+                            className="h-[500px]"
+                        />
 
                         {/* NUSA Framework Info */}
                         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white">
