@@ -10,7 +10,14 @@ from sqlalchemy import func
 from database import get_db, engine
 import sql_models as models
 import models as schemas
+import models as schemas
 from services.openai_service import generate_embedding
+from mock_db import (
+    PATHWAYS_DB, QUIZZES_DB, QUIZ_SUBMISSIONS_DB, DISCUSSIONS_DB,
+    DISCUSSION_COMMENTS_DB, NOTIFICATIONS_DB, CONVERSATIONS_DB,
+    CREDENTIALS_DB
+)
+from services.seeding_service import init_sample_data
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -33,6 +40,14 @@ app = FastAPI(
     version="2.1.0"
 )
 
+# DEBUG: Print DB Config
+print(f"DEBUG: CWD = {os.getcwd()}")
+try:
+    from database import DATABASE_URL
+    print(f"DEBUG: DATABASE_URL = {DATABASE_URL}")
+except ImportError:
+    print("DEBUG: Could not import DATABASE_URL")
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -47,56 +62,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from routers import naska
+from routers.debug import router as debug_router
+app.include_router(naska.router)
+app.include_router(debug_router)
+
 @app.get("/")
 def read_root():
     return {"message": "TSEA-X Backend API is running"}
 
 # --- Mock Data ---
 # COURSES_DB removed - using database
-
-PATHWAYS_DB = [
-    {
-        "title": "Chief Sustainability Officer",
-        "subtitle": "Orchestrate green transformation.",
-        "courses": 6,
-        "duration": "3 Months",
-        "partner": "MIT Sloan & UID",
-        "icon": "Globe",
-        "color": "text-green-600",
-        "bg": "bg-green-50"
-    },
-    {
-        "title": "Smart City Architect",
-        "subtitle": "Design the cities of tomorrow.",
-        "courses": 8,
-        "duration": "4 Months",
-        "partner": "Tsinghua Architecture",
-        "icon": "Hexagon",
-        "color": "text-[#663399]",
-        "bg": "bg-purple-50"
-    }
-]
-
-# In-memory databases for CDIO framework (removed - using database)
-
-# Quiz and Discussion databases
-QUIZZES_DB = {}  # quiz_id -> Quiz
-QUIZ_SUBMISSIONS_DB = {}  # submission_id -> QuizSubmission
-DISCUSSIONS_DB = {}  # thread_id -> DiscussionThread
-DISCUSSION_COMMENTS_DB = {}  # comment_id -> DiscussionComment
-
-# Notification and Inbox databases
-NOTIFICATIONS_DB = {} # notification_id -> Notification
-CONVERSATIONS_DB = {} # conversation_id -> Conversation
-
-# Institution database (removed)
-
-# Enrollment database (removed)
-
-# Blockchain Credentials database
-CREDENTIALS_DB = {} # credential_id -> Credential
-
-# Code Snapshots database (removed)
+# Imported from mock_db.py
 
 # ID counters
 project_counter = 1
@@ -116,191 +93,15 @@ credential_counter = 1
 snapshot_counter = 1
 
 
-# --- Sample Quiz Data ---
-from models import Quiz, QuizQuestion, DiscussionThread
-
-# Initialize sample quizzes
-def init_sample_data():
-    print("DEBUG: init_sample_data called")
-    global quiz_counter, QUIZZES_DB
-    
-    # Sample quiz for course 9 (AI for SMEs)
-    quiz1 = Quiz(
-        id=quiz_counter,
-        course_id=9,
-        title="AI Fundamentals Knowledge Check",
-        duration="15 min",
-        questions=[
-            QuizQuestion(
-                id=1,
-                text="What does AI stand for in the context of business automation?",
-                options=[
-                    "Automated Intelligence",
-                    "Artificial Intelligence", 
-                    "Advanced Integration",
-                    "Application Interface"
-                ],
-                correct_answer=1
-            ),
-            QuizQuestion(
-                id=2,
-                text="Which of the following is a key benefit of AI agents for SMEs?",
-                options=[
-                    "24/7 availability without human intervention",
-                    "Elimination of all human jobs",
-                    "Guaranteed 100% accuracy",
-                    "No need for internet"
-                ],
-                correct_answer=0
-            ),
-            QuizQuestion(
-                id=3,
-                text="What is the CDIO framework primarily used for?",
-                options=[
-                    "Database management",
-                    "Project-based learning methodology",
-                    "Code debugging",
-                    "Customer relationship management"
-                ],
-                correct_answer=1
-            ),
-            QuizQuestion(
-                id=4,
-                text="In the context of AI workflows, what is 'intent classification'?",
-                options=[
-                    "Classifying user intentions from their messages",
-                    "Sorting files by type",
-                    "Organizing calendar events",
-                    "Filtering spam emails"
-                ],
-                correct_answer=0
-            ),
-            QuizQuestion(
-                id=5,
-                text="What is a recommended practice when deploying AI agents to production?",
-                options=[
-                    "Skip testing and deploy immediately",
-                    "Test with real customer data directly",
-                    "Use sandbox environment first",
-                    "Never monitor performance"
-                ],
-                correct_answer=2
-            )
-        ],
-        created_at=datetime.now()
-    )
-    
-    QUIZZES_DB[quiz_counter] = quiz1
-    quiz_counter += 1
-
-    # Sample Notifications
-    global notification_counter, NOTIFICATIONS_DB
-    
-    notif1 = schemas.Notification(
-        id=notification_counter,
-        user_id=1, # Assuming user 1 is the logged in user
-        title="Welcome to TSEA-X",
-        message="Welcome to the Transform Southeast Asia Xchange platform. Start your learning journey today!",
-        type=schemas.NotificationType.SYSTEM,
-        created_at=datetime.now()
-    )
-    NOTIFICATIONS_DB[notification_counter] = notif1
-    notification_counter += 1
-    
-    notif2 = schemas.Notification(
-        id=notification_counter,
-        user_id=1,
-        title="New Course Available",
-        message="Check out the new course 'AI Governance for Policymakers'.",
-        type=schemas.NotificationType.INSTITUTION,
-        created_at=datetime.now()
-    )
-    NOTIFICATIONS_DB[notification_counter] = notif2
-    notification_counter += 1
-
-    # Sample Conversation
-    global conversation_counter, message_counter, CONVERSATIONS_DB
-    
-    msg1 = schemas.Message(
-        id=message_counter,
-        sender_id=2, # Instructor
-        sender_name="Prof. Lin",
-        content="Hello! How are you finding the Blue Carbon course?",
-        created_at=datetime.now(),
-        is_read=False
-    )
-    message_counter += 1
-    
-    conv1 = schemas.Conversation(
-        id=conversation_counter,
-        participants=[1, 2],
-        participant_names=["You", "Prof. Lin"],
-        last_message=msg1,
-        updated_at=datetime.now(),
-        messages=[msg1]
-    )
-    CONVERSATIONS_DB[conversation_counter] = conv1
-    conversation_counter += 1
-
-    # Sample Credentials
-    global credential_counter, CREDENTIALS_DB
-    
-    cred1 = models.Credential(
-        id=credential_counter,
-        user_id=1,
-        credential_type="course_completion",
-        title="Certified AI Strategist",
-        description="Completed the AI Strategy for Business Leaders course.",
-        issuer_name="TSEA-X Institute",
-        issuer_id=1,
-        status="issued",
-        blockchain_network="Polygon Mumbai",
-        token_id="T6C-000001",
-        transaction_hash="0x123abc...",
-        issued_at=datetime.now(),
-        created_at=datetime.now(),
-        updated_at=datetime.now()
-    )
-    CREDENTIALS_DB[credential_counter] = cred1
-    credential_counter += 1
-
-    # Ensure standard users exist
+# Initialize on startup
+@app.on_event("startup")
+def startup_event():
+    # Initialize sample data on startup
     db = next(get_db())
     try:
-        users_to_seed = [
-            {"email": "mats@uid.or.id", "name": "Prof. Mats", "role": "instructor"},
-            {"email": "putra@tsea.asia", "name": "Putra Admin", "role": "admin"},
-            {"email": "student@tsea.asia", "name": "Student User", "role": "student"}
-        ]
-
-        for u in users_to_seed:
-            existing = db.query(models.User).filter(models.User.email == u["email"]).first()
-            if not existing:
-                new_user = models.User(
-                    email=u["email"],
-                    full_name=u["name"],
-                    role=u["role"],
-                    password_hash="hashed_secret" # Mock hash
-                )
-                db.add(new_user)
-                print(f"DEBUG: Created {u['role']} user {u['email']}")
-            else:
-                # Update role/name if mismatch
-                if existing.role != u["role"]:
-                    existing.role = u["role"]
-                    existing.full_name = u["name"]
-                    print(f"DEBUG: Updated role for {u['email']} to {u['role']}")
-        
-        db.commit()
+        init_sample_data(db)
     finally:
         db.close()
-
-    # Legacy data population removed - using database
-
-
-
-# Initialize on startup
-init_sample_data()
 
 
 # ===== AUTH ENDPOINTS =====
@@ -746,6 +547,84 @@ def get_pending_courses(institution_id: int, db: Session = Depends(get_db)):
     return result
 
 
+# ===== INSTRUCTOR GRADING QUEUE =====
+
+@app.get("/api/v1/instructor/grading-queue")
+def get_grading_queue(
+    instructor_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all pending submissions for an instructor's courses.
+    Returns charters, blueprints, and implementations that need grading.
+    """
+    grading_items = []
+    
+    # Get all projects with submissions
+    projects = db.query(models.CDIOProject).all()
+    
+    for project in projects:
+        # Get student info
+        student = db.query(models.User).filter(models.User.id == project.user_id).first()
+        if not student:
+            continue
+            
+        # Get course info
+        course = db.query(models.Course).filter(models.Course.id == project.course_id).first()
+        if not course:
+            continue
+        
+        # If instructor_id is provided, filter by instructor's courses
+        if instructor_id and course.instructor_id != instructor_id:
+            continue
+        
+        # Check for charter submission
+        if project.charter:
+            grading_items.append({
+                "id": project.charter.id,
+                "project_id": project.id,
+                "student_name": student.full_name,
+                "project_title": project.title,
+                "submission_type": "Charter",
+                "course_title": course.title,
+                "submitted_at": project.charter.created_at.strftime("%Y-%m-%d %H:%M") if project.charter.created_at else "N/A",
+                "status": "Pending"
+            })
+        
+        # Check for blueprint submission
+        if project.blueprint:
+            grading_items.append({
+                "id": project.blueprint.id,
+                "project_id": project.id,
+                "student_name": student.full_name,
+                "project_title": project.title,
+                "submission_type": "Blueprint",
+                "course_title": course.title,
+                "submitted_at": project.blueprint.created_at.strftime("%Y-%m-%d %H:%M") if project.blueprint.created_at else "N/A",
+                "status": "Pending"
+            })
+        
+        # Check for implementation submission
+        if project.implementation:
+            # Check if already graded (has AI feedback)
+            status = "Graded" if project.implementation.ai_feedback else "Pending"
+            grading_items.append({
+                "id": project.implementation.id,
+                "project_id": project.id,
+                "student_name": student.full_name,
+                "project_title": project.title,
+                "submission_type": "Implementation",
+                "course_title": course.title,
+                "submitted_at": project.implementation.created_at.strftime("%Y-%m-%d %H:%M") if project.implementation.created_at else "N/A",
+                "status": status
+            })
+    
+    # Sort by submitted_at (most recent first)
+    grading_items.sort(key=lambda x: x["submitted_at"], reverse=True)
+    
+    return grading_items
+
+
 @app.post("/api/v1/courses/{course_id}/approve")
 def approve_course(
     course_id: int,
@@ -791,6 +670,192 @@ def reject_course(
     db.commit()
     
     return {"message": "Course rejected", "course_id": course_id, "reason": reason}
+
+
+
+# ===== Course Editor Endpoints =====
+
+class ContentBlock(BaseModel):
+    id: str
+    type: str
+    content: str
+    metadata: Optional[Dict] = {}
+
+class CourseModuleSchema(BaseModel):
+    title: str
+    order: int
+    content_blocks: List[ContentBlock]
+    status: str
+
+@app.get("/api/v1/courses/{course_id}")
+def get_course_details(course_id: int, db: Session = Depends(get_db)):
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    return {
+        "id": course.id,
+        "title": course.title,
+        "description": course.description,
+        "instructor": course.instructor
+    }
+
+@app.get("/api/v1/courses/{course_id}/modules")
+def get_course_modules(course_id: int, db: Session = Depends(get_db)):
+    modules = db.query(models.CourseModule).filter(
+        models.CourseModule.course_id == course_id
+    ).order_by(models.CourseModule.order).all()
+    
+    return [
+        {
+            "id": m.id,
+            "title": m.title,
+            "order": m.order,
+            "content_blocks": m.content_blocks,
+            "status": m.status
+        }
+        for m in modules
+    ]
+
+@app.post("/api/v1/courses/{course_id}/modules")
+def save_course_modules(
+    course_id: int, 
+    modules: List[CourseModuleSchema], 
+    db: Session = Depends(get_db)
+):
+    # Verify course exists
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+        
+    try:
+        # Simplistic sync: Delete existing and recreate (or update)
+        # For this demo/prototype, let's update by title or recreate.
+        # Better strategy: 
+        # 1. Get existing modules
+        # 2. Update matches, delete removed, add new. 
+        # But since we send the WHOLE list, we can just sync.
+        
+        # Current implementation: Update if title matches (preserving IDs), else create.
+        # NOTE: This implies we can't rename modules easily without losing ID.
+        # But getting correct IDs from frontend would be better.
+        # The frontend sends 'CourseModule' which doesn't seem to track module ID in state explicitely yet?
+        # Let's check frontend. Frontend has 'CourseModule' interface but no ID.
+        # So we might need to wipe and recreate or match by order/title.
+        # Let's match by title for now.
+        
+        for i, mod_data in enumerate(modules):
+            existing = db.query(models.CourseModule).filter(
+                models.CourseModule.course_id == course_id,
+                models.CourseModule.title == mod_data.title
+            ).first()
+            
+            blocks = [b.dict() for b in mod_data.content_blocks]
+            
+            if existing:
+                existing.order = i
+                existing.content_blocks = blocks
+                existing.status = mod_data.status
+                existing.updated_at = datetime.utcnow()
+            else:
+                new_mod = models.CourseModule(
+                    course_id=course_id,
+                    title=mod_data.title,
+                    order=i,
+                    content_blocks=blocks,
+                    status=mod_data.status
+                )
+                db.add(new_mod)
+        
+        db.commit()
+        return {"message": "Modules saved successfully"}
+        
+    except Exception as e:
+        db.rollback()
+        print(f"Error saving modules: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/ai/suggest-content")
+async def ai_suggest_content(request: Dict[str, str]):
+    """AI Helper for Course Editor"""
+    context = request.get("context", "")
+    course_title = request.get("course_title", "")
+    module_title = request.get("module_title", "")
+    
+    prompt = f"""
+    You are an expert teaching assistant.
+    Course: {course_title}
+    Module: {module_title}
+    Current Content context: "{context}"
+    
+    Provide a specific, constructive suggestion to improve this educational content.
+    Keep it short (max 2 sentences).
+    """
+    
+    try:
+        from services.openai_service import clients
+        if "gemini" in clients:
+            response = await clients["gemini"].generate_content_async(prompt)
+            return {"suggestion": response.text.strip()}
+        return {"suggestion": "Try adding a concrete example here to illustrate the concept."}
+    except Exception as e:
+        return {"suggestion": "Consider adding an interactive element."}
+
+
+class CourseModuleCreate(BaseModel):
+    title: str
+    order: int = 0
+    content_blocks: List[Dict] = []
+    status: str = "draft"
+
+@app.get("/api/v1/courses/{course_id}/modules", response_model=List)
+def get_course_modules(course_id: int, db: Session = Depends(get_db)):
+    """Get all content modules for a course"""
+    modules = db.query(models.CourseModule).filter(models.CourseModule.course_id == course_id).order_by(models.CourseModule.order).all()
+    # If no modules exist, create a default one
+    if not modules:
+        default_module = models.CourseModule(
+            course_id=course_id,
+            title="Module 1: Getting Started",
+            order=0,
+            content_blocks=[],
+            status="draft"
+        )
+        db.add(default_module)
+        db.commit()
+        db.refresh(default_module)
+        return [default_module]
+    return modules
+
+@app.post("/api/v1/courses/{course_id}/modules")
+def update_course_modules(course_id: int, modules: List[CourseModuleCreate], db: Session = Depends(get_db)):
+    """Update all modules (full replace for simplicity in this MVP)"""
+    # Verify course exists
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    # In a real app we'd do smart diffing, but for MVP we can delete old and re-create
+    # Make sure to keep IDs if possible, but simpler to wipe for now or check by title/order
+    
+    # 1. Delete existing (brute force strategy for rapid prototyping)
+    db.query(models.CourseModule).filter(models.CourseModule.course_id == course_id).delete()
+    
+    # 2. Create new
+    new_modules = []
+    for m in modules:
+        new_mod = models.CourseModule(
+            course_id=course_id,
+            title=m.title,
+            order=m.order,
+            content_blocks=m.content_blocks,
+            status=m.status
+        )
+        db.add(new_mod)
+        new_modules.append(new_mod)
+    
+    db.commit()
+    
+    return {"message": "Course content saved", "count": len(new_modules)}
 
 
 @app.get("/api/v1/instructors/{user_id}/type")
@@ -2029,6 +2094,50 @@ async def run_code(request: RunCodeRequest):
     return await implementation_service.run_code_mock(request.code, request.language)
 
 
+class SaveCodeRequest(BaseModel):
+    project_id: int
+    code: str
+    language: str
+    auto_saved: bool = False
+
+@app.post("/api/v1/projects/{project_id}/save-code")
+def save_code(project_id: int, request: SaveCodeRequest, db: Session = Depends(get_db)):
+    """Save code snapshot and update implementation"""
+    project = db.query(models.CDIOProject).filter(models.CDIOProject.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Create snapshot
+    snapshot = models.CodeSnapshot(
+        project_id=project_id,
+        code=request.code,
+        language=request.language,
+        auto_saved=request.auto_saved,
+        timestamp=datetime.utcnow()
+    )
+    db.add(snapshot)
+    
+    # Update or Create Implementation
+    impl = db.query(models.Implementation).filter(models.Implementation.project_id == project_id).first()
+    if impl:
+        impl.code_snapshot = request.code
+        impl.updated_at = datetime.utcnow()
+    else:
+        impl = models.Implementation(
+            project_id=project_id,
+            code_snapshot=request.code,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        db.add(impl)
+        db.flush() # get ID
+        project.implementation = impl # Link if relationship not auto-handled
+    
+    db.commit()
+    
+    return {"success": True, "snapshot_id": snapshot.id}
+
+
 class CharterSuggestionsRequest(BaseModel):
     problem_statement: str
     success_metrics: str
@@ -2079,64 +2188,212 @@ async def socratic_chat(request: SocraticChatRequest):
             detail=f"AI service error: {str(e)}"
         )
 
+class IterationSubmission(schemas.IterationArtifactCreate):
+    user_id: int
+
+@app.post("/api/v1/projects/{course_id}/iteration")
+def submit_iteration(course_id: int, submission: IterationSubmission, db: Session = Depends(get_db)):
+    """Submit BML iteration"""
+    # Find project for user + course
+    project = db.query(models.CDIOProject).filter(
+        models.CDIOProject.course_id == course_id,
+        models.CDIOProject.user_id == submission.user_id
+    ).first()
+    
+    if not project:
+         # Auto-create project for demo flow if missing (SKIP logic for brevity, assume exists or throw 404)
+         raise HTTPException(status_code=404, detail="Project not found")
+
+    # Update Implementation/Iteration Artifact
+    impl = project.implementation
+    if not impl:
+        impl = models.Implementation(project_id=project.id)
+        db.add(impl)
+    
+    impl.iteration_number = submission.iteration_number
+    impl.hypothesis = submission.hypothesis
+    impl.code_repository_url = submission.prototype_url
+    impl.code_snapshot = submission.code_snapshot
+    impl.learnings = submission.learnings
+    impl.next_hypothesis = submission.next_hypothesis
+    # impl.measurements = submission.measurements 
+    impl.updated_at = datetime.utcnow()
+    
+    db.commit()
+    db.refresh(impl)
+    return impl
+
+@app.post("/api/v1/ai/grade-iteration/{iteration_id}")
+async def grade_iteration(iteration_id: int, db: Session = Depends(get_db)):
+    """Grade an iteration artifact using AI"""
+    iteration = db.query(models.IterationArtifact).filter(models.IterationArtifact.id == iteration_id).first()
+    if not iteration:
+        raise HTTPException(status_code=404, detail="Iteration artifact not found")
+        
+    project = db.query(models.CDIOProject).filter(models.CDIOProject.id == iteration.project_id).first()
+    if not project:
+         raise HTTPException(status_code=404, detail="Project not found")
+         
+    user = db.query(models.User).filter(models.User.id == project.user_id).first()
+    student_name = user.full_name if user else "Student"
+
+    submission_content = {
+        "hypothesis": iteration.hypothesis,
+        "learnings": iteration.learnings,
+        "code_snapshot": iteration.code_snapshot,
+        "next_hypothesis": iteration.next_hypothesis,
+        "measurements": iteration.measurements
+    }
+
+    try:
+        from services import openai_service
+        feedback = await openai_service.generate_grading_feedback(
+            submission_type="Iteration (Build-Measure-Learn)",
+            project_title=project.title,
+            student_name=student_name,
+            submission_content=submission_content
+        )
+        
+        iteration.ai_feedback = feedback
+        db.commit()
+        
+        return feedback
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI Grading failed: {str(e)}")
+
 @app.get("/api/v1/instructor/grading-queue", response_model=List[GradingQueueItem])
 def get_grading_queue(instructor_id: Optional[int] = None, db: Session = Depends(get_db)):
     """Get all submissions requiring grading or recently graded"""
+    log_path = r"C:\Users\PT\Desktop\TSEA-X\api_debug.log"
+    try:
+        with open(log_path, "a") as f:
+            f.write(f"\n[{datetime.now()}] get_grading_queue called\n")
+    except Exception as e:
+        print(f"LOGGING ERROR: {e}")
+        
     queue = []
     
     # Get all projects (in real app, filter by instructor's courses)
     projects = db.query(models.CDIOProject).all()
     
+    try:
+        with open(log_path, "a") as f:
+            f.write(f"[{datetime.now()}] Found {len(projects)} projects in DB\n")
+    except: pass
+    
     for project in projects:
+        try:
+            with open(log_path, "a") as f:
+                 f.write(f"[{datetime.now()}] Proc Project {project.id}: Charter={project.charter is not None}, Blueprint={project.blueprint is not None}\n")
+        except: pass
+
         course = db.query(models.Course).filter(models.Course.id == project.course_id).first()
         course_title = course.title if course else "Unknown Course"
         student_name = f"Student {project.user_id}" # Mock name lookup
         
         # Check Charter
-        if project.charter_id:
-            charter = db.query(models.ProjectCharter).filter(models.ProjectCharter.id == project.charter_id).first()
-            blueprint = db.query(models.DesignBlueprint).filter(models.DesignBlueprint.id == project.blueprint_id).first()
-            if blueprint:
-                status = "Graded" if project.design_completed else "Pending"
-                if project.overall_status == schemas.ProjectStatus.UNDER_REVIEW and project.current_phase == schemas.CDIOPhase.DESIGN:
-                    status = "Pending"
-                    
-                queue.append(GradingQueueItem(
-                    id=blueprint.id,
-                    project_id=project.id,
-                    student_name=student_name,
-                    project_title=project.title,
-                    submission_type="Blueprint",
-                    course_title=course_title,
-                    submitted_at=blueprint.created_at.strftime("%Y-%m-%d %H:%M"),
-                    status=status
-                ))
+        print(f"DEBUG: Check Charter for {project.id}: {project.charter}")
+        if project.charter:
+            status = "Pending"
+            # Logic to determine if graded: e.g. if feedback exists. 
+            # For now, simplistic: if overall status is NOT under_review, it's graded.
+            if project.overall_status != schemas.ProjectStatus.UNDER_REVIEW:
+                status = "Graded"
+
+            print(f"DEBUG: Adding Charter item for {project.id}")
+            queue.append(GradingQueueItem(
+                id=project.charter.id,
+                project_id=project.id,
+                student_name=student_name,
+                project_title=project.title,
+                submission_type="charter",
+                course_title=course_title,
+                submitted_at=project.charter.created_at.strftime("%Y-%m-%d %H:%M"),
+                status=status
+            ))
+
+        # Check Blueprint (Frontend expects 'design')
+        print(f"DEBUG: Check Blueprint for {project.id}: {project.blueprint}")
+        if project.blueprint:
+            status = "Pending"
+            if project.design_completed:
+                status = "Graded"
+                
+            print(f"DEBUG: Adding Design item for {project.id}")
+            queue.append(GradingQueueItem(
+                id=project.blueprint.id,
+                project_id=project.id,
+                student_name=student_name,
+                project_title=project.title,
+                submission_type="design",
+                course_title=course_title,
+                submitted_at=project.blueprint.created_at.strftime("%Y-%m-%d %H:%M"),
+                status=status
+            ))
 
         # Check Implementation
-        if project.implementation_id:
-            impl = db.query(models.Implementation).filter(models.Implementation.id == project.implementation_id).first()
-            if impl:
-                status = "Graded" if project.implement_completed else "Pending"
-                if project.overall_status == schemas.ProjectStatus.UNDER_REVIEW and project.current_phase == schemas.CDIOPhase.IMPLEMENT:
-                    status = "Pending"
-                    
-                queue.append(GradingQueueItem(
-                    id=impl.id,
-                    project_id=project.id,
-                    student_name=student_name,
-                    project_title=project.title,
-                    submission_type="Implementation",
-                    course_title=course_title,
-                    submitted_at=impl.created_at.strftime("%Y-%m-%d %H:%M"),
-                    status=status
-                ))
+        if project.implementation:
+            status = "Pending"
+            if project.implement_completed:
+                status = "Graded"
+                
+            queue.append(GradingQueueItem(
+                id=project.implementation.id,
+                project_id=project.id,
+                student_name=student_name,
+                project_title=project.title,
+                submission_type="implementation",
+                course_title=course_title,
+                submitted_at=project.implementation.created_at.strftime("%Y-%m-%d %H:%M"),
+                status=status
+            ))
 
+    print(f"DEBUG: Returning queue with {len(queue)} items")
     # Sort by status (Pending first) then date
     # queue.sort(key=lambda x: x.submitted_at, reverse=True)
     queue.sort(key=lambda x: x.status == "Pending", reverse=True)
     
     return queue
 
+
+@app.post("/api/v1/projects/{course_id}/scale")
+def submit_scale(course_id: int, submission: schemas.ScaleArtifactCreate, user_id: int = Query(...), db: Session = Depends(get_db)):
+    """Submit Scale phase artifact (Institutional Deployment)"""
+    project = db.query(models.CDIOProject).filter(
+        models.CDIOProject.course_id == course_id,
+        models.CDIOProject.user_id == user_id
+    ).first()
+    
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Update or Create Deployment
+    deployment = project.deployment
+    if not deployment:
+        deployment = models.Deployment(project_id=project.id)
+        db.add(deployment)
+    
+    if submission.deployment_url:
+        deployment.deployment_url = submission.deployment_url
+    if submission.deployment_platform:
+        deployment.deployment_platform = submission.deployment_platform
+        
+    deployment.institutional_handoff = submission.institutional_handoff
+    deployment.stakeholder_training = submission.stakeholder_training
+    deployment.impact_metrics = submission.impact_metrics
+    deployment.sfia_evidence = submission.sfia_evidence
+    
+    deployment.verification_status = "submitted"
+    deployment.updated_at = datetime.utcnow()
+    
+    # Auto-advance project status
+    project.current_phase = "scale"
+    project.overall_status = "completed"
+    project.completion_percentage = 100
+    
+    db.commit()
+    db.refresh(deployment)
+    return deployment
 
 
 class CompanionChatRequest(BaseModel):

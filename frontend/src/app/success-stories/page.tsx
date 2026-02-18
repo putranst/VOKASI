@@ -38,7 +38,7 @@ export default function SuccessStoriesPage() {
                         </div>
                         <h2 className="text-3xl font-black text-gray-900 mb-4">Stories Coming Soon</h2>
                         <p className="text-gray-600 mb-8 leading-relaxed">
-                            We're currently collecting and documenting success stories from our T6 graduates. Check back soon to read inspiring stories of career transformation through our CDIO-based learning programs.
+                            We're currently collecting and documenting success stories from our T6 graduates. Check back soon to read inspiring stories of career transformation through our IRIS-based learning programs.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Link
@@ -71,7 +71,7 @@ export default function SuccessStoriesPage() {
                             <GraduationCap size={40} className="text-primary mb-4" />
                             <h3 className="text-xl font-bold text-gray-900 mb-3">Industry-Ready Skills</h3>
                             <p className="text-gray-600">
-                                Master practical skills through hands-on projects using the CDIO framework. Build a portfolio that demonstrates real capabilities.
+                                Master practical skills through hands-on projects using the IRIS framework. Build a portfolio that demonstrates real capabilities.
                             </p>
                         </div>
                         <div className="bg-white p-8 rounded-2xl shadow-lg">

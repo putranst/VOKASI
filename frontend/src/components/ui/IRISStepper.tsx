@@ -47,17 +47,7 @@ const phases = [
     },
 ];
 
-// Legacy CDIO to IRIS mapping for backward compatibility
-const cdioToIrisMap: Record<string, string> = {
-    'conceive': 'immerse',
-    'design': 'realize',
-    'implement': 'iterate',
-    'operate': 'scale',
-    // Legacy IRIS names
-    'immersion': 'immerse',
-    'reflection': 'realize',
-    'iteration': 'iterate'
-};
+
 
 export default function IRISStepper({ courseId, currentPhase, completedPhases = [], sprintDay }: IRISStepperProps) {
     const pathname = usePathname();
@@ -70,18 +60,13 @@ export default function IRISStepper({ courseId, currentPhase, completedPhases = 
         const irisPhase = phases.find(p => pathname?.includes(p.id));
         if (irisPhase) return irisPhase.id;
 
-        // Check for legacy CDIO phase names and map to IRIS
-        const cdioPhases = ['conceive', 'design', 'implement', 'operate'];
-        const cdioPhase = cdioPhases.find(p => pathname?.includes(p));
-        if (cdioPhase) return cdioToIrisMap[cdioPhase];
-
         return 'immerse';
     };
 
     const activePhase = detectPhaseFromPath();
 
-    // Convert any CDIO phase names in completedPhases to IRIS names
-    const normalizedCompletedPhases = completedPhases.map(p => cdioToIrisMap[p] || p);
+    // Use phases directly
+    const normalizedCompletedPhases = completedPhases;
 
     const getPhaseStatus = (phaseId: string) => {
         if (normalizedCompletedPhases.includes(phaseId)) return 'completed';
@@ -199,5 +184,4 @@ export default function IRISStepper({ courseId, currentPhase, completedPhases = 
     );
 }
 
-// Export legacy component name for backward compatibility
-export { IRISStepper as CDIOStepper };
+

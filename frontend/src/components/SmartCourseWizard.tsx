@@ -47,10 +47,29 @@ interface Module {
     resources: string[];
 }
 
+interface PLO {
+    id: string;
+    objective: string;
+    blooms_level: string;
+    assessment_method: string;
+}
+
+interface SFIASkill {
+    skill_code: string;
+    skill_name: string;
+    target_level: number;
+}
+
 interface TeachingAgenda {
     course_title: string;
     tagline: string;
     modules: Module[];
+    program_learning_outcomes?: PLO[];
+    sfia_competency_map?: SFIASkill[];
+    assessment_strategy?: {
+        summative: Record<string, number>;
+        formative?: string[];
+    };
     capstone_project: {
         title: string;
         description: string;
@@ -405,8 +424,80 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
             if (response.ok) {
                 const createdCourse = await response.json();
 
-                // Save teaching agenda as syllabus
-                setProcessingStatus('Saving syllabus...');
+                // Save Teaching Modules in Editor-Compatible Format
+                setProcessingStatus('Generating editor content...');
+
+                const modulesPayload = teachingAgenda.modules.map((mod, modIdx) => ({
+                    title: mod.title,
+                    order: modIdx,
+                    status: 'published',
+                    content_blocks: [
+                        {
+                            id: `intro-${modIdx}`,
+                            type: 'heading',
+                            content: mod.title,
+                            metadata: {}
+                        },
+                        {
+                            id: `desc-${modIdx}`,
+                            type: 'text',
+                            content: `Welcome to Week ${mod.week}. In this module, we will focus on the ${(mod.phase && mod.phase !== 'undefined') ? mod.phase : 'learning'} phase.`,
+                            metadata: {}
+                        },
+                        ...(mod.teaching_actions || []).flatMap((action: any, actionIdx: number) => {
+                            const blocks = [];
+                            // Action Heading
+                            blocks.push({
+                                id: `action-${modIdx}-${actionIdx}-head`,
+                                type: 'heading',
+                                content: action.title,
+                                metadata: { level: 2 }
+                            });
+
+                            // Action Content based on type
+                            if (action.type === 'QUIZ') {
+                                blocks.push({
+                                    id: `action-${modIdx}-${actionIdx}-quiz`,
+                                    type: 'quiz',
+                                    content: action.instruction || "Complete the quiz below",
+                                    metadata: { questions: action.questions || [] }
+                                });
+                            } else if (action.type === 'REFLECT' || action.type === 'DISCUSS') {
+                                blocks.push({
+                                    id: `action-${modIdx}-${actionIdx}-discuss`,
+                                    type: 'discussion',
+                                    content: action.prompt || action.content || "Discussion prompt",
+                                    metadata: {}
+                                });
+                            } else {
+                                blocks.push({
+                                    id: `action-${modIdx}-${actionIdx}-text`,
+                                    type: 'text',
+                                    content: action.content || action.instructions || action.prompt || "",
+                                    metadata: {}
+                                });
+                            }
+                            return blocks;
+                        }),
+                        // Fallback if no actions exist
+                        ...((!mod.teaching_actions || mod.teaching_actions.length === 0) ? [{
+                            id: `action-${modIdx}-default`,
+                            type: 'text',
+                            content: "Get started by exploring the core concepts of this week. Click 'Edit' to add interactive activities.",
+                            metadata: {}
+                        }] : [])
+                    ]
+                }));
+
+                await fetch(`${BACKEND_URL}/api/v1/courses/${createdCourse.id}/modules`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(modulesPayload)
+                });
+
+
+                // Save Syllabus (Legacy/Dashboard View)
+                setProcessingStatus('Finalizing...');
                 const syllabusData = {
                     title: `Syllabus: ${teachingAgenda.course_title}`,
                     overview: teachingAgenda.tagline,
@@ -421,7 +512,7 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                     sections: teachingAgenda.modules?.map((mod: any, idx: number) => ({
                         order: idx + 1,
                         title: mod.title,
-                        cdio_phase: mod.phase || 'conceive',
+                        iris_phase: mod.phase || 'immerse',
                         week_number: mod.week || idx + 1,
                         topics: mod.learning_goals || [],
                         activities: mod.teaching_actions?.map((a: any) => a.title) || [],
@@ -436,7 +527,14 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                     body: JSON.stringify(syllabusData)
                 });
 
-                onCourseCreated?.(createdCourse);
+                // Notify parent or Redirect to Editor
+                if (onCourseCreated) {
+                    onCourseCreated(createdCourse);
+                } else {
+                    // Default behavior if not handled by parent: Redirect to editor
+                    window.location.href = `/courses/${createdCourse.id}/editor`;
+                }
+
             } else {
                 throw new Error('Failed to create course');
             }
@@ -913,6 +1011,12 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
         const addAction = (moduleIdx: number, type: TeachingAction['type']) => {
             if (!teachingAgenda) return;
             const updated = { ...teachingAgenda };
+
+            // Ensure teaching_actions array exists
+            if (!updated.modules[moduleIdx].teaching_actions) {
+                updated.modules[moduleIdx].teaching_actions = [];
+            }
+
             const defaultContent = {
                 EXPLAIN: { content: 'Key concepts and explanations to cover...', prompt: '', instructions: '', questions: [] },
                 DISCUSS: { content: '', prompt: 'Discussion question or topic to explore...', instructions: '', questions: [] },
@@ -998,6 +1102,65 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
             setTeachingAgenda({ ...teachingAgenda, tagline: newTagline });
         };
 
+        // PLO Handlers
+        const updatePLO = (idx: number, field: keyof PLO, value: string) => {
+            if (!teachingAgenda) return;
+            const updated = { ...teachingAgenda };
+            if (!updated.program_learning_outcomes) updated.program_learning_outcomes = [];
+            updated.program_learning_outcomes[idx] = { ...updated.program_learning_outcomes[idx], [field]: value };
+            setTeachingAgenda(updated);
+        };
+
+        const addPLO = () => {
+            if (!teachingAgenda) return;
+            const updated = { ...teachingAgenda };
+            if (!updated.program_learning_outcomes) updated.program_learning_outcomes = [];
+            updated.program_learning_outcomes.push({
+                id: `LO${updated.program_learning_outcomes.length + 1}`,
+                objective: 'New Learning Outcome',
+                blooms_level: 'understand',
+                assessment_method: 'Quiz'
+            });
+            setTeachingAgenda(updated);
+        };
+
+        const removePLO = (idx: number) => {
+            if (!teachingAgenda) return;
+            const updated = { ...teachingAgenda };
+            if (!updated.program_learning_outcomes) return;
+            updated.program_learning_outcomes.splice(idx, 1);
+            setTeachingAgenda(updated);
+        };
+
+        // SFIA Handlers
+        const updateSFIA = (idx: number, field: keyof SFIASkill, value: string | number) => {
+            if (!teachingAgenda) return;
+            const updated = { ...teachingAgenda };
+            if (!updated.sfia_competency_map) updated.sfia_competency_map = [];
+            updated.sfia_competency_map[idx] = { ...updated.sfia_competency_map[idx], [field]: value };
+            setTeachingAgenda(updated);
+        };
+
+        const addSFIA = () => {
+            if (!teachingAgenda) return;
+            const updated = { ...teachingAgenda };
+            if (!updated.sfia_competency_map) updated.sfia_competency_map = [];
+            updated.sfia_competency_map.push({
+                skill_code: 'CODE',
+                skill_name: 'New Skill',
+                target_level: 1
+            });
+            setTeachingAgenda(updated);
+        };
+
+        const removeSFIA = (idx: number) => {
+            if (!teachingAgenda) return;
+            const updated = { ...teachingAgenda };
+            if (!updated.sfia_competency_map) return;
+            updated.sfia_competency_map.splice(idx, 1);
+            setTeachingAgenda(updated);
+        };
+
         return (
             <div className="space-y-6">
                 <div className="text-center mb-6">
@@ -1038,61 +1201,125 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                                 <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl">
                                     <CheckCircle2 size={16} className="text-emerald-600" />
                                     <span className="text-emerald-600 font-bold text-sm">MIT OCW Enterprise Standard</span>
-                                    <span className="text-emerald-500 text-xs">• Bloom&apos;s Taxonomy • SFIA Aligned • IRIS + CDIO</span>
+                                    <span className="text-emerald-500 text-xs">• Bloom&apos;s Taxonomy • SFIA Aligned • IRIS</span>
                                 </div>
 
                                 {/* Program Learning Outcomes */}
-                                {(teachingAgenda as any).program_learning_outcomes?.length > 0 && (
-                                    <div className="p-5 bg-white border border-gray-200 rounded-2xl">
-                                        <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                <div className="p-5 bg-white border border-gray-200 rounded-2xl">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                                             <Target size={18} className="text-purple-600" />
                                             Program Learning Outcomes
                                         </h3>
-                                        <div className="space-y-2">
-                                            {(teachingAgenda as any).program_learning_outcomes.map((lo: any, idx: number) => (
-                                                <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
-                                                    <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded font-bold text-xs shrink-0">
-                                                        {lo.id}
-                                                    </span>
-                                                    <div className="flex-1">
-                                                        <p className="text-gray-700 text-sm">{lo.objective}</p>
-                                                        <div className="flex flex-wrap gap-2 mt-2">
-                                                            <span className={`px-2 py-0.5 text-xs rounded-full ${BLOOMS_COLORS[lo.blooms_level] || 'bg-gray-100'}`}>
-                                                                {lo.blooms_level}
-                                                            </span>
-                                                            <span className="px-2 py-0.5 text-xs bg-blue-50 text-blue-600 rounded-full">
-                                                                {lo.assessment_method}
-                                                            </span>
-                                                        </div>
+                                        <button
+                                            onClick={addPLO}
+                                            className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
+                                        >
+                                            + Add PLO
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {(teachingAgenda.program_learning_outcomes || []).map((lo, idx) => (
+                                            <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl group relative">
+                                                <input
+                                                    type="text"
+                                                    value={lo.id}
+                                                    onChange={(e) => updatePLO(idx, 'id', e.target.value)}
+                                                    className="w-16 px-2 py-1 bg-purple-100 text-purple-700 rounded font-bold text-xs text-center focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                                />
+                                                <div className="flex-1 space-y-2">
+                                                    <input
+                                                        type="text"
+                                                        value={lo.objective}
+                                                        onChange={(e) => updatePLO(idx, 'objective', e.target.value)}
+                                                        className="w-full text-gray-700 text-sm bg-transparent border-b border-transparent focus:border-purple-300 focus:outline-none"
+                                                        placeholder="Learning Objective..."
+                                                    />
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <select
+                                                            value={lo.blooms_level}
+                                                            onChange={(e) => updatePLO(idx, 'blooms_level', e.target.value)}
+                                                            className={`px-2 py-0.5 text-xs rounded-full border-none focus:ring-1 focus:ring-purple-500 cursor-pointer ${BLOOMS_COLORS[lo.blooms_level] || 'bg-gray-100'}`}
+                                                        >
+                                                            {Object.keys(BLOOMS_COLORS).map(level => (
+                                                                <option key={level} value={level}>{level}</option>
+                                                            ))}
+                                                        </select>
+                                                        <input
+                                                            type="text"
+                                                            value={lo.assessment_method}
+                                                            onChange={(e) => updatePLO(idx, 'assessment_method', e.target.value)}
+                                                            className="px-2 py-0.5 text-xs bg-blue-50 text-blue-600 rounded-full border-none focus:ring-1 focus:ring-blue-500 w-32"
+                                                            placeholder="Assessment"
+                                                        />
                                                     </div>
                                                 </div>
-                                            ))}
-                                        </div>
+                                                <button
+                                                    onClick={() => removePLO(idx)}
+                                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-opacity"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        ))}
                                     </div>
-                                )}
+                                </div>
 
                                 {/* SFIA Competency Map */}
-                                {(teachingAgenda as any).sfia_competency_map?.length > 0 && (
-                                    <div className="p-5 bg-white border border-gray-200 rounded-2xl">
-                                        <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                <div className="p-5 bg-white border border-gray-200 rounded-2xl">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                                             <Layers size={18} className="text-amber-600" />
                                             SFIA Competency Map
                                         </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                            {(teachingAgenda as any).sfia_competency_map.map((comp: any, idx: number) => (
-                                                <div key={idx} className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <span className="font-bold text-amber-800">{comp.skill_code}</span>
-                                                        <span className="px-2 py-1 bg-amber-200 text-amber-800 rounded-full text-xs font-bold">
-                                                            Level {comp.target_level} - {SFIA_LEVELS[comp.target_level]}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-amber-700 text-sm">{comp.skill_name}</p>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        <button
+                                            onClick={addSFIA}
+                                            className="px-3 py-1 text-xs bg-amber-100 text-amber-700 rounded-full hover:bg-amber-200"
+                                        >
+                                            + Add Skill
+                                        </button>
                                     </div>
-                                )}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {(teachingAgenda.sfia_competency_map || []).map((comp, idx) => (
+                                            <div key={idx} className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl group relative">
+                                                <div className="flex items-center justify-between mb-2 gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={comp.skill_code}
+                                                        onChange={(e) => updateSFIA(idx, 'skill_code', e.target.value)}
+                                                        className="font-bold text-amber-800 bg-transparent border-b border-transparent focus:border-amber-400 focus:outline-none w-20"
+                                                        placeholder="CODE"
+                                                    />
+                                                    <div className="flex items-center gap-1 bg-amber-200 rounded-full px-2 py-1">
+                                                        <span className="text-xs font-bold text-amber-800">L</span>
+                                                        <select
+                                                            value={comp.target_level}
+                                                            onChange={(e) => updateSFIA(idx, 'target_level', parseInt(e.target.value))}
+                                                            className="bg-transparent text-amber-800 text-xs font-bold focus:outline-none cursor-pointer"
+                                                        >
+                                                            {[1, 2, 3, 4, 5, 6, 7].map(l => (
+                                                                <option key={l} value={l}>{l}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    value={comp.skill_name}
+                                                    onChange={(e) => updateSFIA(idx, 'skill_name', e.target.value)}
+                                                    className="w-full text-amber-700 text-sm bg-transparent border-b border-transparent focus:border-amber-400 focus:outline-none"
+                                                    placeholder="Skill Name..."
+                                                />
+                                                <button
+                                                    onClick={() => removeSFIA(idx)}
+                                                    className="absolute -top-2 -right-2 bg-white shadow-sm border border-gray-100 rounded-full p-1 opacity-0 group-hover:opacity-100 text-amber-400 hover:text-red-500 transition-opacity"
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
 
                                 {/* Assessment Strategy */}
                                 {(teachingAgenda as any).assessment_strategy?.summative && (
@@ -1140,7 +1367,7 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
 
                                     {/* Editable Teaching Actions - Expandable */}
                                     <div className="space-y-3">
-                                        {module.teaching_actions.map((action, actionIdx) => {
+                                        {(module.teaching_actions || []).map((action, actionIdx) => {
                                             const expanded = isActionExpanded(idx, actionIdx);
                                             const contentInfo = getContentLabel(action.type);
 
@@ -1379,7 +1606,7 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                         </div>
                         <div className="text-center p-4 bg-white rounded-xl">
                             <p className="text-2xl font-black text-blue-600">
-                                {teachingAgenda.modules.reduce((acc, m) => acc + m.teaching_actions.length, 0)}
+                                {teachingAgenda.modules.reduce((acc, m) => acc + (m.teaching_actions?.length || 0), 0)}
                             </p>
                             <p className="text-sm text-gray-500">Activities</p>
                         </div>

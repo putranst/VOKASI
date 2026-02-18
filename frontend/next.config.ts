@@ -17,10 +17,13 @@ const nextConfig: NextConfig = {
   },
   output: 'standalone',
   async rewrites() {
+    // In Docker production, NEXT_PUBLIC_BACKEND_URL is set to the internal backend service
+    // In local dev, it falls back to localhost:8000
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8000/api/:path*', // Proxy to Backend
+        destination: `${backendUrl}/api/:path*`,
       },
     ]
   },

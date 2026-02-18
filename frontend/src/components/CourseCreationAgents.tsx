@@ -58,13 +58,13 @@ const AGENTS: Record<AgentType, Agent> = {
         capabilities: [
             'Analyze course structure and flow',
             'Suggest learning outcomes aligned with Bloom\'s Taxonomy',
-            'Recommend IRIS/CDIO phase distribution',
+            'Recommend IRIS phase distribution',
             'Generate module sequences and dependencies'
         ],
         systemPrompt: `You are Alexandria, an expert curriculum designer AI. You help instructors create well-structured, internationally-aligned course curricula. You focus on:
 - Course structure and logical flow
 - Learning outcomes using Bloom's Taxonomy
-- IRIS (Immerse-Realize-Iterate-Scale) and CDIO framework alignment
+- IRIS (Immerse-Realize-Iterate-Scale) framework alignment
 - Assessment strategies and rubrics
 - International standards like MIT OCW structure
 
@@ -245,7 +245,7 @@ Which aspect would you like me to focus on?`;
     // Quick action - get initial analysis
     const requestAnalysis = useCallback(async (agent: AgentType) => {
         const analysisQueries: Record<AgentType, string> = {
-            alexandria: 'Analyze my course structure and suggest improvements based on IRIS/CDIO frameworks and international standards.',
+            alexandria: 'Analyze my course structure and suggest improvements based on IRIS framework and international standards.',
             sme: 'Review my course content and suggest ways to add more depth, examples, and practical applications.',
             pedagogy: 'Evaluate my course for engagement, accessibility, and pedagogical effectiveness.'
         };
@@ -324,8 +324,8 @@ Which aspect would you like me to focus on?`;
                             onMouseEnter={() => setShowCapabilities(agent.id)}
                             onMouseLeave={() => setShowCapabilities(null)}
                             className={`flex-1 p-4 relative transition-all ${isSelected
-                                    ? `${agent.bgColor} border-b-2 border-current ${agent.color}`
-                                    : 'hover:bg-gray-50'
+                                ? `${agent.bgColor} border-b-2 border-current ${agent.color}`
+                                : 'hover:bg-gray-50'
                                 }`}
                         >
                             <div className="flex flex-col items-center gap-2">

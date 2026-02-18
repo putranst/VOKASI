@@ -323,6 +323,7 @@ class IterationArtifact(ORMBase):
     measurements: Optional[Dict[str, Any]] = None
     learnings: Optional[str] = None
     next_hypothesis: Optional[str] = None
+    ai_feedback: Optional[Dict[str, Any]] = None
     linting_passed: bool = False
     tests_passed: bool = False
     created_at: datetime

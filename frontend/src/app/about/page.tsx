@@ -101,7 +101,7 @@ export default function AboutPage() {
                             {
                                 icon: Sparkles,
                                 title: 'AI-Powered Learning',
-                                description: 'Socratic AI tutor that guides learners through project-based education using the CDIO framework.',
+                                description: 'Socratic AI tutor that guides learners through project-based education using the IRIS framework.',
                                 color: 'text-yellow-600',
                                 bg: 'bg-yellow-50'
                             },

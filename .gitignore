@@ -28,3 +28,7 @@ frontend/yarn-error.log*
 
 # OS specific
 Thumbs.db
+
+# Production secrets - NEVER commit these!
+.env.production
+service-account.json

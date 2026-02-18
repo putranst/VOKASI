@@ -28,11 +28,16 @@ export default function GradingPage() {
     const [filterStatus, setFilterStatus] = useState('all');
     const [submissions, setSubmissions] = useState<GradingItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [mounted, setMounted] = useState(false);
 
     const handleLogout = () => {
         logout();
         router.push('/');
     };
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         const fetchGradingQueue = async () => {
@@ -73,10 +78,12 @@ export default function GradingPage() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 mr-4 border-r border-gray-200 pr-4">
-                            <InboxDrawer />
-                            <NotificationPopover />
-                        </div>
+                        {mounted && (
+                            <div className="flex items-center gap-2 mr-4 border-r border-gray-200 pr-4">
+                                <InboxDrawer />
+                                <NotificationPopover />
+                            </div>
+                        )}
 
                         <Link href="/instructor/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold text-xs">
@@ -99,7 +106,7 @@ export default function GradingPage() {
                 <div className="flex justify-between items-end mb-8">
                     <div>
                         <h1 className="text-3xl font-black text-gray-900 mb-2">Grading Queue</h1>
-                        <p className="text-gray-600">Review and grade student submissions across all CDIO phases.</p>
+                        <p className="text-gray-600">Review and grade student submissions across all IRIS phases.</p>
                     </div>
 
                     <div className="flex items-center gap-2">

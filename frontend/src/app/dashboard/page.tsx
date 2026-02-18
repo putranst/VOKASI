@@ -24,6 +24,8 @@ import { LearningStreak } from '@/components/ui/LearningStreak';
 import { EkspedisiAINusantara } from '@/components/EkspedisiAINusantara';
 import { ActiveProjectCard } from '@/components/ActiveProjectCard';
 import { WeeklyGoalRing } from '@/components/ui/WeeklyGoalRing';
+import { NaskaBuddy } from '@/components/NaskaBuddy';
+import { FeedbackSummaryCard } from '@/components/dashboard/FeedbackSummaryCard';
 
 interface DashboardData {
     enrolled_courses: DashboardCourseProgress[];
@@ -40,6 +42,13 @@ interface DashboardData {
         current_phase: 'immerse' | 'realize' | 'iterate' | 'scale' | 'completed';
         completion_percentage: number;
         sfia_target_level?: number;
+        ai_feedback?: {
+            grade: string;
+            score: number;
+            strengths: string[];
+            weaknesses: string[];
+        };
+        credential_earned?: boolean;
     }[];
     learning_streak?: {
         current_streak: number;
@@ -166,40 +175,42 @@ export default function DashboardPage() {
                     </div>
                 </aside>
 
-                {/* Main Content */}
-                <main className="flex-1 lg:ml-64 min-h-screen w-full max-w-[100vw] overflow-x-hidden">
-                    {/* Header */}
-                    <header className="bg-white border-b border-gray-100 sticky top-0 z-10 w-full">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                            <h1 className="text-xl font-bold text-gray-900">
-                                {activeTab === 'overview' ? 'My Learning Dashboard' : 'Digital Credential Wallet'}
-                            </h1>
+                {/* Main Content - Premium Layout */}
+                <main className="flex-1 lg:ml-64 min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-[#FAFAFA]">
+                    {/* Premium Header */}
+                    <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-xl border-b border-gray-100 transition-all duration-500">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+                            <div>
+                                <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+                                    {activeTab === 'overview' ? 'My Learning Space' : 'Credential Vault'}
+                                </h1>
+                                <p className="text-xs text-gray-500 font-medium">
+                                    {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                                </p>
+                            </div>
 
-                            <div className="flex items-center gap-4">
-                                <div className="hidden md:flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
-                                    <Clock size={14} className="text-gray-400" />
-                                    <span className="text-xs font-medium text-gray-600">
-                                        {data?.total_learning_hours || 0}h Learning Time
-                                    </span>
+                            <div className="flex items-center gap-6">
+                                {/* NASKA TRIGGER (Placeholder) */}
+                                <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-purple-50 to-blue-50 rounded-full border border-purple-100/50 shadow-sm cursor-pointer hover:shadow-md transition-all group">
+                                    <Sparkles size={16} className="text-purple-600 animate-pulse" />
+                                    <span className="text-xs font-semibold text-purple-700 group-hover:text-purple-800">Ask Naska</span>
                                 </div>
 
-                                <div className="h-6 w-px bg-gray-200 mx-2"></div>
+                                <div className="h-8 w-px bg-gray-200 mx-2 hidden md:block"></div>
 
-                                <InboxDrawer />
-                                <NotificationPopover />
+                                <div className="flex items-center gap-4">
+                                    <InboxDrawer />
+                                    <NotificationPopover />
 
-                                <div className="flex items-center gap-3 ml-2">
-                                    <div className="text-right hidden sm:block">
-                                        <p className="text-sm font-bold text-gray-900">{user?.name}</p>
-                                        <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
-                                    </div>
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 p-0.5">
-                                        <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                                            <img
-                                                src={`https://ui-avatars.com/api/?name=${user?.name}&background=random`}
-                                                alt={user?.name}
-                                                className="w-full h-full object-cover"
-                                            />
+                                    <div className="relative group cursor-pointer">
+                                        <div className="w-10 h-10 rounded-full p-0.5 bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-purple-500 group-hover:to-blue-500 transition-all duration-500">
+                                            <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                                                <img
+                                                    src={`https://ui-avatars.com/api/?name=${user?.name}&background=random`}
+                                                    alt={user?.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -207,31 +218,39 @@ export default function DashboardPage() {
                         </div>
                     </header>
 
-                    <PageTransition className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+                    <PageTransition className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
                         {activeTab === 'overview' ? (
                             <>
-                                {/* Career Goal Banner - Show if no pathway selected */}
-                                {!data?.career_pathway_id && (
-                                    <CareerGoalBanner
-                                        onSetGoal={() => {
-                                            // Scroll to career explorer or open modal
-                                            const element = document.getElementById('career-explorer');
-                                            element?.scrollIntoView({ behavior: 'smooth' });
-                                        }}
-                                    />
-                                )}
+                                {/* Premium Greeting Section */}
+                                <div className="relative overflow-hidden rounded-3xl bg-white border border-gray-100 shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-8 sm:p-10 mb-8 group">
+                                    {/* Abstract Background Decoration */}
+                                    <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-br from-purple-500/5 to-blue-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:scale-110 transition-transform duration-1000"></div>
 
-                                {/* Welcome Section */}
-                                <div className="mb-6">
-                                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                                        Welcome back, {user?.name?.split(' ')[0]}! 👋
-                                    </h2>
-                                    <p className="text-gray-600">
-                                        {selectedPathway
-                                            ? `You're on track to become a ${selectedPathway.title}. Keep learning!`
-                                            : "You've made great progress this week. Keep it up!"
-                                        }
-                                    </p>
+                                    <div className="relative z-10 max-w-2xl">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-50 border border-gray-100 rounded-full mb-4">
+                                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Learning Engine Active</span>
+                                        </div>
+                                        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 tracking-tight leading-tight">
+                                            Good Morning, {user?.name?.split(' ')[0]}. <br />
+                                            <span className="text-gray-400 font-medium">Ready to continue your IRIS journey?</span>
+                                        </h2>
+                                        <p className="text-lg text-gray-600 leading-relaxed mb-6">
+                                            {selectedPathway
+                                                ? `You're making excellent progress on the ${selectedPathway.title} track. Your recent activity suggests focusing on logic design today.`
+                                                : "Your cognitive engine is ready. Select a pathway to begin personalized optimization."
+                                            }
+                                        </p>
+
+                                        <div className="flex flex-wrap gap-3">
+                                            <button className="px-6 py-3 bg-gray-900 text-white rounded-xl font-bold text-sm shadow-lg shadow-gray-200 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                                                <BookOpen size={16} /> Resume Learning
+                                            </button>
+                                            <button className="px-6 py-3 bg-white text-gray-700 border border-gray-200 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all flex items-center gap-2">
+                                                <Target size={16} /> View Goals
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Career Explorer - Show if no pathway selected */}
@@ -325,12 +344,14 @@ export default function DashboardPage() {
                                 </div>
 
                                 {/* Your Active Project - Unified Block */}
-                                {data?.enrolled_courses && data.enrolled_courses.length > 0 && (
-                                    <div className="mb-8">
-                                        {(() => {
-                                            const activeCourse = data.enrolled_courses[0];
-                                            const phase = activeCourse.progress > 75 ? 'scale' : activeCourse.progress > 50 ? 'iterate' : activeCourse.progress > 25 ? 'realize' : 'immerse';
-                                            return (
+                                <div className="mb-8">
+                                    {(() => {
+                                        const activeProject = data.iris_projects?.find(p => p.course_id === data.enrolled_courses[0].course_id);
+                                        const activeCourse = data.enrolled_courses[0];
+                                        const phase = activeProject?.current_phase || (activeCourse.progress > 75 ? 'scale' : activeCourse.progress > 50 ? 'iterate' : activeCourse.progress > 25 ? 'realize' : 'immerse');
+
+                                        return (
+                                            <div className="space-y-6">
                                                 <ActiveProjectCard
                                                     courseId={activeCourse.course_id}
                                                     courseTitle={activeCourse.title}
@@ -345,10 +366,46 @@ export default function DashboardPage() {
                                                     completedModules={Math.round((activeCourse.progress / 100) * 10)}
                                                     lastActivity="Today"
                                                 />
-                                            );
-                                        })()}
-                                    </div>
-                                )}
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    {/* AI Feedback Display */}
+                                                    {activeProject?.ai_feedback && (
+                                                        <FeedbackSummaryCard
+                                                            courseId={activeCourse.course_id}
+                                                            grade={activeProject.ai_feedback.grade}
+                                                            score={activeProject.ai_feedback.score}
+                                                            strengths={activeProject.ai_feedback.strengths}
+                                                            weaknesses={activeProject.ai_feedback.weaknesses}
+                                                        />
+                                                    )}
+
+                                                    {/* Credential Earned Banner */}
+                                                    {(activeProject?.current_phase === 'completed' || activeProject?.current_phase === 'scale') && (
+                                                        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white flex flex-col justify-between relative overflow-hidden">
+                                                            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+                                                            <div>
+                                                                <div className="flex items-center gap-2 mb-2">
+                                                                    <div className="p-1 bg-white/20 rounded-lg">
+                                                                        <Award size={16} className="text-white" />
+                                                                    </div>
+                                                                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-100">Ready to Claim</span>
+                                                                </div>
+                                                                <h3 className="text-lg font-bold mb-1">Innovation Practitioner</h3>
+                                                                <p className="text-indigo-100 text-xs">Verify your achievement on the blockchain.</p>
+                                                            </div>
+                                                            <Link
+                                                                href={`/courses/${activeCourse.course_id}/scale`}
+                                                                className="mt-4 w-full py-2 bg-white text-indigo-600 rounded-lg text-sm font-bold text-center hover:bg-indigo-50 transition-colors"
+                                                            >
+                                                                View Credential
+                                                            </Link>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
 
                                 {/* Empty State for No Active Project */}
                                 {(!data?.enrolled_courses || data.enrolled_courses.length === 0) && (
@@ -532,6 +589,7 @@ export default function DashboardPage() {
                         </div>
                     </div>
                 )}
+                <NaskaBuddy />
             </div>
         </RoleRouteGuard>
     );

@@ -533,10 +533,16 @@ export default function InstructorDashboard() {
                                                         }}
                                                         className="flex-1 py-2 bg-emerald-50 text-emerald-600 font-medium rounded-xl hover:bg-emerald-100 transition-colors flex items-center justify-center gap-1"
                                                     >
-                                                        <FileText size={14} />
                                                         Syllabus
                                                     </button>
                                                 </div>
+                                                <button
+                                                    onClick={() => router.push(`/courses/${course.id}/editor`)}
+                                                    className="w-full mt-2 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-medium rounded-xl hover:from-purple-600 hover:to-indigo-600 transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                                                >
+                                                    <LayoutDashboard size={14} />
+                                                    Manage Content
+                                                </button>
                                             </div>
                                         </div>
                                     ))}

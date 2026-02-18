@@ -5,7 +5,8 @@ import { useParams } from 'next/navigation';
 import IRISStepper from '@/components/ui/IRISStepper';
 import { useAuth } from '@/lib/AuthContext';
 import { EnhancedSocraticTutor } from '@/components/EnhancedSocraticTutor';
-import { RefreshCw, Lightbulb, BarChart3, Code, FileText, Send, CheckCircle, Plus } from 'lucide-react';
+import { GradingFeedback } from '@/components/GradingFeedback';
+import { RefreshCw, Lightbulb, BarChart3, Code, FileText, Send, CheckCircle, Plus, Sparkles } from 'lucide-react';
 
 
 interface Iteration {
@@ -13,6 +14,14 @@ interface Iteration {
     hypothesis: string;
     learnings: string;
     completed: boolean;
+}
+
+interface GradingFeedbackData {
+    grade: string;
+    score: number;
+    feedback: string;
+    strengths: string[];
+    weaknesses: string[];
 }
 
 export default function IteratePage() {
@@ -34,6 +43,56 @@ export default function IteratePage() {
         next_hypothesis: ''
     });
 
+    // Grading State
+    const [gradingLoading, setGradingLoading] = useState(false);
+    const [aiFeedback, setAiFeedback] = useState<GradingFeedbackData | null>(null);
+    const [backendIterationId, setBackendIterationId] = useState<number | null>(null);
+
+    // Fetch existing project/iteration data
+    React.useEffect(() => {
+        async function fetchProject() {
+            if (!user) return;
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/courses/${courseId}/projects?user_id=${user.id}`);
+                const projects = await res.json();
+                if (projects && projects.length > 0) {
+                    const proj = projects[0];
+
+                    // Fetch details
+                    const detailsRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/projects/${proj.id}`);
+                    const details = await detailsRes.json();
+
+                    if (details.iteration) {
+                        setBackendIterationId(details.iteration.id);
+                        if (details.iteration.ai_feedback) {
+                            setAiFeedback(details.iteration.ai_feedback);
+                        }
+                        // Restore form data if needed (skipped for brevity/demo)
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to fetch project data", e);
+            }
+        }
+        fetchProject();
+    }, [courseId, user]);
+
+    const handleAnalyzeCycle = async () => {
+        if (!backendIterationId) return;
+        setGradingLoading(true);
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/ai/grade-iteration/${backendIterationId}`, { method: 'POST' });
+            if (res.ok) {
+                const feedback = await res.json();
+                setAiFeedback(feedback);
+            }
+        } catch (e) {
+            console.error("Grading failed", e);
+        } finally {
+            setGradingLoading(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -50,6 +109,10 @@ export default function IteratePage() {
             });
 
             if (response.ok) {
+                const savedIteration = await response.json();
+                if (savedIteration && savedIteration.id) {
+                    setBackendIterationId(savedIteration.id);
+                }
                 // Mark current iteration complete
                 setIterations(prev => prev.map((it, i) =>
                     i === currentIteration ? { ...it, hypothesis: formData.hypothesis, learnings: formData.learnings, completed: true } : it
@@ -105,6 +168,23 @@ export default function IteratePage() {
                         >
                             Continue to Scale →
                         </a>
+
+                        {(backendIterationId || aiFeedback) && (
+                            <div className="mt-8 text-left">
+                                <GradingFeedback feedback={aiFeedback as any} isLoading={gradingLoading} />
+                                {!aiFeedback && !gradingLoading && (
+                                    <div className="mt-4 text-center">
+                                        <button
+                                            onClick={handleAnalyzeCycle}
+                                            className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100"
+                                        >
+                                            <Sparkles size={18} />
+                                            Analyze Final Result with AI
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -155,6 +235,13 @@ export default function IteratePage() {
                                     measure results, and learn from outcomes. You can run multiple cycles before scaling.
                                 </p>
                             </div>
+
+                            {/* Grading Feedback Area - Show if feedback exists even if not submitted */}
+                            {aiFeedback && (
+                                <div className="mb-8">
+                                    <GradingFeedback feedback={aiFeedback as any} />
+                                </div>
+                            )}
 
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 {/* Hypothesis */}
@@ -248,6 +335,20 @@ export default function IteratePage() {
                                     )}
                                 </button>
                             </form>
+
+                            {/* Analyze Button for active iteration if saved/BackendId exists (optional, mostly for post-submit) */}
+                            {backendIterationId && !aiFeedback && !loading && !submitted && (
+                                <div className="mt-6 border-t border-gray-100 pt-6">
+                                    <button
+                                        onClick={handleAnalyzeCycle}
+                                        disabled={gradingLoading}
+                                        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl font-bold hover:bg-indigo-100 transition-colors"
+                                    >
+                                        <Sparkles size={18} />
+                                        {gradingLoading ? 'Analyzing...' : 'Get AI Feedback on Progress'}
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 

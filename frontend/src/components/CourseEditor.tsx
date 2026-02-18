@@ -5,8 +5,10 @@ import {
     Plus, GripVertical, Trash2, ChevronDown, ChevronUp,
     Type, Video, Code, FileQuestion, MessageSquare, BookOpen,
     Lightbulb, Users, Sparkles, Save, Eye, Edit3, Wand2,
-    CheckCircle, Clock, Target, LayoutGrid
+    CheckCircle, Clock, Target, LayoutGrid, Palette
 } from 'lucide-react';
+import { VisualCanvas, createInitialCanvasState, VisualElement } from './visual-editor/VisualCanvas';
+import { AssetLibrary } from './visual-editor/AssetLibrary';
 
 // Content Block Types
 type BlockType =
@@ -19,7 +21,8 @@ type BlockType =
     | 'assignment'
     | 'ai_interaction'
     | 'resource'
-    | 'divider';
+    | 'divider'
+    | 'design';
 
 interface ContentBlock {
     id: string;
@@ -32,6 +35,7 @@ interface ContentBlock {
         codeLanguage?: string;
         videoUrl?: string;
         resources?: string[];
+        canvasState?: VisualElement[];
     };
 }
 
@@ -59,8 +63,126 @@ const BLOCK_TYPES: Record<BlockType, { icon: React.ElementType; label: string; c
     assignment: { icon: Target, label: 'Assignment', color: 'bg-orange-100 text-orange-600', description: 'Student assignment' },
     ai_interaction: { icon: Sparkles, label: 'AI Interaction', color: 'bg-indigo-100 text-indigo-600', description: 'Socratic AI checkpoint' },
     resource: { icon: Lightbulb, label: 'Resources', color: 'bg-teal-100 text-teal-600', description: 'Learning resources' },
-    divider: { icon: LayoutGrid, label: 'Divider', color: 'bg-gray-50 text-gray-400', description: 'Section divider' }
+    divider: { icon: LayoutGrid, label: 'Divider', color: 'bg-gray-50 text-gray-400', description: 'Section divider' },
+    design: { icon: Palette, label: 'Visual Design', color: 'bg-pink-100 text-pink-600', description: 'Slides & Graphics' }
 };
+
+// --- Rich Block Components ---
+
+const HeadingBlock = ({ block, onUpdate, onDelete }: { block: ContentBlock, onUpdate: any, onDelete: any }) => (
+    <div className="relative group mb-4">
+        <input
+            type="text"
+            value={block.content}
+            onChange={(e) => onUpdate(block.id, { content: e.target.value })}
+            className="w-full text-3xl font-bold text-gray-900 border-none focus:ring-0 bg-transparent p-0 placeholder:text-gray-300"
+            placeholder="Heading Title"
+        />
+        <div className="absolute -right-12 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button onClick={() => onDelete(block.id)} className="p-2 text-gray-400 hover:text-red-500 bg-white rounded-full shadow-sm hover:shadow-md border border-gray-100 transition-all">
+                <Trash2 size={16} />
+            </button>
+        </div>
+    </div>
+);
+
+const ResourceBlock = ({ block, onUpdate }: { block: ContentBlock, onUpdate: any }) => (
+    <div className="p-5 bg-teal-50 border border-teal-100 rounded-xl relative group transition-all hover:bg-teal-50/80 hover:border-teal-200">
+        <div className="flex items-start gap-4">
+            <div className="p-3 bg-white rounded-xl text-teal-600 shadow-sm">
+                <Lightbulb size={24} />
+            </div>
+            <div className="flex-1 space-y-3">
+                <div className="flex justify-between items-start">
+                    <input
+                        type="text"
+                        value={block.metadata?.title || ''}
+                        onChange={(e) => onUpdate(block.id, { metadata: { ...block.metadata, title: e.target.value } })}
+                        className="w-full text-lg font-bold text-teal-900 bg-transparent border-none focus:ring-0 p-0 placeholder:text-teal-400"
+                        placeholder="Resource Title (e.g. Required Reading)"
+                    />
+                </div>
+                <textarea
+                    value={block.content}
+                    onChange={(e) => onUpdate(block.id, { content: e.target.value })}
+                    className="w-full text-sm text-teal-800 bg-transparent border-none focus:ring-0 p-0 resize-none placeholder:text-teal-500/70"
+                    placeholder="Add description, instructions, or citation..."
+                    rows={2}
+                />
+                {/* Link Input (Optional Metadata) */}
+                <div className="flex items-center gap-2 bg-white/50 px-3 py-1.5 rounded-lg w-fit">
+                    <span className="text-xs font-semibold text-teal-600 uppercase">Link:</span>
+                    <input
+                        type="text"
+                        value={block.metadata?.link || ''}
+                        onChange={(e) => onUpdate(block.id, { metadata: { ...block.metadata, link: e.target.value } })}
+                        className="bg-transparent border-none text-xs text-teal-700 w-64 focus:ring-0 p-0 placeholder:text-teal-400"
+                        placeholder="https://..."
+                    />
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+const AssignmentBlock = ({ block, onUpdate }: { block: ContentBlock, onUpdate: any }) => (
+    <div className="p-6 bg-orange-50 border border-orange-100 rounded-xl relative group transition-all hover:shadow-md">
+        <div className="flex items-start gap-4">
+            <div className="p-3 bg-white rounded-xl text-orange-600 shadow-sm">
+                <Target size={24} />
+            </div>
+            <div className="flex-1 space-y-3">
+                <div className="flex justify-between items-center">
+                    <input
+                        type="text"
+                        value={block.metadata?.title || ''}
+                        onChange={(e) => onUpdate(block.id, { metadata: { ...block.metadata, title: e.target.value } })}
+                        className="text-lg font-bold text-orange-900 bg-transparent border-none focus:ring-0 p-0 placeholder:text-orange-400 w-full mr-4"
+                        placeholder="Assignment Title"
+                    />
+                    <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm border border-orange-100">
+                        <span className="text-xs text-orange-400 font-bold uppercase">Points</span>
+                        <input
+                            type="number"
+                            value={block.metadata?.points || 100}
+                            onChange={(e) => onUpdate(block.id, { metadata: { ...block.metadata, points: parseInt(e.target.value) } })}
+                            className="w-12 text-sm font-bold text-orange-600 bg-transparent border-none focus:ring-0 p-0 text-right"
+                        />
+                    </div>
+                </div>
+                <div className="bg-white/60 p-4 rounded-lg border border-orange-100/50">
+                    <textarea
+                        value={block.content}
+                        onChange={(e) => onUpdate(block.id, { content: e.target.value })}
+                        className="w-full text-base text-gray-700 bg-transparent border-none focus:ring-0 p-0 resize-none placeholder:text-gray-400"
+                        placeholder="Describe the assignment task, deliverables, and criteria..."
+                        rows={4}
+                    />
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+const DiscussionBlock = ({ block, onUpdate }: { block: ContentBlock, onUpdate: any }) => (
+    <div className="p-5 bg-yellow-50 border border-yellow-100 rounded-xl relative group">
+        <div className="flex items-start gap-4">
+            <div className="p-3 bg-white rounded-xl text-yellow-600 shadow-sm">
+                <MessageSquare size={24} />
+            </div>
+            <div className="flex-1">
+                <h4 className="text-xs font-bold text-yellow-600 uppercase mb-2">Discussion Prompt</h4>
+                <textarea
+                    value={block.content}
+                    onChange={(e) => onUpdate(block.id, { content: e.target.value })}
+                    className="w-full text-lg font-medium text-yellow-900 bg-transparent border-none focus:ring-0 p-0 resize-none placeholder:text-yellow-400/70"
+                    placeholder="Ask a question to spark debate..."
+                    rows={2}
+                />
+            </div>
+        </div>
+    </div>
+);
 
 export function CourseEditor({ initialBlocks = [], onSave, courseTitle, moduleTitle }: CourseEditorProps) {
     const [blocks, setBlocks] = useState<ContentBlock[]>(initialBlocks.length > 0 ? initialBlocks : [
@@ -112,6 +234,7 @@ export function CourseEditor({ initialBlocks = [], onSave, courseTitle, moduleTi
             case 'ai_interaction': return 'Ask the AI tutor about this concept';
             case 'resource': return 'Recommended reading and resources';
             case 'divider': return '';
+            case 'design': return 'Visual Design Block';
             default: return '';
         }
     };
@@ -133,6 +256,8 @@ export function CourseEditor({ initialBlocks = [], onSave, courseTitle, moduleTi
                 return { codeLanguage: 'javascript' };
             case 'ai_interaction':
                 return { title: 'Socratic Checkpoint' };
+            case 'design':
+                return { canvasState: createInitialCanvasState() };
             default:
                 return {};
         }
@@ -316,15 +441,7 @@ export function CourseEditor({ initialBlocks = [], onSave, courseTitle, moduleTi
     const renderBlockContent = (block: ContentBlock, isSelected: boolean) => {
         switch (block.type) {
             case 'heading':
-                return (
-                    <input
-                        type="text"
-                        value={block.content}
-                        onChange={(e) => updateBlock(block.id, { content: e.target.value })}
-                        className="w-full text-xl font-bold text-gray-900 bg-transparent border-none focus:outline-none focus:ring-0"
-                        placeholder="Section heading..."
-                    />
-                );
+                return <HeadingBlock block={block} onUpdate={updateBlock} onDelete={deleteBlock} />;
 
             case 'text':
                 return (
@@ -454,16 +571,10 @@ export function CourseEditor({ initialBlocks = [], onSave, courseTitle, moduleTi
                 );
 
             case 'discussion':
+                return <DiscussionBlock block={block} onUpdate={updateBlock} />;
+
             case 'assignment':
-                return (
-                    <textarea
-                        value={block.content}
-                        onChange={(e) => updateBlock(block.id, { content: e.target.value })}
-                        className="w-full text-gray-700 bg-transparent border-none focus:outline-none focus:ring-0 resize-none min-h-[60px]"
-                        placeholder={block.type === 'discussion' ? 'Discussion prompt...' : 'Assignment description...'}
-                        rows={3}
-                    />
-                );
+                return <AssignmentBlock block={block} onUpdate={updateBlock} />;
 
             case 'ai_interaction':
                 return (
@@ -483,18 +594,22 @@ export function CourseEditor({ initialBlocks = [], onSave, courseTitle, moduleTi
                 );
 
             case 'resource':
-                return (
-                    <textarea
-                        value={block.content}
-                        onChange={(e) => updateBlock(block.id, { content: e.target.value })}
-                        className="w-full text-gray-700 bg-transparent border-none focus:outline-none focus:ring-0 resize-none"
-                        placeholder="List recommended readings, links, and resources..."
-                        rows={3}
-                    />
-                );
+                return <ResourceBlock block={block} onUpdate={updateBlock} />;
 
             case 'divider':
                 return <hr className="border-t-2 border-gray-200 my-2" />;
+
+            case 'design':
+                return (
+                    <div className="h-[500px] border border-gray-200 rounded-xl overflow-hidden shadow-inner bg-gray-50 relative pointer-events-auto">
+                        <VisualCanvas
+                            elements={block.metadata?.canvasState || []}
+                            onChange={(newElements) => updateBlock(block.id, {
+                                metadata: { ...block.metadata, canvasState: newElements }
+                            })}
+                        />
+                    </div>
+                );
 
             default:
                 return <p className="text-gray-500">Unknown block type</p>;
@@ -595,6 +710,19 @@ export function CourseEditor({ initialBlocks = [], onSave, courseTitle, moduleTi
             case 'divider':
                 return <hr key={block.id} className="border-t-2 border-gray-200 my-8" />;
 
+            case 'design':
+                return (
+                    <div key={block.id} className="mb-8">
+                        <div className="h-[400px] border border-gray-100 rounded-xl overflow-hidden shadow-sm bg-gray-50 pointer-events-none">
+                            <VisualCanvas
+                                elements={block.metadata?.canvasState || []}
+                                onChange={() => { }}
+                                readOnly={true}
+                            />
+                        </div>
+                    </div>
+                );
+
             default:
                 return (
                     <div key={block.id} className="mb-4 p-4 bg-gray-50 rounded-lg">
@@ -676,51 +804,69 @@ export function CourseEditor({ initialBlocks = [], onSave, courseTitle, moduleTi
                 </div>
             </div>
 
-            {/* Editor Content */}
-            <div
-                ref={editorRef}
-                className="max-w-4xl mx-auto px-6 py-8"
-                onClick={() => { setShowBlockMenu(null); }}
-            >
-                {isPreviewMode ? (
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                        {blocks.map(block => renderBlockPreview(block))}
-                    </div>
-                ) : (
-                    <div className="space-y-6">
-                        {/* Add Block at Start */}
-                        <div className="flex justify-center">
-                            <button
-                                onClick={() => addBlock('text')}
-                                className="px-4 py-2 text-sm text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors flex items-center gap-2"
-                            >
-                                <Plus size={16} />
-                                Add content block
-                            </button>
+            {/* Main Content Area with potential Sidebar */}
+            <div className="flex max-w-7xl mx-auto">
+                {/* Asset Library Sidebar - Shows only when Design Block is selected */}
+                {!isPreviewMode && selectedBlockId && blocks.find(b => b.id === selectedBlockId)?.type === 'design' && (
+                    <div className="w-64 flex-shrink-0 sticky top-24 h-[calc(100vh-100px)] animate-in slide-in-from-left-4 duration-300 z-10">
+                        <div className="h-full bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                            <AssetLibrary
+                                onDragStart={(e, type, payload) => {
+                                    // The drop is handled by the VisualCanvas
+                                    e.dataTransfer.setData('type', type);
+                                    if (payload) e.dataTransfer.setData('payload', payload);
+                                }}
+                            />
                         </div>
-
-                        {/* Blocks */}
-                        {blocks.map(block => renderBlock(block))}
-
-                        {/* Empty State */}
-                        {blocks.length === 0 && (
-                            <div className="text-center py-16">
-                                <div className="w-16 h-16 mx-auto bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
-                                    <LayoutGrid size={32} className="text-gray-400" />
-                                </div>
-                                <h3 className="text-lg font-semibold text-gray-800 mb-2">Start building your course</h3>
-                                <p className="text-gray-500 mb-6">Add content blocks to create engaging learning experiences</p>
-                                <button
-                                    onClick={() => addBlock('heading')}
-                                    className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors"
-                                >
-                                    <Plus size={18} className="inline mr-2" />
-                                    Add First Block
-                                </button>
-                            </div>
-                        )}
                     </div>
                 )}
+
+                {/* Editor Content */}
+                <div
+                    ref={editorRef}
+                    className="flex-1 px-6 py-8 min-w-0"
+                    onClick={() => { setShowBlockMenu(null); }}
+                >
+                    {isPreviewMode ? (
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+                            {blocks.map(block => renderBlockPreview(block))}
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            {/* Add Block at Start */}
+                            <div className="flex justify-center">
+                                <button
+                                    onClick={() => addBlock('text')}
+                                    className="px-4 py-2 text-sm text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors flex items-center gap-2"
+                                >
+                                    <Plus size={16} />
+                                    Add content block
+                                </button>
+                            </div>
+
+                            {/* Blocks */}
+                            {blocks.map(block => renderBlock(block))}
+
+                            {/* Empty State */}
+                            {blocks.length === 0 && (
+                                <div className="text-center py-16">
+                                    <div className="w-16 h-16 mx-auto bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+                                        <LayoutGrid size={32} className="text-gray-400" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Start building your course</h3>
+                                    <p className="text-gray-500 mb-6">Add content blocks to create engaging learning experiences</p>
+                                    <button
+                                        onClick={() => addBlock('heading')}
+                                        className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors"
+                                    >
+                                        <Plus size={18} className="inline mr-2" />
+                                        Add First Block
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Loading Overlay for AI */}

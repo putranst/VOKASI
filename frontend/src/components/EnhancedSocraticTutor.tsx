@@ -152,7 +152,7 @@ I can help you:
 • Design effective learning outcomes
 • Create engaging activities
 • Develop assessment strategies
-• Ensure alignment with IRIS/CDIO frameworks
+• Ensure alignment with IRIS framework
 
 What aspect of your course would you like to work on?`
         };
@@ -420,8 +420,8 @@ Think about this carefully before responding. The goal isn't to find the "right"
                         className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                         <div className={`max-w-[85%] rounded-2xl p-4 ${msg.role === 'user'
-                                ? 'bg-emerald-600 text-white rounded-br-none'
-                                : 'bg-white border border-gray-100 shadow-sm rounded-bl-none'
+                            ? 'bg-emerald-600 text-white rounded-br-none'
+                            : 'bg-white border border-gray-100 shadow-sm rounded-bl-none'
                             }`}>
                             {msg.role === 'ai' && (
                                 <div className="flex items-center gap-2 mb-2 text-emerald-600">
@@ -450,8 +450,8 @@ Think about this carefully before responding. The goal isn't to find the "right"
             {/* Question Quality Indicator */}
             {input.length > 10 && (
                 <div className={`px-4 py-2 flex items-center gap-2 text-xs ${questionQuality === 'excellent' ? 'bg-green-50 text-green-700' :
-                        questionQuality === 'good' ? 'bg-blue-50 text-blue-700' :
-                            'bg-amber-50 text-amber-700'
+                    questionQuality === 'good' ? 'bg-blue-50 text-blue-700' :
+                        'bg-amber-50 text-amber-700'
                     }`}>
                     <Zap className="w-3 h-3" />
                     {questionQuality === 'excellent' && "Excellent question! Clear context and specific."}
