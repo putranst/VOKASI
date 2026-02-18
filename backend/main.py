@@ -71,6 +71,10 @@ app.include_router(debug_router)
 def read_root():
     return {"message": "TSEA-X Backend API is running"}
 
+@app.get("/api/health")
+def health_check():
+    return {"status": "ok"}
+
 # --- Mock Data ---
 # COURSES_DB removed - using database
 # Imported from mock_db.py

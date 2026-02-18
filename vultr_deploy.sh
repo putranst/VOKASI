@@ -39,8 +39,8 @@ docker compose -f "$COMPOSE_FILE" build --no-cache
 echo "[4/5] Starting services..."
 docker compose -f "$COMPOSE_FILE" --env-file .env.production up -d
 
-echo "[5/5] Waiting for health checks..."
-sleep 15
+echo "[5/5] Waiting for health checks (45s)..."
+sleep 45
 
 # Check if services are running
 echo ""
