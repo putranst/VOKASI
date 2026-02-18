@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   backend:
@@ -37,8 +37,7 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
 
   caddy:
     image: caddy:2-alpine

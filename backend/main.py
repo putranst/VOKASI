@@ -101,11 +101,14 @@ snapshot_counter = 1
 @app.on_event("startup")
 def startup_event():
     # Initialize sample data on startup
-    db = next(get_db())
     try:
-        init_sample_data(db)
-    finally:
-        db.close()
+        db = next(get_db())
+        try:
+            init_sample_data(db)
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"Startup Warning: Could not initialize sample data: {e}")
 
 
 # ===== AUTH ENDPOINTS =====
