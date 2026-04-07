@@ -1,8 +1,22 @@
-t6.tsea.asia {
-    handle_path /api/* {
-        reverse_proxy backend:8080
-    }
+# TSEA-X Caddyfile
+# Caddy automatically provisions HTTPS via Let's Encrypt when using a real domain.
+# For IP-only access, use :80 instead.
 
+# Option A: Domain with auto-HTTPS (uncomment when DNS is ready)
+# t6.tsea.asia {
+#     handle_path /api/* {
+#         reverse_proxy backend:8000
+#     }
+#     handle {
+#         reverse_proxy frontend:3000
+#     }
+# }
+
+# Option B: IP-only (HTTP) — use this for initial testing
+:80 {
+    handle_path /api/* {
+        reverse_proxy backend:8000
+    }
     handle {
         reverse_proxy frontend:3000
     }

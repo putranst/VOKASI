@@ -8,7 +8,8 @@ import {
     Globe, Target, TrendingUp,
     Building2, Briefcase, Landmark,
     FileText, HelpCircle, BookMarked,
-    Users, Mail, ShieldCheck, Info
+    Users, Mail, ShieldCheck, Info,
+    MessageSquare, Calendar, Flame
 } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { NavDropdown } from '@/components/ui/NavDropdown';
@@ -39,6 +40,12 @@ export const Navbar = () => {
         { label: 'Hexahelix Model', href: '/hexahelix', icon: <Globe size={18} />, description: 'Our ecosystem approach' },
         { label: 'SDG Alignment', href: '/sdg', icon: <Target size={18} />, description: 'UN Sustainable Development Goals' },
         { label: 'Success Stories', href: '/success-stories', icon: <TrendingUp size={18} />, description: 'Graduate transformations' },
+    ];
+
+    const communityItems = [
+        { label: 'Discussions', href: '/community', icon: <MessageSquare size={18} />, description: 'Join the conversation' },
+        { label: 'Events', href: '/community', icon: <Calendar size={18} />, description: 'Meetups & Hackathons' },
+        { label: 'Ekspedisi AI', href: '/community', icon: <Flame size={18} />, description: 'National Leaderboard' },
     ];
 
     const partnersItems = [
@@ -75,6 +82,7 @@ export const Navbar = () => {
                 <nav className="hidden lg:flex items-center justify-center gap-6 flex-1 mx-8">
                     <NavDropdown label="Learn" items={learnItems} />
                     <NavDropdown label="Impact" items={impactItems} />
+                    <NavDropdown label="Community" items={communityItems} />
                     <NavDropdown label="Partners" items={partnersItems} />
                     <NavDropdown label="Resources" items={resourcesItems} />
                     <NavDropdown label="About" items={aboutItems} />
@@ -158,6 +166,16 @@ export const Navbar = () => {
                             <div className="space-y-1">
                                 <Link href="/hexahelix" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Hexahelix Model</Link>
                                 <Link href="/success-stories" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Success Stories</Link>
+                            </div>
+                        </div>
+
+                        {/* Community Section */}
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Community</p>
+                            <div className="space-y-1">
+                                <Link href="/community" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Discussions</Link>
+                                <Link href="/community" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Events</Link>
+                                <Link href="/community" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Ekspedisi AI leaderboard</Link>
                             </div>
                         </div>
 

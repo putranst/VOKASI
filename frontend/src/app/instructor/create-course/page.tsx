@@ -52,10 +52,16 @@ export default function CreateCoursePage() {
     };
 
     const handleSmartCourseCreated = (courseData: any) => {
-        setShowSuccess(true);
-        setTimeout(() => {
-            router.push('/instructor');
-        }, 2000);
+        if (courseData.approval_status === 'draft') {
+            // Redirect to Editor for Drafts
+            router.push(`/courses/${courseData.id}/editor`);
+        } else {
+            // Success Message & Redirect to Dashboard for Published
+            setShowSuccess(true);
+            setTimeout(() => {
+                router.push('/instructor');
+            }, 2000);
+        }
     };
 
     return (

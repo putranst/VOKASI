@@ -98,7 +98,7 @@ export default function PathwaysPage() {
                         <div className="text-center">
                             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-2xl flex items-center justify-center text-2xl font-black mx-auto mb-4">3</div>
                             <h3 className="font-bold text-gray-900 mb-2">Build Real Projects</h3>
-                            <p className="text-gray-600 text-sm">Use CDIO framework for hands-on learning</p>
+                            <p className="text-gray-600 text-sm">Use IRIS framework for hands-on learning</p>
                         </div>
                         <div className="text-center">
                             <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-2xl flex items-center justify-center text-2xl font-black mx-auto mb-4">4</div>

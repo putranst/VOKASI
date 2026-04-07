@@ -172,13 +172,13 @@ export const HeroSlider = () => {
                         />
                     </div>
 
-                    <div className="max-w-[70rem] mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-8 lg:gap-12 items-center w-full">
+                    <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10 grid lg:grid-cols-2 gap-8 lg:gap-16 items-center w-full h-full">
                         {/* Left Content */}
-                        <div className="space-y-6 md:space-y-8 text-center lg:text-left mt-8 lg:mt-0">
+                        <div className="space-y-6 md:space-y-6 text-center lg:text-left mt-0 lg:mt-0 flex flex-col justify-center">
                             {/* Badge */}
                             <div className="flex justify-center lg:justify-start">
                                 <div
-                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm text-sm font-medium"
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm text-xs sm:text-sm font-medium"
                                     style={{ color: '#f59e0b' }}
                                 >
                                     <span className="relative flex h-2 w-2">
@@ -190,11 +190,11 @@ export const HeroSlider = () => {
                             </div>
 
                             {/* Animated Title */}
-                            <div className="h-32 sm:h-36 relative">
+                            <div className="grid grid-cols-1 grid-rows-1 mb-4 sm:mb-6 min-h-[120px] sm:min-h-[160px] lg:min-h-[200px] items-center">
                                 {/* English Title */}
                                 <h1
-                                    className={`absolute inset-0 text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight transition-all duration-700 ease-in-out ${showEnglish
-                                        ? 'opacity-100 translate-y-0'
+                                    className={`col-start-1 row-start-1 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight transition-all duration-700 ease-in-out ${showEnglish
+                                        ? 'opacity-100 translate-y-0 relative z-10'
                                         : 'opacity-0 translate-y-4 pointer-events-none'
                                         }`}
                                 >
@@ -206,8 +206,8 @@ export const HeroSlider = () => {
 
                                 {/* Indonesian Title */}
                                 <h1
-                                    className={`absolute inset-0 text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight transition-all duration-700 ease-in-out ${!showEnglish
-                                        ? 'opacity-100 translate-y-0'
+                                    className={`col-start-1 row-start-1 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight transition-all duration-700 ease-in-out ${!showEnglish
+                                        ? 'opacity-100 translate-y-0 relative z-10'
                                         : 'opacity-0 translate-y-4 pointer-events-none'
                                         }`}
                                 >
@@ -219,14 +219,14 @@ export const HeroSlider = () => {
                             </div>
 
                             {/* Description */}
-                            <p className="text-lg text-slate-300 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+                            <p className="text-base sm:text-lg text-slate-300 max-w-lg mx-auto lg:mx-0 leading-relaxed">
                                 Transforming abstract digital potential into real-world solutions.
                                 38 Provinces. 12 Months. <br className="hidden md:block" />
                                 <span className="text-cyan-400 font-semibold block mt-1">National Survivability & Sovereignty.</span>
                             </p>
 
                             {/* CTA Button - Full width on mobile */}
-                            <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                            <div className="pt-2 sm:pt-4 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                                 <a
                                     href="https://ekspedisi.tsea.asia"
                                     target="_blank"
@@ -340,10 +340,10 @@ export const HeroSlider = () => {
                                 </div>
 
                                 <div className="space-y-4" key={currentSubSlide}>
-                                    <h1 className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1] break-words">
+                                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1] break-words">
                                         {currentT6Data.title}
                                     </h1>
-                                    <p className="text-lg text-slate-600 leading-relaxed max-w-xl mx-auto lg:mx-0">
+                                    <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl mx-auto lg:mx-0">
                                         {currentT6Data.description}
                                     </p>
                                 </div>

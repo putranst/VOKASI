@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, Sparkles, Trash2 } from 'lucide-react';
 
-// Accept both IRIS and CDIO phase names for backward compatibility
-type Phase = 'immerse' | 'realize' | 'iterate' | 'scale' | 'conceive' | 'design' | 'implement' | 'operate' | 'immersion' | 'reflection' | 'iteration';
+// IRIS phase names
+type Phase = 'immerse' | 'realize' | 'iterate' | 'scale';
 
 interface SocraticTutorProps {
     projectId: string;
@@ -21,21 +21,6 @@ interface Message {
 // Storage key generator
 const getStorageKey = (projectId: string) => `socratic_history_${projectId}`;
 
-// Map CDIO and legacy IRIS to new IRIS phases
-const normalizePhase = (phase: Phase): string => {
-    const mapping: Record<string, string> = {
-        'conceive': 'immerse',
-        'design': 'realize',
-        'implement': 'iterate',
-        'operate': 'scale',
-        // Legacy IRIS names
-        'immersion': 'immerse',
-        'reflection': 'realize',
-        'iteration': 'iterate'
-    };
-    return mapping[phase] || phase;
-};
-
 export default function SocraticTutor({ projectId, phase, context, className = '' }: SocraticTutorProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
@@ -43,7 +28,7 @@ export default function SocraticTutor({ projectId, phase, context, className = '
     const [initialized, setInitialized] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const normalizedPhase = normalizePhase(phase);
+
 
     // Load messages from localStorage on mount
     useEffect(() => {
@@ -63,22 +48,16 @@ export default function SocraticTutor({ projectId, phase, context, className = '
             }
         }
 
-        // IRIS-aware greetings with CDIO fallback
+        // IRIS-aware greetings
         const greetings: Record<string, string> = {
-            // IRIS phases (new naming)
             immerse: "👋 I'm your Socratic Tutor. In the Immerse phase, let's explore the authentic problem context. What did you observe in the field?",
             realize: "👋 I'm your Socratic Tutor for Realize. Let's analyze your knowledge gaps. What do you already know (Q), and what do you need to learn (P)?",
             iterate: "👋 Ready for Build-Measure-Learn? I'll guide your hypothesis testing. What are you building in this iteration?",
-            scale: "👋 Time to scale! Let's ensure institutional adoption succeeds. How will you hand off your solution?",
-            // Legacy CDIO (redirect handled by normalizePhase)
-            conceive: "👋 I'm your Socratic Tutor. Let's refine your problem statement. What specific challenge are you addressing?",
-            design: "👋 I'm your Socratic Design Tutor. I'll guide you toward robust architecture. What's the first step in your solution?",
-            implement: "👋 Ready to code? I can help you think through algorithms and patterns. What are you building right now?",
-            operate: "👋 Deployment time! Let's ensure your solution is production-ready. How do you plan to monitor it?"
+            scale: "👋 Time to scale! Let's ensure institutional adoption succeeds. How will you hand off your solution?"
         };
-        setMessages([{ role: 'ai', text: greetings[normalizedPhase] || greetings.immerse }]);
+        setMessages([{ role: 'ai', text: greetings[phase] || greetings.immerse }]);
         setInitialized(true);
-    }, [projectId, normalizedPhase, initialized]);
+    }, [projectId, phase, initialized]);
 
 
     // Save messages to localStorage whenever they change
@@ -132,25 +111,19 @@ export default function SocraticTutor({ projectId, phase, context, className = '
         if (window.confirm('Clear conversation history? This cannot be undone.')) {
             localStorage.removeItem(getStorageKey(projectId));
             const greetings: Record<string, string> = {
-                // IRIS phases (new naming)
                 immerse: "👋 I'm your Socratic Tutor. In the Immerse phase, let's explore the authentic problem context. What did you observe in the field?",
                 realize: "👋 I'm your Socratic Tutor for Realize. Let's analyze your knowledge gaps. What do you already know (Q), and what do you need to learn (P)?",
                 iterate: "👋 Ready for Build-Measure-Learn? I'll guide your hypothesis testing. What are you building in this iteration?",
-                scale: "👋 Time to scale! Let's ensure institutional adoption succeeds. How will you hand off your solution?",
-                // Legacy CDIO
-                conceive: "👋 I'm your Socratic Tutor. Let's refine your problem statement. What specific challenge are you addressing?",
-                design: "👋 I'm your Socratic Design Tutor. I'll guide you toward robust architecture. What's the first step in your solution?",
-                implement: "👋 Ready to code? I can help you think through algorithms and patterns. What are you building right now?",
-                operate: "👋 Deployment time! Let's ensure your solution is production-ready. How do you plan to monitor it?"
+                scale: "👋 Time to scale! Let's ensure institutional adoption succeeds. How will you hand off your solution?"
             };
-            setMessages([{ role: 'ai', text: greetings[normalizedPhase] || greetings.immerse }]);
+            setMessages([{ role: 'ai', text: greetings[phase] || greetings.immerse }]);
         }
     };
 
 
     return (
         <div className={`bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden flex flex-col ${className}`}>
-            <div className={`bg-gradient-to-r ${phase === 'operate' ? 'from-orange-600 to-red-600' : phase === 'design' ? 'from-blue-600 to-purple-600' : 'from-green-600 to-teal-600'} p-4 text-white`}>
+            <div className={`bg-gradient-to-r ${phase === 'scale' ? 'from-orange-600 to-red-600' : phase === 'realize' ? 'from-blue-600 to-purple-600' : 'from-green-600 to-teal-600'} p-4 text-white`}>
                 <div className="flex items-center justify-between">
                     <div>
                         <h3 className="font-bold flex items-center gap-2">

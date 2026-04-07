@@ -2,26 +2,9 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-// IRIS phases with CDIO backward compatibility mapping
+// IRIS phases
 type IRISPhase = 'immerse' | 'realize' | 'iterate' | 'scale';
-type CDIOPhase = 'conceive' | 'design' | 'implement' | 'operate';
-type LegacyIRISPhase = 'immersion' | 'reflection' | 'iteration';
-type Phase = IRISPhase | CDIOPhase | LegacyIRISPhase;
-
-// Map CDIO and legacy IRIS to new IRIS phases
-const mapToIRIS = (phase: Phase): IRISPhase => {
-    const mapping: Record<string, IRISPhase> = {
-        'conceive': 'immerse',
-        'design': 'realize',
-        'implement': 'iterate',
-        'operate': 'scale',
-        // Legacy IRIS names
-        'immersion': 'immerse',
-        'reflection': 'realize',
-        'iteration': 'iterate'
-    };
-    return mapping[phase] || phase as IRISPhase;
-};
+type Phase = IRISPhase;
 
 // IRIS phase-specific Socratic prompts for AI tutor
 export const IRIS_PROMPTS: Record<IRISPhase, { focus: string; questions: string[] }> = {
@@ -87,9 +70,9 @@ export function SocraticProvider({ children }: { children: ReactNode }) {
     const [phase, setPhaseInternal] = useState<IRISPhase>('immerse');
     const [context, setContext] = useState<any>({});
 
-    // Convert CDIO to IRIS when setting phase
+    // Set phase directly
     const setPhase = (p: Phase) => {
-        setPhaseInternal(mapToIRIS(p));
+        setPhaseInternal(p);
     };
 
     const phasePrompts = IRIS_PROMPTS[phase];

@@ -14,6 +14,7 @@ import json
 import asyncio
 from typing import Dict, List, Optional
 from datetime import datetime
+from .openai_service import clients, MODELS, PRIORITY
 
 # Bloom's Taxonomy Levels
 BLOOMS_TAXONOMY = {
@@ -440,11 +441,169 @@ def generate_fallback_syllabus(
     }
 
 
+async def generate_t6_syllabus(
+    course_title: str,
+    course_description: str,
+    duration_weeks: int,
+    level: str,
+    material_content: str = "",
+    hexahelix_sectors: list = None
+) -> Dict:
+    """Generate T6-format syllabus (MIT OCW + TSEA-X CDIO Hybrid)"""
+    
+    # Calculate sections per CDIO phase based on duration
+    sections_per_phase = max(1, duration_weeks // 4)
+    total_sections = sections_per_phase * 4
+    
+    context_prompt = ""
+    if material_content:
+        context_prompt = f"""
+        INSTRUCTOR MATERIALS (incorporate these into the syllabus):
+        --- MATERIAL START ---
+        {material_content[:15000]}
+        --- MATERIAL END ---
+        """
+    
+    sectors_str = ", ".join(hexahelix_sectors) if hexahelix_sectors else "Technology, Education"
+    
+    prompt = f"""You are an academic curriculum designer creating a T6 Syllabus (MIT OCW + TSEA-X CDIO Hybrid).
+
+COURSE DETAILS:
+- Title: {course_title}
+- Description: {course_description}
+- Duration: {duration_weeks} weeks
+- Level: {level}
+- Hexahelix Sectors: {sectors_str}
+
+{context_prompt}
+
+REQUIREMENTS:
+1. Create EXACTLY {total_sections} sections ({sections_per_phase} per CDIO phase)
+2. Each section = 1 week of content
+3. Align sections to CDIO phases in order: Conceive -> Design -> Implement -> Operate
+4. Include 3-5 specific topics per section
+5. Include practical activities aligned to phase
+6. Specify assessment types (Quiz, Assignment, Project, Presentation)
+
+OUTPUT (valid JSON only):
+{{
+    "title": "Syllabus title",
+    "overview": "Brief overview paragraph",
+    "learning_outcomes": ["Outcome 1", "Outcome 2"],
+    "assessment_strategy": {{
+        "quizzes": 20,
+        "assignments": 30,
+        "project": 30,
+        "capstone": 20
+    }},
+    "resources": ["Textbook 1", "Online resource"],
+    "sections": [
+        {{
+            "order": 1,
+            "title": "Section title",
+            "cdio_phase": "conceive",
+            "week_number": 1,
+            "topics": ["Topic 1", "Topic 2", "Topic 3"],
+            "activities": ["Activity 1", "Activity 2"],
+            "assessment": "Quiz",
+            "duration_hours": 3.0
+        }}
+    ]
+}}
+
+Respond ONLY with valid JSON."""
+
+    errors = []
+    for provider in PRIORITY:
+        if provider == "mock":
+            await asyncio.sleep(2)
+            # Generate mock sections
+            mock_sections = []
+            phases = ["conceive", "design", "implement", "operate"]
+            phase_names = {
+                "conceive": "Understanding & Analysis",
+                "design": "Planning & Architecture", 
+                "implement": "Building & Development",
+                "operate": "Deployment & Iteration"
+            }
+            for i in range(total_sections):
+                phase_idx = i // sections_per_phase
+                phase = phases[min(phase_idx, 3)]
+                mock_sections.append({
+                    "order": i + 1,
+                    "title": f"Week {i+1}: {phase_names[phase]}",
+                    "cdio_phase": phase,
+                    "week_number": i + 1,
+                    "topics": [f"Topic {i+1}.1", f"Topic {i+1}.2", f"Topic {i+1}.3"],
+                    "activities": [f"Activity for week {i+1}"],
+                    "assessment": ["Quiz", "Assignment", "Project", "Presentation"][phase_idx % 4],
+                    "duration_hours": 3.0
+                })
+            
+            return {
+                "title": f"T6 Syllabus: {course_title}",
+                "overview": f"A {duration_weeks}-week comprehensive course on {course_title} using the CDIO framework.",
+                "learning_outcomes": [
+                    "Analyze and define complex problems",
+                    "Design scalable solutions",
+                    "Implement working prototypes",
+                    "Deploy and iterate on solutions",
+                    "Apply critical thinking skills"
+                ],
+                "assessment_strategy": {"quizzes": 20, "assignments": 30, "project": 30, "capstone": 20},
+                "resources": ["Course textbook", "Online documentation", "Supplementary readings"],
+                "sections": mock_sections
+            }
+
+        if provider not in clients:
+            continue
+
+        try:
+            content = ""
+            if provider == "gemini":
+                response = await clients[provider].generate_content_async(prompt)
+                content = response.text
+            else:
+                response = await clients[provider].chat.completions.create(
+                    model=MODELS[provider],
+                    messages=[{"role": "system", "content": "You are a JSON curriculum designer."}, {"role": "user", "content": prompt}],
+                    temperature=0.7
+                )
+                content = response.choices[0].message.content
+
+            try:
+                content = content.replace("```json", "").replace("```", "").strip()
+                import re
+                match = re.search(r'\{.*\}', content, re.DOTALL)
+                if match:
+                    return json.loads(match.group())
+                
+                # Check directly if valid json
+                return json.loads(content)
+            except:
+                raise ValueError("Failed to parse JSON")
+
+        except Exception as e:
+            print(f"[{provider}] Syllabus Gen Error: {e}")
+            errors.append(f"{provider}: {str(e)}")
+            continue
+
+    return {
+        "title": f"Syllabus for {course_title}",
+        "overview": f"Generation failed. Errors: {errors}",
+        "learning_outcomes": [],
+        "assessment_strategy": {},
+        "resources": [],
+        "sections": []
+    }
+
+
 # Export functions
 __all__ = [
     'generate_international_syllabus',
     'generate_fallback_syllabus',
     'validate_and_enhance_syllabus',
+    'generate_t6_syllabus',
     'BLOOMS_TAXONOMY',
     'IRIS_PHASES',
     'CDIO_TO_IRIS'

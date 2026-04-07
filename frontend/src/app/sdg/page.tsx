@@ -12,7 +12,7 @@ const sdgGoals = [
         title: 'Quality Education',
         description: 'Ensure inclusive and equitable quality education and promote lifelong learning opportunities for all.',
         color: 'bg-red-500',
-        impact: 'Our CDIO-based curriculum and AI tutor provide accessible, world-class education to learners worldwide.'
+        impact: 'Our IRIS-based curriculum and AI tutor provide accessible, world-class education to learners worldwide.'
     },
     {
         number: 8,

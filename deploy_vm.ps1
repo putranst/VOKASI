@@ -61,7 +61,7 @@ Write-Host "Deploying Configuration to VM..." -ForegroundColor Yellow
 # Retry loop for SSH availability
 for ($i = 1; $i -le 5; $i++) {
     try {
-        gcloud compute scp docker-compose.yml nginx.conf ${VmName}:~/ --zone=$Zone
+        gcloud compute scp docker-compose.yml Caddyfile ${VmName}:~/ --zone=$Zone
         break
     }
     catch {

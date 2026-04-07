@@ -101,7 +101,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
     ],
     "Data & AI": [
         {
-            id: 9,
+            id: 10,
             title: "AI for SMEs: Practical Implementation",
             instructor: "Tech Innovation Lab",
             org: "T6 Business",
@@ -112,7 +112,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             level: "Beginner"
         },
         {
-            id: 10,
+            id: 11,
             title: "Data Analytics for Decision Makers",
             instructor: "Data Science Faculty",
             org: "MIT Sloan",
@@ -123,7 +123,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             level: "Intermediate"
         },
         {
-            id: 11,
+            id: 12,
             title: "Cyber Security Fundamentals",
             instructor: "Cyber Defense Unit",
             org: "T6 Security",
@@ -134,7 +134,7 @@ export const TABBED_COURSES: Record<string, Course[]> = {
             level: "Beginner"
         },
         {
-            id: 12,
+            id: 9,
             title: "Advanced Machine Learning Ops",
             instructor: "AI Research Center",
             org: "Tsinghua SEA",

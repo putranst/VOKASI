@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Play, Clock, Target, ChevronRight, Sparkles, CheckCircle2, Circle, Loader2 } from 'lucide-react';
+import { Play, Clock, Target, ChevronRight, Sparkles, CheckCircle2, Circle, Loader2, BookOpen } from 'lucide-react';
 
 interface ActiveProjectProps {
     courseId: number;
@@ -121,10 +121,10 @@ export function ActiveProjectCard({
                                     <div key={phase.id} className="flex flex-col items-center flex-1">
                                         {/* Node */}
                                         <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all ${isCompleted
-                                                ? `bg-gradient-to-r ${phase.color} text-white shadow-md`
-                                                : isCurrent
-                                                    ? `bg-gradient-to-r ${phase.color} text-white shadow-lg ring-4 ring-offset-2 ring-${phase.color.split('-')[1]}-200`
-                                                    : 'bg-gray-100 text-gray-400'
+                                            ? `bg-gradient-to-r ${phase.color} text-white shadow-md`
+                                            : isCurrent
+                                                ? `bg-gradient-to-r ${phase.color} text-white shadow-lg ring-4 ring-offset-2 ring-${phase.color.split('-')[1]}-200`
+                                                : 'bg-gray-100 text-gray-400'
                                             }`}>
                                             {isCompleted ? (
                                                 <CheckCircle2 size={18} />
@@ -168,16 +168,31 @@ export function ActiveProjectCard({
                     </div>
 
                     {/* CTA */}
-                    <Link
-                        href={`/courses/${courseId}/${currentPhase}`}
-                        className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl
-                                 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm
-                                 flex items-center justify-center gap-2 text-sm"
-                    >
-                        <Play size={16} />
-                        Continue {currentPhase.charAt(0).toUpperCase() + currentPhase.slice(1)} Phase
-                        <ChevronRight size={16} />
-                    </Link>
+                    {/* CTA */}
+                    <div className="flex flex-col gap-3">
+                        {/* Synchronous Path */}
+                        <Link
+                            href={`/courses/${courseId}/${currentPhase}`}
+                            className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl
+                                     hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm
+                                     flex items-center justify-center gap-2 text-sm"
+                        >
+                            <Play size={16} />
+                            Synchronous Project ({currentPhase.charAt(0).toUpperCase() + currentPhase.slice(1)})
+                            <ChevronRight size={16} />
+                        </Link>
+
+                        {/* Asynchronous Path */}
+                        <Link
+                            href={`/courses/${courseId}/learn`}
+                            className="w-full py-3 bg-white text-gray-700 font-bold rounded-xl border border-gray-200
+                                     hover:bg-gray-50 transition-all shadow-sm
+                                     flex items-center justify-center gap-2 text-sm"
+                        >
+                            <BookOpen size={16} />
+                            Asynchronous Learning (Modules)
+                        </Link>
+                    </div>
                 </div>
             </div>
         </div>

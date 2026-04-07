@@ -71,6 +71,21 @@ class Course(Base):
     projects = relationship("CDIOProject", back_populates="course")
     enrollments = relationship("Enrollment", back_populates="course")
     syllabi = relationship("Syllabus", back_populates="course")
+    modules = relationship("CourseModule", back_populates="course", order_by="CourseModule.order")
+
+class CourseModule(Base):
+    """Content modules for the WYSIWYG editor"""
+    __tablename__ = "course_modules"
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id"))
+    title = Column(String)
+    order = Column(Integer, default=0)
+    content_blocks = Column(JSON, default=list) # List of ContentBlock objects
+    status = Column(String, default="draft")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+    
+    course = relationship("Course", back_populates="modules")
 
 class Syllabus(Base):
     """T6 Syllabus Standard - MIT OCW + TSEA-X CDIO Hybrid"""
@@ -198,10 +213,17 @@ class Implementation(Base):
     __tablename__ = "implementations"
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"))
+    iteration_number = Column(Integer, default=1)
+    hypothesis = Column(Text, nullable=True)
+    learnings = Column(Text, nullable=True)
     code_repository_url = Column(String, nullable=True)
     code_snapshot = Column(Text, nullable=True)
+    next_hypothesis = Column(String, nullable=True)
+    ai_feedback = Column(JSON, nullable=True)
     notes = Column(Text, nullable=True)
     security_check_passed = Column(Boolean, default=False)
+    linting_passed = Column(Boolean, default=False)
+    tests_passed = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
     
@@ -219,6 +241,13 @@ class Deployment(Base):
     sbt_token_id = Column(String, nullable=True)
     transaction_hash = Column(String, nullable=True)
     explorer_url = Column(String, nullable=True)
+    
+    # Scale Phase Fields
+    institutional_handoff = Column(Text, nullable=True)
+    stakeholder_training = Column(Text, nullable=True)
+    impact_metrics = Column(JSON, nullable=True)
+    sfia_evidence = Column(JSON, nullable=True)
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
     

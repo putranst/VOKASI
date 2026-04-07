@@ -5,7 +5,7 @@ echo ========================================
 echo.
 
 REM Check if backend venv exists
-if not exist backend\venv\Scripts\activate.bat (
+if not exist backend\venv\Scripts\python.exe (
     echo ERROR: Backend virtual environment not found!
     echo Please run: cd backend ^&^& python -m venv venv ^&^& venv\Scripts\activate ^&^& pip install -r requirements.txt
     pause
@@ -21,10 +21,10 @@ if not exist frontend\node_modules (
 )
 
 echo [1/2] Starting Backend Server (FastAPI on port 8000)...
-start "TSEA-X Backend" cmd /k "cd /d %~dp0backend && venv\Scripts\activate && uvicorn main:app --reload"
+start "TSEA-X Backend" cmd /k "cd /d %~dp0backend && venv\Scripts\python.exe -m uvicorn main:app --reload"
 
 echo [2/2] Starting Frontend Server (Next.js on port 3000)...
-timeout /t 2 /nobreak >nul
+timeout /t 3 /nobreak >nul
 start "TSEA-X Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
 
 echo.

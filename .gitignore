@@ -9,6 +9,7 @@
 # Backend
 backend/venv/
 backend/.env
+backend/.env.production
 backend/*.db
 backend/api_test_output.txt
 backend/available_models.txt
@@ -19,6 +20,7 @@ frontend/node_modules/
 frontend/.next/
 frontend/out/
 frontend/.env.local
+frontend/.env.production
 frontend/.env.production.local
 frontend/.env.development.local
 frontend/.env.test.local
@@ -28,3 +30,10 @@ frontend/yarn-error.log*
 
 # OS specific
 Thumbs.db
+
+# Secrets and keys
+*.pem
+*.key
+.env.production
+backend/.env
+**/secrets/**

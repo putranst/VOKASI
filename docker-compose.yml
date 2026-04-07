@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    image: tsea-x-backend
+    image: gcr.io/tsea-x-platform/tsea-x-backend:latest
     build: ./backend
     container_name: tsea-x-backend
     restart: always

@@ -9,6 +9,10 @@ import asyncio
 import random
 import base64
 from typing import Dict, List, Optional
+import io
+import pypdf
+from pptx import Presentation
+from PIL import Image as PILImage
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -47,9 +51,17 @@ PRIORITY = ["openai", "openrouter", "gemini", "mock"]
 # Models Configuration
 MODELS = {
     "openai": os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
-    "openrouter": os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-exp:free"),
+    "openrouter": os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-001"),
     "gemini": "gemini-2.0-flash"
 }
+
+# Fallback models for OpenRouter if primary fails
+OPENROUTER_FALLBACKS = [
+    "google/gemini-2.0-flash-001",
+    "meta-llama/llama-3.3-70b-instruct",
+    "deepseek/deepseek-chat",
+    "mistralai/mistral-small-24b-instruct-2501"
+]
 
 
 print(f"[AI Service] Initialized providers: {list(clients.keys())}")
@@ -343,51 +355,27 @@ OUTPUT FORMAT (valid JSON only):
             "phase": "Conceive",
             "iris_phase": "Immerse", 
             "title": "Module 1: Understanding & Context",
-            "content": "Detailed 2-3 sentence description of what students will learn in this module, including specific skills and knowledge they will gain.",
+            "content": "Rich markdown text introduction to the module. Use bolding, lists, and clear structure.",
             "topics": ["Topic 1: Specific topic name", "Topic 2: Another topic", "Topic 3: Third topic"],
             "learning_goals": ["Students will be able to...", "Students will understand..."],
             "activities": [
-                {{"type": "lecture", "title": "Introduction to {topic}", "duration_minutes": 30}},
-                {{"type": "discussion", "title": "Real-world applications", "duration_minutes": 20}},
-                {{"type": "exercise", "title": "Hands-on exploration", "duration_minutes": 40}}
+                {{"type": "lecture", "title": "Introduction to {topic}", "duration_minutes": 30, "content": "Detailed markdown explanation of the topic. Include definitions, examples, and key takeaways."}},
+                {{"type": "discussion", "title": "Real-world connections", "duration_minutes": 20, "prompt": "Thought-provoking question for students to discuss..."}},
+                {{"type": "quiz", "title": "Key Concepts Check", "duration_minutes": 15, "questions": [{{"question": "Question text?", "options": ["A", "B", "C", "D"], "correctAnswer": "A", "explanation": "Why correct"}}]}},
+                {{"type": "exercise", "title": "Hands-on Practice", "duration_minutes": 40, "instructions": "Step-by-step instructions for the activity..."}}
             ]
         }},
-        {{
-            "phase": "Design",
-            "iris_phase": "Realize",
-            "title": "Module 2: Planning & Architecture",
-            "content": "Detailed description of design phase content...",
-            "topics": ["Topic 1", "Topic 2", "Topic 3"],
-            "learning_goals": ["..."],
-            "activities": [...]
-        }},
-        {{
-            "phase": "Implement",
-            "iris_phase": "Iterate",
-            "title": "Module 3: Building & Testing",
-            "content": "Detailed description of implementation phase content...",
-            "topics": ["Topic 1", "Topic 2", "Topic 3"],
-            "learning_goals": ["..."],
-            "activities": [...]
-        }},
-        {{
-            "phase": "Operate",
-            "iris_phase": "Scale",
-            "title": "Module 4: Deployment & Growth",
-            "content": "Detailed description of operations phase content...",
-            "topics": ["Topic 1", "Topic 2", "Topic 3"],
-            "learning_goals": ["..."],
-            "activities": [...]
-        }}
+        ... (repeat for other phases)
     ],
-    "capstone_project": "Comprehensive description of the capstone project that ties together all modules. Describe what students will build, the skills they'll apply, and the expected deliverables."
+    "capstone_project": "..."
 }}
 
 IMPORTANT: 
-- Make the content SPECIFIC to {topic}, not generic
-- Include real, actionable learning activities
-- The 'content' field for each module should be 2-3 detailed sentences
-- Topics should be specific and relevant to {topic}
+- Provide RICH, DETAILED content for every activity.
+- Use Markdown formatting in descriptions and content fields.
+- Include at least one QUIZ with 3 questions per module.
+- Include specific discussion prompts.
+- Make the 'content' field in activities substantial (at least 2-3 paragraphs).
 
 Respond ONLY with valid JSON."""
 
@@ -509,6 +497,162 @@ Respond ONLY with valid JSON."""
         "modules": [],
         "capstone_project": "Error generating project."
     }
+
+async def parse_course_material(
+    file_base64: str,
+    file_name: str,
+    mime_type: str = "application/pdf"
+) -> Dict:
+    """
+    Parse uploaded course material (PDF, PPTX, Image) and extract structured course content.
+    Uses Gemini Vision for images/PDFs if available, falls back to text extraction + API.
+    """
+    
+    # 1. Decode File
+    try:
+        file_bytes = base64.b64decode(file_base64)
+    except Exception as e:
+        return {"success": False, "error": f"Failed to decode file: {str(e)}"}
+        
+    extracted_text = ""
+    is_vision_capable = False
+    
+    # 2. Extract Content based on type
+    try:
+        if mime_type == "application/pdf":
+            # Attempt text extraction first (reliable for text-heavy PDFs)
+            try:
+                pdf_reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+                text_parts = []
+                # Limit to first 20 pages to avoid context limits
+                for i in range(min(len(pdf_reader.pages), 20)):
+                    text_parts.append(pdf_reader.pages[i].extract_text())
+                extracted_text = "\n".join(text_parts)
+            except Exception as e:
+                print(f"PDF Text Extraction failed: {e}")
+                
+            # If text is sparse, mark for Vision fallback (if supported)
+            if len(extracted_text) < 100: 
+                is_vision_capable = True # For Gemini
+                
+        elif "presentation" in mime_type or file_name.endswith(".pptx"):
+            try:
+                prs = Presentation(io.BytesIO(file_bytes))
+                text_parts = []
+                for slide in prs.slides:
+                    for shape in slide.shapes:
+                        if hasattr(shape, "text"):
+                            text_parts.append(shape.text)
+                extracted_text = "\n".join(text_parts)
+            except Exception as e:
+                print(f"PPTX Extraction failed: {e}")
+                
+        elif mime_type.startswith("image/"):
+            is_vision_capable = True
+            
+        elif mime_type.startswith("text/"):
+            extracted_text = file_bytes.decode("utf-8")
+            
+    except Exception as e:
+        return {"success": False, "error": f"File processing failed: {str(e)}"}
+
+    # 3. AI Analysis
+    prompt = """
+    Analyze this course material and extract a structured course outline.
+    
+    OUTPUT JSON format:
+    {
+        "title": "Proposed Course Title",
+        "summary": "2-3 sentence summary of the material",
+        "main_topics": [
+            {
+                "name": "Topic 1",
+                "description": "Brief description",
+                "subtopics": ["Sub 1", "Sub 2"]
+            },
+            ...
+        ],
+        "learning_objectives": ["Objective 1", "Objective 2"],
+        "key_concepts": ["Concept 1", "Concept 2"],
+        "difficulty_level": "Beginner/Intermediate/Advanced",
+        "target_audience": "Who is this for?",
+        "estimated_duration": "e.g. 4 weeks"
+    }
+    """
+    
+    errors = []
+    
+    # Priority: Gemini (Vision) -> OpenRouter (Text) -> OpenAI (Text)
+    
+    # A. Gemini Vision (Native PDF/Image support)
+    if "gemini" in clients:
+        try:
+            # For Gemini 1.5/2.0, we can pass the image/pdf directly as Part
+            # Convert to Part object
+            import google.generativeai as genai
+            
+            content_parts = [prompt]
+            
+            if mime_type.startswith("image/"):
+                img = PILImage.open(io.BytesIO(file_bytes))
+                content_parts.append(img)
+            elif mime_type == "application/pdf":
+                 # Gemini PDF support usually requires upload, but we can try text fallback or 'pdf_part' if library supports
+                 # For now, let's rely on the extracted text if we have it, OR just text.
+                 # Actually, Gemini API supports inline data for images, but for PDF it usually wants 'File API'.
+                 # Let's stick to text for PDFs unless we implement File API upload.
+                 if not extracted_text:
+                     return {"success": False, "error": "PDF Parsing failed and File API not implemented."}
+                 content_parts.append(f"DOCUMENT CONTENT:\n{extracted_text[:30000]}") # 30k chars safety limit
+            else:
+                 content_parts.append(f"DOCUMENT CONTENT:\n{extracted_text[:30000]}")
+
+            response = await clients["gemini"].generate_content_async(content_parts)
+            content = response.text
+            
+            # Parse JSON
+            content = content.replace("```json", "").replace("```", "").strip()
+            # Find JSON brace
+            import re
+            match = re.search(r'\{.*\}', content, re.DOTALL)
+            if match:
+                data = json.loads(match.group())
+                return {"success": True, "data": data}
+                
+        except Exception as e:
+            errors.append(f"Gemini: {e}")
+            
+    # B. Text Fallback (OpenAI / OpenRouter)
+    if not extracted_text:
+         return {"success": False, "error": f"Could not extract text from file. Errors: {errors}"}
+         
+    for provider in ["openrouter", "openai"]:
+        if provider not in clients: continue
+        
+        try:
+            response = await clients[provider].chat.completions.create(
+                model=MODELS[provider],
+                messages=[
+                    {"role": "system", "content": "You are an expert curriculum designer. Output valid JSON."},
+                    {"role": "user", "content": f"{prompt}\n\nDOCUMENT CONTENT:\n{extracted_text[:15000]}"} # Limit tokens
+                ],
+                temperature=0.7
+            )
+            content = response.choices[0].message.content
+            
+            # Parse JSON
+            content = content.replace("```json", "").replace("```", "").strip()
+            import re
+            match = re.search(r'\{.*\}', content, re.DOTALL)
+            if match:
+                data = json.loads(match.group())
+                return {"success": True, "data": data}
+                
+        except Exception as e:
+             errors.append(f"{provider}: {e}")
+             
+    return {"success": False, "error": f"All providers failed. Errors: {errors}"}
+
 
 async def generate_t6_syllabus(
     course_title: str,
@@ -633,6 +777,28 @@ Respond ONLY with valid JSON."""
             if provider == "gemini":
                 response = await clients[provider].generate_content_async(prompt)
                 content = response.text
+            elif provider == "openrouter":
+                # Try OpenRouter with fallbacks
+                current_models = [MODELS[provider]] + [m for m in OPENROUTER_FALLBACKS if m != MODELS[provider]]
+                last_error = None
+                
+                for model in current_models:
+                    try:
+                        print(f"[OpenRouter] Trying model: {model}")
+                        response = await clients[provider].chat.completions.create(
+                            model=model,
+                            messages=[{"role": "system", "content": "You are a JSON curriculum designer."}, {"role": "user", "content": prompt}],
+                            temperature=0.7
+                        )
+                        content = response.choices[0].message.content
+                        break # Success
+                    except Exception as e:
+                        print(f"[OpenRouter] Model {model} failed: {e}")
+                        last_error = e
+                        continue
+                
+                if not content and last_error:
+                    raise last_error
             else:
                 response = await clients[provider].chat.completions.create(
                     model=MODELS[provider],

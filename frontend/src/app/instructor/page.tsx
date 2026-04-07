@@ -64,6 +64,100 @@ interface Student {
     grade: string;
 }
 
+const getStatusColor = (status: string) => {
+    switch (status) {
+        case 'pending': return 'bg-yellow-100 text-yellow-800';
+        case 'graded': return 'bg-green-100 text-green-800';
+        case 'needs_review': return 'bg-red-100 text-red-800';
+        default: return 'bg-gray-100 text-gray-800';
+    }
+};
+
+const getTypeIcon = (type: string) => {
+    switch (type) {
+        case 'charter': return <BookOpen className="w-4 h-4" />;
+        case 'design': return <LayoutDashboard className="w-4 h-4" />;
+        case 'implementation': return <Code className="w-4 h-4" />;
+        default: return <CheckCircle className="w-4 h-4" />;
+    }
+};
+
+const GradingQueueTable = ({ items, loading, onGrade, limit }: { items: GradingQueueItem[], loading: boolean, onGrade: (item: GradingQueueItem) => void, limit?: number }) => {
+    const displayItems = limit ? items.slice(0, limit) : items;
+
+    return (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden max-w-full">
+            <div className="overflow-x-auto">
+                <table className="w-full text-left whitespace-nowrap">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Student / Project</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Course</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Submitted</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                        {loading ? (
+                            <tr>
+                                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                    Loading submissions...
+                                </td>
+                            </tr>
+                        ) : displayItems.length === 0 ? (
+                            <tr>
+                                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                    No submissions found.
+                                </td>
+                            </tr>
+                        ) : (
+                            displayItems.map((item, index) => (
+                                <tr key={`queue-${item.id}-${index}`} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-col">
+                                            <span className="font-medium text-gray-900">{item.project_title}</span>
+                                            <span className="text-sm text-gray-500">{item.student_name}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-600">
+                                        {item.course_title}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2 text-sm text-gray-700 capitalize">
+                                            {getTypeIcon(item.submission_type)}
+                                            {item.submission_type}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-500">
+                                        {new Date(item.submitted_at).toLocaleDateString()}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
+                                            {item.status.replace('_', ' ')}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <button
+                                            onClick={() => onGrade(item)}
+                                            className="flex items-center gap-1 px-3 py-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-all text-sm font-medium"
+                                            title="AI Grade"
+                                        >
+                                            <Sparkles className="w-4 h-4" />
+                                            Grade
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};
+
 export default function InstructorDashboard() {
     const { user, logout } = useAuth();
     const router = useRouter();
@@ -124,7 +218,8 @@ export default function InstructorDashboard() {
                 const data = await queueRes.json();
                 queueData = data.map((item: any) => ({
                     ...item,
-                    status: item.status.toLowerCase()
+                    status: item.status.toLowerCase(),
+                    submission_type: item.submission_type === 'Blueprint' ? 'design' : item.submission_type.toLowerCase()
                 }));
                 setQueue(queueData);
             }
@@ -262,23 +357,7 @@ export default function InstructorDashboard() {
         return matchesFilter && matchesSearch;
     });
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'pending': return 'bg-yellow-100 text-yellow-800';
-            case 'graded': return 'bg-green-100 text-green-800';
-            case 'needs_review': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
-        }
-    };
-
-    const getTypeIcon = (type: string) => {
-        switch (type) {
-            case 'charter': return <BookOpen className="w-4 h-4" />;
-            case 'design': return <LayoutDashboard className="w-4 h-4" />;
-            case 'implementation': return <Code className="w-4 h-4" />;
-            default: return <CheckCircle className="w-4 h-4" />;
-        }
-    };
+    // Helper functions removed from here (moved to module scope)
 
     return (
         <RoleRouteGuard allowedRoles={['instructor']}>
@@ -389,13 +468,17 @@ export default function InstructorDashboard() {
                                             View All
                                         </button>
                                     </div>
-                                    {/* Reuse the table logic but limited items */}
-                                    {/* ... (Table code below) ... */}
+                                    <GradingQueueTable
+                                        items={queue.filter(i => i.status === 'pending')}
+                                        loading={loading}
+                                        onGrade={handleGrade}
+                                        limit={5}
+                                    />
                                 </div>
                             </div>
                         )}
 
-                        {(activeTab === 'grading' || activeTab === 'overview') && (
+                        {activeTab === 'grading' && (
                             <div className={activeTab === 'overview' ? 'mt-8' : ''}>
                                 {/* Filters */}
                                 <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -424,75 +507,11 @@ export default function InstructorDashboard() {
                                 </div>
 
                                 {/* Queue List */}
-                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden max-w-full">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left whitespace-nowrap">
-                                            <thead className="bg-gray-50 border-b border-gray-200">
-                                                <tr>
-                                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Student / Project</th>
-                                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Course</th>
-                                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
-                                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Submitted</th>
-                                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-100">
-                                                {loading ? (
-                                                    <tr>
-                                                        <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                                                            Loading submissions...
-                                                        </td>
-                                                    </tr>
-                                                ) : filteredQueue.length === 0 ? (
-                                                    <tr>
-                                                        <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                                                            No submissions found matching your criteria.
-                                                        </td>
-                                                    </tr>
-                                                ) : (
-                                                    filteredQueue.slice(0, activeTab === 'overview' ? 5 : undefined).map((item, index) => (
-                                                        <tr key={`queue-${item.id}-${index}`} className="hover:bg-gray-50 transition-colors">
-                                                            <td className="px-6 py-4">
-                                                                <div className="flex flex-col">
-                                                                    <span className="font-medium text-gray-900">{item.project_title}</span>
-                                                                    <span className="text-sm text-gray-500">{item.student_name}</span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4 text-sm text-gray-600">
-                                                                {item.course_title}
-                                                            </td>
-                                                            <td className="px-6 py-4">
-                                                                <div className="flex items-center gap-2 text-sm text-gray-700 capitalize">
-                                                                    {getTypeIcon(item.submission_type)}
-                                                                    {item.submission_type}
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4 text-sm text-gray-500">
-                                                                {new Date(item.submitted_at).toLocaleDateString()}
-                                                            </td>
-                                                            <td className="px-6 py-4">
-                                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
-                                                                    {item.status.replace('_', ' ')}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-6 py-4">
-                                                                <button
-                                                                    onClick={() => handleGrade(item)}
-                                                                    className="flex items-center gap-1 px-3 py-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-all text-sm font-medium"
-                                                                    title="AI Grade"
-                                                                >
-                                                                    <Sparkles className="w-4 h-4" />
-                                                                    Grade
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    ))
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
+                                <GradingQueueTable
+                                    items={filteredQueue}
+                                    loading={loading}
+                                    onGrade={handleGrade}
+                                />
                             </div>
                         )}
 
@@ -533,10 +552,16 @@ export default function InstructorDashboard() {
                                                         }}
                                                         className="flex-1 py-2 bg-emerald-50 text-emerald-600 font-medium rounded-xl hover:bg-emerald-100 transition-colors flex items-center justify-center gap-1"
                                                     >
-                                                        <FileText size={14} />
                                                         Syllabus
                                                     </button>
                                                 </div>
+                                                <button
+                                                    onClick={() => router.push(`/courses/${course.id}/editor`)}
+                                                    className="w-full mt-2 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-medium rounded-xl hover:from-purple-600 hover:to-indigo-600 transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                                                >
+                                                    <LayoutDashboard size={14} />
+                                                    Manage Content
+                                                </button>
                                             </div>
                                         </div>
                                     ))}
@@ -608,8 +633,8 @@ export default function InstructorDashboard() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
-                                            {students.map(student => (
-                                                <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                                            {students.map((student, index) => (
+                                                <tr key={`student-${student.id}-${index}`} className="hover:bg-gray-50 transition-colors">
                                                     <td className="px-6 py-4">
                                                         <div className="flex flex-col">
                                                             <span className="font-medium text-gray-900">{student.name}</span>
@@ -780,6 +805,6 @@ export default function InstructorDashboard() {
                     )}
                 </main>
             </div>
-        </RoleRouteGuard>
+        </RoleRouteGuard >
     );
 }

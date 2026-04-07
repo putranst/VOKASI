@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
@@ -18,6 +18,14 @@ export default function CourseDetailPage() {
     const [isEnrolled, setIsEnrolled] = useState(false);
     const [enrollmentId, setEnrollmentId] = useState<number | undefined>();
     const [loading, setLoading] = useState(true);
+
+    // Redirect legacy ID 12 to 9
+    const router = useRouter();
+    useEffect(() => {
+        if (courseId === 12) {
+            router.replace('/courses/9');
+        }
+    }, [courseId, router]);
 
     // Find course across all categories
     const allCourses = Object.values(TABBED_COURSES).flat();
@@ -122,12 +130,21 @@ export default function CourseDetailPage() {
                                     </>
                                 ) : (
                                     // Just show text if not enrolled, the button below handles enrollment
-                                    // Actually the button is in the sticky sidebar usually, but let's see where it was.
-                                    // In the original code, this was just text "Enroll in this course..." or empty if not enrolled here?
-                                    // Ah, the original had a check. Let's keep the logic simple.
+                                    // Actually the button is in the sticky sidebar usually, but let's keep logic simple.
                                     <div className="text-gray-300 text-sm italic">
                                         Enroll in this course to access the content
                                     </div>
+                                )}
+
+                                {/* Instructor Controls */}
+                                {(user?.role === 'instructor' || user?.role === 'admin') && (
+                                    <a
+                                        href={`/courses/${course.id}/editor`}
+                                        className="bg-purple-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-purple-700 transition-all flex items-center gap-2 border border-purple-500/50 shadow-lg shadow-purple-900/20"
+                                    >
+                                        <BookOpen size={20} />
+                                        Edit Content
+                                    </a>
                                 )}
                             </div>
                         </div>
