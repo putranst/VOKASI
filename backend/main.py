@@ -48,15 +48,11 @@ try:
 except ImportError:
     print("DEBUG: Could not import DATABASE_URL")
 
-# CORS middleware
+# CORS middleware - configurable from environment
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,https://t6.tsea.asia,http://t6.tsea.asia").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://t6.tsea.asia",
-        "http://t6.tsea.asia",
-    ],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -103,13 +99,6 @@ snapshot_counter = 1
 @app.on_event("startup")
 def startup_event():
     # Initialize sample data on startup
-<<<<<<< HEAD
-    db = next(get_db())
-    try:
-        init_sample_data(db)
-    finally:
-        db.close()
-=======
     try:
         db = next(get_db())
         try:
@@ -118,7 +107,6 @@ def startup_event():
             db.close()
     except Exception as e:
         print(f"Startup Warning: Could not initialize sample data: {e}")
->>>>>>> 36b5f396c275188512a1d135e85e4f68b59f3fef
 
 
 # ===== AUTH ENDPOINTS =====
@@ -692,9 +680,6 @@ def reject_course(
 
 # ===== Course Editor Endpoints =====
 
-<<<<<<< HEAD
-
-=======
 class ContentBlock(BaseModel):
     id: str
     type: str
@@ -748,21 +733,6 @@ def save_course_modules(
         raise HTTPException(status_code=404, detail="Course not found")
         
     try:
-        # Simplistic sync: Delete existing and recreate (or update)
-        # For this demo/prototype, let's update by title or recreate.
-        # Better strategy: 
-        # 1. Get existing modules
-        # 2. Update matches, delete removed, add new. 
-        # But since we send the WHOLE list, we can just sync.
-        
-        # Current implementation: Update if title matches (preserving IDs), else create.
-        # NOTE: This implies we can't rename modules easily without losing ID.
-        # But getting correct IDs from frontend would be better.
-        # The frontend sends 'CourseModule' which doesn't seem to track module ID in state explicitely yet?
-        # Let's check frontend. Frontend has 'CourseModule' interface but no ID.
-        # So we might need to wipe and recreate or match by order/title.
-        # Let's match by title for now.
-        
         for i, mod_data in enumerate(modules):
             existing = db.query(models.CourseModule).filter(
                 models.CourseModule.course_id == course_id,
@@ -793,7 +763,6 @@ def save_course_modules(
         db.rollback()
         print(f"Error saving modules: {e}")
         raise HTTPException(status_code=500, detail=str(e))
->>>>>>> 36b5f396c275188512a1d135e85e4f68b59f3fef
 
 @app.post("/api/v1/ai/suggest-content")
 async def ai_suggest_content(request: Dict[str, str]):

@@ -12,19 +12,26 @@ services:
       - "8000:8000"
     volumes:
       - backend-data:/app/data
+      - backend-db:/app
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/api/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://localhost:8000}
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_ENVIRONMENT: production
     restart: always
     env_file:
-      - ./frontend/.env.local
+      - ./frontend/.env.production
     ports:
       - "3000:3000"
     depends_on:
@@ -32,3 +39,4 @@ services:
 
 volumes:
   backend-data:
+  backend-db:
