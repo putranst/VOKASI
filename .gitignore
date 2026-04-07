@@ -31,9 +31,10 @@ frontend/yarn-error.log*
 # OS specific
 Thumbs.db
 
-# Secrets and keys
+# Secrets and keys - NEVER commit these!
 *.pem
 *.key
 .env.production
 backend/.env
 **/secrets/**
+service-account.json

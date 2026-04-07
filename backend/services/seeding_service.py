@@ -135,50 +135,6 @@ def init_sample_data(db: Session, force: bool = False):
 
     # --- SQL Seeding ---
     try:
-        # Create Institutions FIRST (before users/courses reference them)
-        institutions_to_seed = [
-            {
-                "name": "Universitas Indonesia",
-                "short_name": "UI",
-                "type": "university",
-                "country": "Indonesia",
-                "logo_url": "https://ui-avatars.com/api/?name=UI&background=0066cc&color=fff&size=128",
-                "is_featured": True
-            },
-            {
-                "name": "National University of Singapore",
-                "short_name": "NUS",
-                "type": "university",
-                "country": "Singapore",
-                "logo_url": "https://ui-avatars.com/api/?name=NUS&background=ff6600&color=fff&size=128",
-                "is_featured": True
-            }
-        ]
-        
-        ui_institution = None
-        
-        for inst_data in institutions_to_seed:
-            existing_inst = db.query(models.Institution).filter(
-                models.Institution.short_name == inst_data["short_name"]
-            ).first()
-            
-            if not existing_inst:
-                new_inst = models.Institution(
-                    name=inst_data["name"],
-                    short_name=inst_data["short_name"],
-                    type=inst_data["type"],
-                    country=inst_data["country"],
-                    logo_url=inst_data["logo_url"],
-                    is_featured=inst_data["is_featured"]
-                )
-                db.add(new_inst)
-                db.commit()
-                existing_inst = new_inst
-                print(f"DEBUG: Created institution {inst_data['name']}")
-            
-            if inst_data["short_name"] == "UI":
-                ui_institution = existing_inst
-        
         # Create Users
         users_to_seed = [
             {"email": "mats@uid.or.id", "name": "Prof. Mats", "role": "instructor"},
@@ -195,20 +151,17 @@ def init_sample_data(db: Session, force: bool = False):
                     email=u["email"],
                     full_name=u["name"],
                     role=u["role"],
-                    password_hash="hashed_secret",
-                    institution_id=ui_institution.id if ui_institution and u["role"] == "instructor" else None
+                    password_hash="hashed_secret"
                 )
                 db.add(new_user)
                 db.commit() # Commit each to ensure IDs are generated
                 existing = new_user
                 print(f"DEBUG: Created {u['role']} user {u['email']}")
             else:
-                # Update existing user
-                existing.role = u["role"]
-                existing.full_name = u["name"]
-                if u["role"] == "instructor" and ui_institution:
-                    existing.institution_id = ui_institution.id
-                db.commit()
+                if existing.role != u["role"]:
+                    existing.role = u["role"]
+                    existing.full_name = u["name"]
+                    db.commit()
             
             if u["email"] == "mats@uid.or.id":
                 mats_user = existing
@@ -253,11 +206,6 @@ def init_sample_data(db: Session, force: bool = False):
                         approval_status=c_data.get("status", "approved")
                     )
                     db.add(new_course)
-                else:
-                    # Update existing course with institution_id
-                    if existing_course.institution_id != mats_user.institution_id:
-                        existing_course.institution_id = mats_user.institution_id
-                        existing_course.instructor_id = mats_user.id
             
             db.commit()
 
@@ -309,67 +257,6 @@ def init_sample_data(db: Session, force: bool = False):
             
             db.commit()
             
-            # --- Enrollment Seeding ---
-            # Create enrollments to link students to courses
-            print("Creating student enrollments...")
-            
-            # Get the student user
-            student_user = db.query(models.User).filter(models.User.email == "student@tsea.asia").first()
-            
-            # Create additional student users for realistic data
-            additional_students = [
-                {"email": "alice@student.tsea.asia", "name": "Alice Chen"},
-                {"email": "bob@student.tsea.asia", "name": "Bob Tan"},
-                {"email": "charlie@student.tsea.asia", "name": "Charlie Lim"},
-                {"email": "diana@student.tsea.asia", "name": "Diana Wong"}
-            ]
-            
-            all_students = []
-            if student_user:
-                all_students.append(student_user)
-            
-            for s in additional_students:
-                existing_student = db.query(models.User).filter(models.User.email == s["email"]).first()
-                if not existing_student:
-                    new_student = models.User(
-                        email=s["email"],
-                        full_name=s["name"],
-                        role="student",
-                        password_hash="hashed_secret"
-                    )
-                    db.add(new_student)
-                    db.commit()
-                    all_students.append(new_student)
-                    print(f"DEBUG: Created student {s['email']}")
-                else:
-                    all_students.append(existing_student)
-            
-            # Enroll students in courses
-            enrollment_count = 0
-            for idx, course in enumerate(courses_with_content):
-                # Enroll 2-4 students per course for variety
-                students_to_enroll = all_students[:min(2 + (idx % 3), len(all_students))]
-                
-                for student in students_to_enroll:
-                    # Check if enrollment already exists
-                    existing_enrollment = db.query(models.Enrollment).filter(
-                        models.Enrollment.user_id == student.id,
-                        models.Enrollment.course_id == course.id
-                    ).first()
-                    
-                    if not existing_enrollment:
-                        enrollment = models.Enrollment(
-                            user_id=student.id,
-                            course_id=course.id,
-                            status="active",
-                            enrolled_at=datetime.now()
-                        )
-                        db.add(enrollment)
-                        enrollment_count += 1
-            
-            db.commit()
-            print(f"DEBUG: Created {enrollment_count} enrollments")
-            
             # --- Grading Queue Seeding (Projects) ---
             # Ensure we have active projects for the instructor to grade
             print("Syncing Grading Queue...")
@@ -377,20 +264,11 @@ def init_sample_data(db: Session, force: bool = False):
             
             if existing_projects_count == 0 or force:
                  # Create fresh sample projects linked to Mats' real courses
-                 # Use enrolled students for projects
                  for idx, course in enumerate(courses_with_content[:5]): # Use first 5 courses
-                    # Get a student enrolled in this course
-                    enrollment = db.query(models.Enrollment).filter(
-                        models.Enrollment.course_id == course.id
-                    ).first()
-                    
-                    if not enrollment:
-                        continue  # Skip if no enrollments
-                    
                     # Create a project for this course
                     project = models.CDIOProject(
                         course_id=course.id,
-                        user_id=enrollment.user_id,
+                        user_id=1, # Mock student (assuming ID 1 exists from previous step)
                         title=f"NUSA Sprint: {course.title} Solution",
                         current_phase="design",
                         overall_status="under_review",

@@ -1,221 +1,177 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
-import { WYSIWYGCourseEditor } from '@/components/course-editor';
-import { CourseData } from '@/components/course-editor/types';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Loader2, Save, Plus } from 'lucide-react';
+import { CourseEditor } from '@/components/CourseEditor';
+import { useToast } from '@/lib/ToastContext';
+
+interface CourseData {
+    id: number;
+    title: string;
+    description: string;
+}
+
+interface CourseModule {
+    title: string;
+    order: number;
+    content_blocks: any[];
+    status: string;
+}
 
 export default function CourseEditorPage() {
     const params = useParams();
     const router = useRouter();
-    const courseId = params.id as string;
+    const courseId = params.id;
+    const { showToast } = useToast();
 
-    const [courseData, setCourseData] = useState<CourseData | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [courseTitle, setCourseTitle] = useState('Course Editor');
+    const [course, setCourse] = useState<CourseData | null>(null);
+    const [modules, setModules] = useState<CourseModule[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedModuleIdx, setSelectedModuleIdx] = useState(0);
+    const [isSaving, setIsSaving] = useState(false);
 
-    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-
-    // Fetch course data on mount
     useEffect(() => {
-        if (courseId) {
-            fetchCourseData();
-        }
-    }, [courseId]);
-
-    const fetchCourseData = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-
-            // Fetch course metadata
-            const courseRes = await fetch(`${BACKEND_URL}/api/v1/courses/${courseId}`);
-            if (!courseRes.ok) throw new Error('Failed to fetch course data');
-            const course = await courseRes.json();
-            setCourseTitle(course.title || 'Course Editor');
-
-            // Fetch course modules
-            const modulesRes = await fetch(`${BACKEND_URL}/api/v1/courses/${courseId}/modules`);
-
-            let modules = [];
-            if (modulesRes.ok) {
-                const modulesData = await modulesRes.json();
-                modules = transformModulesToEditorFormat(modulesData);
-            } else {
-                // If no modules exist, create a default structure
-                modules = createDefaultModules();
-            }
-
-            const editorData: CourseData = {
-                id: courseId,
-                title: course.title,
-                approval_status: course.approval_status,
-                modules: modules
-            };
-
-            setCourseData(editorData);
-        } catch (err: any) {
-            console.error('Error fetching course data:', err);
-            setError(err.message || 'Failed to load course data');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Transform backend modules to editor format
-    const transformModulesToEditorFormat = (modulesData: any[]): any[] => {
-        return modulesData.map((mod, idx) => ({
-            id: mod.id?.toString() || `module-${idx}`,
-            title: mod.title || `Module ${idx + 1}`,
-            order: mod.order ?? idx,
-            isExpanded: idx === 0, // Expand first module by default
-            pages: [
-                {
-                    id: `page-${mod.id || idx}-1`,
-                    title: mod.title || `Page 1`,
-                    order: 0,
-                    content: mod.content_blocks || []
+        const fetchContext = async () => {
+            try {
+                // Fetch course info
+                const courseRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/courses/${courseId}`);
+                if (courseRes.ok) {
+                    setCourse(await courseRes.json());
                 }
-            ]
-        }));
-    };
 
-    // Create default modules if none exist
-    const createDefaultModules = () => {
-        return [
-            {
-                id: 'module-1',
-                title: 'Introduction',
-                order: 0,
-                isExpanded: true,
-                pages: [
-                    {
-                        id: 'page-1-1',
-                        title: 'Getting Started',
-                        order: 0,
-                        content: []
-                    }
-                ]
+                // Fetch modules
+                const modulesRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/courses/${courseId}/modules`);
+                if (modulesRes.ok) {
+                    setModules(await modulesRes.json());
+                }
+            } catch (error) {
+                console.error('Error fetching context:', error);
+                showToast('error', 'Failed to load editor context');
+            } finally {
+                setIsLoading(false);
             }
-        ];
-    };
+        };
 
-    // Handle save
-    const handleSave = async (data: CourseData) => {
+        if (courseId) {
+            fetchContext();
+        }
+    }, [courseId, showToast]);
+
+    const handleSave = async (blocks: any[]) => {
+        setIsSaving(true);
         try {
-            // Transform editor data back to backend format
-            const modulesPayload = data.modules.map(module => ({
-                title: module.title,
-                order: module.order,
-                status: 'published',
-                content_blocks: module.pages[0]?.content || [] // For now, use first page's content
-            }));
+            // Update the current module's blocks in state
+            const updatedModules = [...modules];
+            if (!updatedModules[selectedModuleIdx]) {
+                // Should not happen if module exists, but handled for safety
+                updatedModules[selectedModuleIdx] = {
+                    title: 'New Module',
+                    order: selectedModuleIdx,
+                    content_blocks: blocks,
+                    status: 'draft'
+                };
+            } else {
+                updatedModules[selectedModuleIdx].content_blocks = blocks;
+            }
+            setModules(updatedModules);
 
-            const response = await fetch(`${BACKEND_URL}/api/v1/courses/${courseId}/modules`, {
+            // Persist to backend
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/courses/${courseId}/modules`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(modulesPayload)
+                body: JSON.stringify(updatedModules)
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to save course content');
-            }
+            if (!response.ok) throw new Error('Failed to save');
 
-            console.log('Course content saved successfully');
-            return true;
-        } catch (err: any) {
-            console.error('Error saving course:', err);
-            alert('Failed to save course. Please try again.');
-            return false;
+            showToast('success', 'Course content saved successfully');
+        } catch (error) {
+            console.error('Error saving:', error);
+            showToast('error', 'Failed to save content');
+        } finally {
+            setIsSaving(false);
         }
     };
 
-    // Handle publish
-    const handlePublish = async (data: CourseData) => {
-        const saved = await handleSave(data);
-
-        if (saved) {
-            try {
-                const response = await fetch(`${BACKEND_URL}/api/v1/courses/${courseId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ approval_status: 'approved' })
-                });
-
-                if (response.ok) {
-                    alert('Course published successfully! It is now live.');
-                    // Update local state to reflect change
-                    if (courseData) {
-                        setCourseData({ ...courseData, approval_status: 'approved' });
-                    }
-                } else {
-                    alert('Course saved, but failed to publish status.');
-                }
-            } catch (err) {
-                console.error('Publish error:', err);
-                alert('Error publishing course.');
-            }
-        }
+    const addNewModule = () => {
+        const newModule: CourseModule = {
+            title: `Module ${modules.length + 1}`,
+            order: modules.length,
+            content_blocks: [],
+            status: 'draft'
+        };
+        const updated = [...modules, newModule];
+        setModules(updated);
+        setSelectedModuleIdx(updated.length - 1);
     };
 
-    // Loading state
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-                    <p className="text-gray-600 font-medium">Loading course editor...</p>
+                <div className="flex items-center gap-3 text-gray-500">
+                    <Loader2 className="animate-spin" size={24} />
+                    <span>Loading course editor...</span>
                 </div>
             </div>
         );
     }
 
-    // Error state
-    if (error) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-                <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
-                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <AlertCircle className="w-8 h-8 text-red-600" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Course</h2>
-                    <p className="text-gray-600 mb-6">{error}</p>
-                    <div className="flex gap-3">
-                        <button
-                            onClick={() => router.push('/instructor')}
-                            className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
-                        >
-                            Back to Dashboard
-                        </button>
-                        <button
-                            onClick={fetchCourseData}
-                            className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-                        >
-                            Retry
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    // Main editor view
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header with breadcrumb */}
-            {/* Header removed - handled by EditorCanvas */}
+            {/* Back Navigation */}
+            <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
+                <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
+                    <button
+                        onClick={() => router.back()}
+                        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                    >
+                        <ArrowLeft size={18} />
+                        <span>Back to Course</span>
+                    </button>
+                    {isSaving && (
+                        <span className="flex items-center gap-2 text-sm text-purple-600 animate-pulse">
+                            <Save size={14} /> Saving...
+                        </span>
+                    )}
+                </div>
+            </div>
 
-            {/* WYSIWYG Editor */}
-            {courseData && (
-                <WYSIWYGCourseEditor
-                    courseId={courseId}
-                    initialData={courseData}
-                    onSave={async (data) => { await handleSave(data); }}
-                    onPublish={handlePublish}
-                />
-            )}
+            {/* Module Selector */}
+            <div className="bg-white border-b border-gray-200 shadow-sm">
+                <div className="max-w-7xl mx-auto px-6 py-3">
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                        {modules.map((module, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => setSelectedModuleIdx(idx)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all border
+                                    ${selectedModuleIdx === idx
+                                        ? 'bg-purple-50 border-purple-200 text-purple-700 shadow-sm'
+                                        : 'bg-white border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-200'
+                                    }`}
+                            >
+                                Module {idx + 1}: {module.title}
+                            </button>
+                        ))}
+                        <button
+                            onClick={addNewModule}
+                            className="px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-purple-600 hover:bg-purple-50 transition-colors flex items-center gap-1"
+                        >
+                            <Plus size={16} /> New Module
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Course Editor */}
+            <CourseEditor
+                key={selectedModuleIdx} // Force re-render on module switch to reset internal state
+                courseTitle={course?.title || 'Untitled Course'}
+                moduleTitle={modules[selectedModuleIdx]?.title || 'New Module'}
+                initialBlocks={modules[selectedModuleIdx]?.content_blocks || []}
+                onSave={handleSave}
+            />
         </div>
     );
 }

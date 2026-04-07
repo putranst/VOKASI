@@ -21,6 +21,7 @@ import { CareerExplorer } from '@/components/CareerExplorer';
 import { CAREER_PATHWAYS } from '@/components/careerData';
 import { IRISProgressTracker } from '@/components/ui/IRISProgressTracker';
 import { LearningStreak } from '@/components/ui/LearningStreak';
+import { EkspedisiAINusantara } from '@/components/EkspedisiAINusantara';
 import { ActiveProjectCard } from '@/components/ActiveProjectCard';
 import { WeeklyGoalRing } from '@/components/ui/WeeklyGoalRing';
 import { NaskaBuddy } from '@/components/NaskaBuddy';
@@ -66,12 +67,8 @@ export default function DashboardPage() {
 
     const [data, setData] = useState<DashboardData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [currentDate, setCurrentDate] = useState<string>('');
 
     useEffect(() => {
-        // Set current date on client side only
-        setCurrentDate(new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }));
-
         if (!isAuthenticated) {
             router.push('/login');
         } else {
@@ -154,7 +151,7 @@ export default function DashboardPage() {
                         <NavItem icon={BookOpen} label="My Learning" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
                         <NavItem icon={Award} label="Credentials" active={activeTab === 'wallet'} onClick={() => setActiveTab('wallet')} />
                         <NavItem icon={TrendingUp} label="Knowledge Graph" active={activeTab === 'knowledge'} onClick={() => setActiveTab('knowledge')} />
-                        <NavItem icon={Users} label="Community" onClick={() => router.push('/community')} />
+                        <NavItem icon={Users} label="Community" />
                     </nav>
 
                     <div className="absolute bottom-8 left-0 w-full px-6">
@@ -188,7 +185,7 @@ export default function DashboardPage() {
                                     {activeTab === 'overview' ? 'My Learning Space' : 'Credential Vault'}
                                 </h1>
                                 <p className="text-xs text-gray-500 font-medium">
-                                    {currentDate}
+                                    {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                                 </p>
                             </div>
 
@@ -347,72 +344,70 @@ export default function DashboardPage() {
                                 </div>
 
                                 {/* Your Active Project - Unified Block */}
-                                <div className="mb-8">
-                                    {(() => {
-                                        if (!data || !data.enrolled_courses || data.enrolled_courses.length === 0) {
-                                            return null;
-                                        }
+                                {data && data.enrolled_courses && data.enrolled_courses.length > 0 && (
+                                    <div className="mb-8">
+                                        {(() => {
+                                            const activeProject = data.iris_projects?.find(p => p.course_id === data.enrolled_courses[0].course_id);
+                                            const activeCourse = data.enrolled_courses[0];
+                                            const phase = activeProject?.current_phase || (activeCourse.progress > 75 ? 'scale' : activeCourse.progress > 50 ? 'iterate' : activeCourse.progress > 25 ? 'realize' : 'immerse');
 
-                                        const activeProject = data.iris_projects?.find(p => p.course_id === data.enrolled_courses[0].course_id);
-                                        const activeCourse = data.enrolled_courses[0];
-                                        const phase = activeProject?.current_phase || (activeCourse.progress > 75 ? 'scale' : activeCourse.progress > 50 ? 'iterate' : activeCourse.progress > 25 ? 'realize' : 'immerse');
+                                            return (
+                                                <div className="space-y-6">
+                                                    <ActiveProjectCard
+                                                        courseId={activeCourse.course_id}
+                                                        courseTitle={activeCourse.title}
+                                                        courseImage={activeCourse.image}
+                                                        instructor={'TSEA Faculty'}
+                                                        progress={activeCourse.progress}
+                                                        currentPhase={phase as 'immerse' | 'realize' | 'iterate' | 'scale'}
+                                                        sfiaLevel={2}
+                                                        targetSfiaLevel={3}
+                                                        estimatedCompletion="2 weeks"
+                                                        totalModules={10}
+                                                        completedModules={Math.round((activeCourse.progress / 100) * 10)}
+                                                        lastActivity="Today"
+                                                    />
 
-                                        return (
-                                            <div className="space-y-6">
-                                                <ActiveProjectCard
-                                                    courseId={activeCourse.course_id}
-                                                    courseTitle={activeCourse.title}
-                                                    courseImage={activeCourse.image}
-                                                    instructor={'TSEA Faculty'}
-                                                    progress={activeCourse.progress}
-                                                    currentPhase={phase as 'immerse' | 'realize' | 'iterate' | 'scale'}
-                                                    sfiaLevel={2}
-                                                    targetSfiaLevel={3}
-                                                    estimatedCompletion="2 weeks"
-                                                    totalModules={10}
-                                                    completedModules={Math.round((activeCourse.progress / 100) * 10)}
-                                                    lastActivity="Today"
-                                                />
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        {/* AI Feedback Display */}
+                                                        {activeProject?.ai_feedback && (
+                                                            <FeedbackSummaryCard
+                                                                courseId={activeCourse.course_id}
+                                                                grade={activeProject.ai_feedback.grade}
+                                                                score={activeProject.ai_feedback.score}
+                                                                strengths={activeProject.ai_feedback.strengths}
+                                                                weaknesses={activeProject.ai_feedback.weaknesses}
+                                                            />
+                                                        )}
 
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    {/* AI Feedback Display */}
-                                                    {activeProject?.ai_feedback && (
-                                                        <FeedbackSummaryCard
-                                                            courseId={activeCourse.course_id}
-                                                            grade={activeProject.ai_feedback.grade}
-                                                            score={activeProject.ai_feedback.score}
-                                                            strengths={activeProject.ai_feedback.strengths}
-                                                            weaknesses={activeProject.ai_feedback.weaknesses}
-                                                        />
-                                                    )}
-
-                                                    {/* Credential Earned Banner */}
-                                                    {(activeProject?.current_phase === 'completed' || activeProject?.current_phase === 'scale') && (
-                                                        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white flex flex-col justify-between relative overflow-hidden">
-                                                            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
-                                                            <div>
-                                                                <div className="flex items-center gap-2 mb-2">
-                                                                    <div className="p-1 bg-white/20 rounded-lg">
-                                                                        <Award size={16} className="text-white" />
+                                                        {/* Credential Earned Banner */}
+                                                        {(activeProject?.current_phase === 'completed' || activeProject?.current_phase === 'scale') && (
+                                                            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white flex flex-col justify-between relative overflow-hidden">
+                                                                <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+                                                                <div>
+                                                                    <div className="flex items-center gap-2 mb-2">
+                                                                        <div className="p-1 bg-white/20 rounded-lg">
+                                                                            <Award size={16} className="text-white" />
+                                                                        </div>
+                                                                        <span className="text-xs font-bold uppercase tracking-wider text-indigo-100">Ready to Claim</span>
                                                                     </div>
-                                                                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-100">Ready to Claim</span>
+                                                                    <h3 className="text-lg font-bold mb-1">Innovation Practitioner</h3>
+                                                                    <p className="text-indigo-100 text-xs">Verify your achievement on the blockchain.</p>
                                                                 </div>
-                                                                <h3 className="text-lg font-bold mb-1">Innovation Practitioner</h3>
-                                                                <p className="text-indigo-100 text-xs">Verify your achievement on the blockchain.</p>
+                                                                <Link
+                                                                    href={`/courses/${activeCourse.course_id}/scale`}
+                                                                    className="mt-4 w-full py-2 bg-white text-indigo-600 rounded-lg text-sm font-bold text-center hover:bg-indigo-50 transition-colors"
+                                                                >
+                                                                    View Credential
+                                                                </Link>
                                                             </div>
-                                                            <Link
-                                                                href={`/courses/${activeCourse.course_id}/scale`}
-                                                                className="mt-4 w-full py-2 bg-white text-indigo-600 rounded-lg text-sm font-bold text-center hover:bg-indigo-50 transition-colors"
-                                                            >
-                                                                View Credential
-                                                            </Link>
-                                                        </div>
-                                                    )}
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })()}
-                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                )}
 
                                 {/* Empty State for No Active Project */}
                                 {(!data?.enrolled_courses || data.enrolled_courses.length === 0) && (
@@ -433,6 +428,21 @@ export default function DashboardPage() {
                                         </Link>
                                     </div>
                                 )}
+
+                                {/* Ekspedisi AI Nusantara Competition */}
+                                <div className="mb-8">
+                                    <EkspedisiAINusantara
+                                        userProvince={'Jawa Timur'}
+                                        provinceRank={5}
+                                        rankChange="up"
+                                        changeAmount={2}
+                                        totalXP={data?.learning_streak?.total_xp || 12450}
+                                        totalLearners={847}
+                                        badgesEarned={data?.credentials?.length || 3}
+                                        onViewLeaderboard={() => console.log('View leaderboard')}
+                                        onContribute={() => console.log('Contribute')}
+                                    />
+                                </div>
 
                                 {/* Quick Stats Row */}
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

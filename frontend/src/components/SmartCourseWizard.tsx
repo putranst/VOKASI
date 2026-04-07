@@ -5,7 +5,7 @@ import {
     Upload, FileText, Sparkles, ChevronRight, ChevronLeft, ChevronDown,
     Check, Loader2, X, Eye, Edit3, Wand2, BookOpen,
     Brain, Target, Clock, Users, Layers, Play, MessageSquare,
-    HelpCircle, Lightbulb, CheckCircle2, Trash2, Image, Plus, Pencil
+    HelpCircle, Lightbulb, CheckCircle2, Trash2, Image, Plus
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -160,14 +160,6 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
 
     // Comprehensive thumbnail library organized by category/topic
     const THUMBNAIL_LIBRARY: Record<string, string[]> = {
-        marketing: [
-            'https://images.unsplash.com/photo-1533750349088-cd871a92f312?w=800', // Digital Marketing
-            'https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=800', // Analytics/Graph
-            'https://images.unsplash.com/photo-1557838923-2985c318be48?w=800', // Shopping/Ecom
-            'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800', // Strategy
-            'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800', // Data
-            'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800', // Team
-        ],
         leadership: [
             'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800', // Team meeting
             'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800', // Leadership presentation
@@ -260,9 +252,8 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
         if (/mindful|meditation|wellness|conscious|awareness|mental|stress|balance/.test(text)) return 'mindfulness';
         if (/health|medical|fitness|nutrition|wellness|diet|exercise/.test(text)) return 'health';
         if (/finance|invest|trading|money|capital|banking|fintech|stock/.test(text)) return 'finance';
-        if (/ai|machine learning|data|code|programming|software|tech|digital|cyber|computer/.test(text)) return 'technology';
-        if (/marketing|market|brand|social media|advertising|seo|content|communication|pr/.test(text)) return 'marketing';
-        if (/business|startup|entrepreneur|sales|strategy|mba|management|corporate/.test(text)) return 'business';
+        if (/ai|machine learning|data|code|programming|software|tech|digital|cyber/.test(text)) return 'technology';
+        if (/business|startup|entrepreneur|marketing|sales|strategy|mba/.test(text)) return 'business';
         if (/education|teach|learn|school|university|academic|student/.test(text)) return 'education';
 
         return 'default';
@@ -418,11 +409,10 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                 duration: parsedContent.estimated_duration || `${durationWeeks} weeks`,
                 tag: 'AI Generated',
                 image: courseThumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800',
-                category: detectCategory(),
+                category: 'Technology',
                 instructor: user?.name || 'Instructor',
                 org: 'TSEA',
-                instructor_id: user?.id,  // Link to logged-in instructor
-                approval_status: 'draft'
+                instructor_id: user?.id  // Link to logged-in instructor
             };
 
             const response = await fetch(`${BACKEND_URL}/api/v1/courses`, {
@@ -440,7 +430,7 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                 const modulesPayload = teachingAgenda.modules.map((mod, modIdx) => ({
                     title: mod.title,
                     order: modIdx,
-                    status: 'draft',
+                    status: 'published',
                     content_blocks: [
                         {
                             id: `intro-${modIdx}`,
@@ -469,29 +459,21 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                                 blocks.push({
                                     id: `action-${modIdx}-${actionIdx}-quiz`,
                                     type: 'quiz',
-                                    content: action.instruction || "Test your knowledge with this quick quiz.",
+                                    content: action.instruction || "Complete the quiz below",
                                     metadata: { questions: action.questions || [] }
                                 });
                             } else if (action.type === 'REFLECT' || action.type === 'DISCUSS') {
                                 blocks.push({
                                     id: `action-${modIdx}-${actionIdx}-discuss`,
                                     type: 'discussion',
-                                    content: action.prompt || action.content || "Share your thoughts on this topic.",
-                                    metadata: {}
-                                });
-                            } else if (action.type === 'EXPLAIN' || action.type === 'LECTURE') {
-                                blocks.push({
-                                    id: `action-${modIdx}-${actionIdx}-text`,
-                                    type: 'text',
-                                    content: action.content || "No content generated.",
+                                    content: action.prompt || action.content || "Discussion prompt",
                                     metadata: {}
                                 });
                             } else {
                                 blocks.push({
                                     id: `action-${modIdx}-${actionIdx}-text`,
                                     type: 'text',
-                                    // Fallback for other types like PRACTICE/ DEMO
-                                    content: action.instructions || action.content || action.prompt || "Complete the activity instructions provided below.",
+                                    content: action.content || action.instructions || action.prompt || "",
                                     metadata: {}
                                 });
                             }
@@ -499,6 +481,8 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                         }),
                         // Fallback if no actions exist
                         ...((!mod.teaching_actions || mod.teaching_actions.length === 0) ? [{
+                            id: `action-${modIdx}-default`,
+                            type: 'text',
                             content: "Get started by exploring the core concepts of this week. Click 'Edit' to add interactive activities.",
                             metadata: {}
                         }] : [])
@@ -1594,7 +1578,7 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                              hover:from-purple-700 hover:to-blue-700 flex items-center justify-center gap-3"
                 >
                     <Eye size={20} />
-                    Preview & Review
+                    Preview & Publish
                 </button>
             </div>
         );
@@ -1603,11 +1587,11 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
     const renderStep4 = () => (
         <div className="space-y-6">
             <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-4">
-                    <Pencil className="text-blue-600" size={40} />
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
+                    <Check className="text-green-600" size={40} />
                 </div>
-                <h2 className="text-2xl font-black text-gray-900 mb-2">Ready to Build!</h2>
-                <p className="text-gray-500">Create a draft and polish it in the editor</p>
+                <h2 className="text-2xl font-black text-gray-900 mb-2">Ready to Publish!</h2>
+                <p className="text-gray-500">Your AI-generated course is complete</p>
             </div>
 
             {teachingAgenda && parsedContent && (
@@ -1670,51 +1654,16 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                     ))}
                 </div>
 
-
-                {/* Custom URL input OR Upload */}
+                {/* Custom URL input */}
                 <div className="mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex flex-col gap-3">
-                        <label className="text-xs text-gray-500 block">Or use a custom image:</label>
-
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => {
-                                    const input = document.createElement('input');
-                                    input.type = 'file';
-                                    input.accept = 'image/*';
-                                    input.onchange = (e) => {
-                                        const file = (e.target as HTMLInputElement).files?.[0];
-                                        if (file) {
-                                            const reader = new FileReader();
-                                            reader.onload = (ev) => {
-                                                setCourseThumbnail(ev.target?.result as string);
-                                            };
-                                            reader.readAsDataURL(file);
-                                        }
-                                    };
-                                    input.click();
-                                }}
-                                className="px-4 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 
-                                         flex items-center gap-2 text-sm font-semibold transition-colors border border-purple-100"
-                            >
-                                <Upload size={16} />
-                                Upload Image
-                            </button>
-
-                            <input
-                                type="text"
-                                value={courseThumbnail.startsWith('data:') ? '' : courseThumbnail}
-                                onChange={(e) => setCourseThumbnail(e.target.value)}
-                                placeholder="https://example.com/image.jpg"
-                                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none"
-                            />
-                        </div>
-                        {courseThumbnail.startsWith('data:') && (
-                            <p className="text-xs text-green-600 flex items-center gap-1">
-                                <CheckCircle2 size={12} /> Custom image uploaded
-                            </p>
-                        )}
-                    </div>
+                    <label className="text-xs text-gray-500 mb-1 block">Or paste a custom image URL:</label>
+                    <input
+                        type="text"
+                        value={courseThumbnail}
+                        onChange={(e) => setCourseThumbnail(e.target.value)}
+                        placeholder="https://example.com/image.jpg"
+                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none"
+                    />
                 </div>
             </div>
 
@@ -1733,7 +1682,7 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                 ) : (
                     <>
                         <CheckCircle2 size={20} />
-                        Create & Open Editor
+                        Publish Course
                     </>
                 )}
             </button>
@@ -1766,7 +1715,7 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                 <span className={step >= 1 ? 'text-purple-600 font-semibold' : ''}>Upload</span>
                 <span className={step >= 2 ? 'text-purple-600 font-semibold' : ''}>Analyze</span>
                 <span className={step >= 3 ? 'text-purple-600 font-semibold' : ''}>Generate</span>
-                <span className={step >= 4 ? 'text-purple-600 font-semibold' : ''}>Review</span>
+                <span className={step >= 4 ? 'text-purple-600 font-semibold' : ''}>Publish</span>
             </div>
 
             {/* Error Display */}

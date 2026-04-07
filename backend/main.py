@@ -73,6 +73,10 @@ app.include_router(debug_router)
 def read_root():
     return {"message": "TSEA-X Backend API is running"}
 
+@app.get("/api/health")
+def health_check():
+    return {"status": "ok"}
+
 # --- Mock Data ---
 # COURSES_DB removed - using database
 # Imported from mock_db.py
@@ -99,11 +103,22 @@ snapshot_counter = 1
 @app.on_event("startup")
 def startup_event():
     # Initialize sample data on startup
+<<<<<<< HEAD
     db = next(get_db())
     try:
         init_sample_data(db)
     finally:
         db.close()
+=======
+    try:
+        db = next(get_db())
+        try:
+            init_sample_data(db)
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"Startup Warning: Could not initialize sample data: {e}")
+>>>>>>> 36b5f396c275188512a1d135e85e4f68b59f3fef
 
 
 # ===== AUTH ENDPOINTS =====
@@ -677,7 +692,108 @@ def reject_course(
 
 # ===== Course Editor Endpoints =====
 
+<<<<<<< HEAD
 
+=======
+class ContentBlock(BaseModel):
+    id: str
+    type: str
+    content: str
+    metadata: Optional[Dict] = {}
+
+class CourseModuleSchema(BaseModel):
+    title: str
+    order: int
+    content_blocks: List[ContentBlock]
+    status: str
+
+@app.get("/api/v1/courses/{course_id}")
+def get_course_details(course_id: int, db: Session = Depends(get_db)):
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    return {
+        "id": course.id,
+        "title": course.title,
+        "description": course.description,
+        "instructor": course.instructor
+    }
+
+@app.get("/api/v1/courses/{course_id}/modules")
+def get_course_modules(course_id: int, db: Session = Depends(get_db)):
+    modules = db.query(models.CourseModule).filter(
+        models.CourseModule.course_id == course_id
+    ).order_by(models.CourseModule.order).all()
+    
+    return [
+        {
+            "id": m.id,
+            "title": m.title,
+            "order": m.order,
+            "content_blocks": m.content_blocks,
+            "status": m.status
+        }
+        for m in modules
+    ]
+
+@app.post("/api/v1/courses/{course_id}/modules")
+def save_course_modules(
+    course_id: int, 
+    modules: List[CourseModuleSchema], 
+    db: Session = Depends(get_db)
+):
+    # Verify course exists
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+        
+    try:
+        # Simplistic sync: Delete existing and recreate (or update)
+        # For this demo/prototype, let's update by title or recreate.
+        # Better strategy: 
+        # 1. Get existing modules
+        # 2. Update matches, delete removed, add new. 
+        # But since we send the WHOLE list, we can just sync.
+        
+        # Current implementation: Update if title matches (preserving IDs), else create.
+        # NOTE: This implies we can't rename modules easily without losing ID.
+        # But getting correct IDs from frontend would be better.
+        # The frontend sends 'CourseModule' which doesn't seem to track module ID in state explicitely yet?
+        # Let's check frontend. Frontend has 'CourseModule' interface but no ID.
+        # So we might need to wipe and recreate or match by order/title.
+        # Let's match by title for now.
+        
+        for i, mod_data in enumerate(modules):
+            existing = db.query(models.CourseModule).filter(
+                models.CourseModule.course_id == course_id,
+                models.CourseModule.title == mod_data.title
+            ).first()
+            
+            blocks = [b.dict() for b in mod_data.content_blocks]
+            
+            if existing:
+                existing.order = i
+                existing.content_blocks = blocks
+                existing.status = mod_data.status
+                existing.updated_at = datetime.utcnow()
+            else:
+                new_mod = models.CourseModule(
+                    course_id=course_id,
+                    title=mod_data.title,
+                    order=i,
+                    content_blocks=blocks,
+                    status=mod_data.status
+                )
+                db.add(new_mod)
+        
+        db.commit()
+        return {"message": "Modules saved successfully"}
+        
+    except Exception as e:
+        db.rollback()
+        print(f"Error saving modules: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+>>>>>>> 36b5f396c275188512a1d135e85e4f68b59f3fef
 
 @app.post("/api/v1/ai/suggest-content")
 async def ai_suggest_content(request: Dict[str, str]):

@@ -36,6 +36,8 @@ interface ContentBlock {
         videoUrl?: string;
         resources?: string[];
         canvasState?: VisualElement[];
+        link?: string;
+        points?: number;
     };
 }
 
