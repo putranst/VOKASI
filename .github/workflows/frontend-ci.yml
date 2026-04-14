@@ -1,12 +1,12 @@
-name: Frontend CI
+name: VOKASI Frontend CI
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "main", "staging" ]
     paths:
       - 'frontend/**'
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "staging" ]
     paths:
       - 'frontend/**'
 
@@ -18,10 +18,10 @@ jobs:
         working-directory: ./frontend
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
