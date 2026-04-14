@@ -1,5 +1,12 @@
 # Frontend
 
-Frontend application for VOKASI.
+Next.js + TypeScript frontend scaffold for VOKASI.
 
-Planned stack: Next.js + TypeScript + Tailwind CSS.
+## Commands
+
+```bash
+npm install
+npm run dev
+```
+
+Then open `http://localhost:3000`.

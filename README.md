@@ -1,22 +1,39 @@
 # VOKASI
 
-VOKASI is a fresh repository for building a vocational learning platform.
+Starter monorepo for building the VOKASI vocational learning platform.
 
-## Project Structure
+## Structure
 
-- `frontend/` – web client
-- `backend/` – API and services
-- `docs/` – product and technical documentation
+- `frontend/` - Next.js web app scaffold
+- `backend/` - FastAPI service scaffold
+- `docs/` - architecture and planning notes
 
-## Getting Started
+## Run Locally
 
-1. Clone the repository.
-2. Set up `frontend` and `backend` dependencies.
-3. Add environment variables in local `.env` files.
-4. Start both services for local development.
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend runs on `http://localhost:3000`.
+
+### Backend
+
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+Backend health check: `http://localhost:8000/health`.
 
 ## Next Steps
 
-- Initialize frontend stack (e.g. Next.js)
-- Initialize backend stack (e.g. FastAPI)
-- Add CI pipeline and lint/test checks
+- Add shared environment strategy (`.env` management)
+- Add API routing modules and domain models
+- Add CI for linting, tests, and build checks
