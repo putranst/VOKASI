@@ -10,10 +10,20 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
+You can copy `backend/.env.example` to `.env` before running.
+
 ## Run
 
 ```bash
 uvicorn app.main:app --reload --port 8000
+```
+
+## Docker Run
+
+From repo root:
+
+```bash
+docker compose up --build backend
 ```
 
 ## Available Endpoints

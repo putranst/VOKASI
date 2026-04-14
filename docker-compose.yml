@@ -1,0 +1,23 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: vokasi-backend
+    ports:
+      - "8000:8000"
+    environment:
+      APP_NAME: VOKASI API
+      APP_ENV: development
+      API_PREFIX: /api/v1
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: vokasi-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
