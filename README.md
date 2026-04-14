@@ -1,77 +1,82 @@
-# TSEA-X Platform
+# VOKASI Platform
 
-TSEA-X is an AI-powered competency learning platform featuring Soulbound Credentials, Socratic Bots, and real-time policy-to-practice integration.
+VOKASI is the rebranded, history-preserving evolution of the CENDIKIA-MAIC platform.
 
-## 🚀 Getting Started
+## Baseline
+
+- Full modules and services are migrated from CENDIKIA-MAIC.
+- Git history is preserved.
+- API and database compatibility remain the initial priority.
+- Rebranding and enterprise hardening continue incrementally.
+
+## Quick Start
 
 ### Prerequisites
+
 - Node.js 20+
 - Python 3.11+
-- Docker & Docker Compose (optional, for production/containerized dev)
+- Docker and Docker Compose
 
-### Quick Start (Windows)
+### Windows
 
-1. **Run the setup script:**
-   ```powershell
-   .\dev-setup.ps1
-   ```
-   This will set up virtual environments, install dependencies, and create environment files.
-
-2. **Start Development Servers:**
-   You can use the Makefile if you have `make` installed:
-   ```bash
-   make dev
-   ```
-   Or run them manually in separate terminals:
-
-   **Backend:**
-   ```bash
-   cd backend
-   .\venv\Scripts\activate
-   uvicorn main:app --reload
-   ```
-
-   **Frontend:**
-   ```bash
-   cd frontend
-   npm run dev
-   ```
-
-3. **Access the App:**
-   - Frontend: [http://localhost:3000](http://localhost:3000)
-   - Backend API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
-
-## 🛠️ CI/CD Pipeline
-
-This project uses GitHub Actions for Continuous Integration and Continuous Deployment.
-
-### Workflows
-- **Backend CI**: Runs on push/PR to `backend/**`. Performs linting (flake8) and testing (pytest).
-- **Frontend CI**: Runs on push/PR to `frontend/**`. Performs linting and build verification.
-
-### Deployment (Docker)
-The project is containerized for production deployment.
-
-**Build and Run Production Containers:**
-```bash
-docker-compose -f docker-compose.production.yml up --build -d
+```powershell
+.\dev-setup.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 up
 ```
 
-## 📁 Project Structure
+### macOS/Linux/WSL
 
-- `backend/`: FastAPI application
+```bash
+make setup
+make up
+```
+
+### Manual Run
+
+Backend:
+
+```bash
+cd backend
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+App URLs:
+
+- Frontend: `http://localhost:3000`
+- Backend docs: `http://localhost:8000/docs`
+
+## CI/CD Default Path
+
+Enterprise-ready default pipeline:
+
+1. GitHub Actions CI (`backend-ci.yml`, `frontend-ci.yml`)
+2. GitHub Actions build/push to GHCR (`deploy-staging.yml`, `deploy-production.yml`)
+3. Deployment via Docker Compose on target instance
+
+This path is the easiest to maintain while continuously upgrading and hardening VOKASI.
+
+## Structure
+
+- `backend/`: FastAPI services and modules
 - `frontend/`: Next.js application
-- `.github/workflows/`: CI/CD configurations
-- `docker-compose.production.yml`: Production orchestration
+- `.github/workflows/`: CI/CD workflows
+- `docker-compose.production.yml`: production orchestration
+- `scripts/`: operational scripts
 
-## 🔑 Environment Variables
+## Environment
 
-Copy the example files to create your local configuration:
-- Backend: `cp backend/.env.example backend/.env`
-- Frontend: `cp frontend/.env.local.example frontend/.env.local`
+Copy templates before running:
 
-**Required Secrets for GitHub Actions:**
-- `OPENAI_API_KEY`
-- `GEMINI_API_KEY`
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
+- `backend/.env.example` -> `backend/.env`
+- `frontend/.env.local.example` -> `frontend/.env.local`
