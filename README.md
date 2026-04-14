@@ -31,6 +31,28 @@ Services:
 - Frontend: `http://localhost:3000`
 - Backend: `http://localhost:8000`
 
+## Operations Shortcuts
+
+### Windows PowerShell
+
+```bash
+powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 setup
+powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 up
+powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 health
+powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 logs
+powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 down
+```
+
+### Makefile (macOS/Linux/WSL)
+
+```bash
+make setup
+make up
+make health
+make logs
+make down
+```
+
 ## Option B: Run Services Manually
 
 Backend:
