@@ -66,6 +66,11 @@ Enterprise-ready default pipeline:
 
 This path is the easiest to maintain while continuously upgrading and hardening VOKASI.
 
+Optional SSH deploy jobs in workflows require these repository secrets:
+
+- `VOKASI_PROD_SSH_HOST`, `VOKASI_PROD_SSH_USER`, `VOKASI_PROD_SSH_KEY`, `VOKASI_PROD_APP_DIR`
+- `VOKASI_STG_SSH_HOST`, `VOKASI_STG_SSH_USER`, `VOKASI_STG_SSH_KEY`, `VOKASI_STG_APP_DIR`
+
 ## Structure
 
 - `backend/`: FastAPI services and modules

@@ -38,3 +38,20 @@ Thumbs.db
 backend/.env
 **/secrets/**
 service-account.json
+
+# Archives and generated bundles
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# Runtime output and dumps
+*logs.txt
+*error.txt
+deployment-error.json
+test_output.txt
+users_dump.json
+users_list.txt
+vm_error.txt
+debug.sh
+debug*.sql
