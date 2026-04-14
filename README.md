@@ -30,7 +30,17 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-Backend health check: `http://localhost:8000/health`.
+Backend health check: `http://localhost:8000/api/v1/health`.
+
+### Demo Auth Endpoints
+
+- `POST /api/v1/auth/login`
+- `GET /api/v1/users/me` (requires `Authorization: Bearer <token>`)
+
+Demo credentials:
+
+- `student@vokasi.dev` / `student123`
+- `instructor@vokasi.dev` / `instructor123`
 
 ## Next Steps
 
