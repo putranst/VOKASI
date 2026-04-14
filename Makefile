@@ -1,40 +1,40 @@
-.RECIPEPREFIX := >
+# Makefile for TSEA-X
 
-.PHONY: help setup setup-backend setup-frontend up down logs health dev-backend dev-frontend
+.PHONY: setup dev dev-backend dev-frontend test docker-build docker-up clean
 
-help:
->echo "Available targets:"
->echo "  make setup          - install backend and frontend dependencies"
->echo "  make up             - start full stack with docker compose"
->echo "  make down           - stop docker compose stack"
->echo "  make logs           - tail docker compose logs"
->echo "  make health         - check backend health endpoint"
->echo "  make dev-backend    - run backend in reload mode"
->echo "  make dev-frontend   - run frontend dev server"
+setup:
+	@echo "Setting up project..."
+	./dev-setup.sh
 
-setup: setup-backend setup-frontend
-
-setup-backend:
->python -m venv backend/.venv
->backend/.venv/bin/pip install -r backend/requirements.txt
-
-setup-frontend:
->cd frontend && npm install
-
-up:
->docker compose up --build
-
-down:
->docker compose down
-
-logs:
->docker compose logs -f
-
-health:
->curl -fsS http://localhost:8000/api/v1/health || true
+dev:
+	@echo "Starting development environment..."
+	make -j 2 dev-backend dev-frontend
 
 dev-backend:
->cd backend && .venv/bin/uvicorn app.main:app --reload --port 8000
+	cd backend && uvicorn main:app --reload --port 8000
 
 dev-frontend:
->cd frontend && npm run dev
+	cd frontend && npm run dev
+
+test:
+	@echo "Running tests..."
+	make test-backend
+	make test-frontend
+
+test-backend:
+	cd backend && pytest
+
+test-frontend:
+	cd frontend && npm run lint && npm run build
+
+docker-build:
+	docker-compose -f docker-compose.production.yml build
+
+docker-up:
+	docker-compose -f docker-compose.production.yml up -d
+
+clean:
+	find . -type d -name "__pycache__" -exec rm -rf {} +
+	find . -type d -name ".pytest_cache" -exec rm -rf {} +
+	rm -rf frontend/.next
+	rm -rf frontend/out

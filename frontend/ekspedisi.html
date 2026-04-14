@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ekspedisi AI Nusantara 2026 | Membumikan Kecerdasan Awan</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#0f172a',
+                            primary: '#0e7490', // Cyan/Teal
+                            accent: '#f59e0b', // Gold
+                            light: '#f8fafc'
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #0e7490;
+            border-radius: 5px;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hero-bg {
+            background-color: #0f172a;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+        }
+
+        /* Smooth text transition for the title */
+        .title-transition {
+            transition: opacity 0.8s ease-in-out, transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased overflow-x-hidden">
+
+    <nav class="fixed w-full z-50 transition-all duration-300" 
+         x-data="{ scrolled: false }" 
+         @scroll.window="scrolled = (window.pageYOffset > 20)"
+         :class="scrolled ? 'bg-brand-dark/90 backdrop-blur-md py-3 shadow-lg border-b border-white/10' : 'bg-transparent py-6'">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <div class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                <i data-lucide="mountain" class="text-brand-accent"></i>
+                Ekspedisi AI <span class="text-brand-primary font-light">2026</span>
+            </div>
+            <div class="hidden md:flex gap-8 text-sm font-medium text-slate-300">
+                <a href="#urgency" class="hover:text-white transition-colors">The Crisis</a>
+                <a href="#mission" class="hover:text-white transition-colors">The Mission</a>
+                <a href="#roadmap" class="hover:text-white transition-colors">Roadmap</a>
+                <a href="#tech" class="hover:text-white transition-colors">T6 Platform</a>
+            </div>
+            <a href="https://ekspedisi.tsea.asia/Ekspedisi-AI-Nusantara.pdf" target="_blank" class="bg-brand-primary hover:bg-cyan-600 text-white px-6 py-2 rounded-full font-semibold transition-all shadow-lg hover:shadow-cyan-500/30 text-sm">
+                Download Proposal
+            </a>
+        </div>
+    </nav>
+
+    <section class="relative min-h-screen flex items-center hero-bg text-white pt-24 overflow-hidden">
+        
+        <div class="absolute inset-0 z-0 opacity-20 pointer-events-none flex items-center justify-center translate-y-8">
+            <img src="https://ekspedisi.tsea.asia/id.png" alt="Peta Indonesia" class="w-full max-w-7xl object-contain invert px-4">
+        </div>
+
+        <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+            <div class="absolute top-20 left-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float"></div>
+            <div class="absolute top-40 right-10 w-72 h-72 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" style="animation-delay: 2s;"></div>
+        </div>
+
+        <div class="container mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-12 items-center">
+            <div class="space-y-8">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm text-brand-accent text-sm font-medium animate-fade-in-up">
+                    <span class="relative flex h-2 w-2">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                    </span>
+                    Tsinghua SEA & UID Initiative
+                </div>
+                
+                <div class="h-40 sm:h-48 relative" x-data="{ en: true }" x-init="setInterval(() => en = !en, 4000)">
+                    <h1 class="absolute inset-0 text-5xl lg:text-7xl font-bold leading-tight tracking-tight title-transition"
+                        :class="en ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'">
+                        Grounding the <br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">AI Cloud</span>
+                    </h1>
+                    
+                    <h1 class="absolute inset-0 text-5xl lg:text-7xl font-bold leading-tight tracking-tight title-transition"
+                        :class="!en ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'">
+                        Membumikan <br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-yellow-300">Kecerdasan Awan</span>
+                    </h1>
+                </div>
+                
+                <p class="text-xl text-slate-300 max-w-lg leading-relaxed animate-fade-in-up" style="animation-delay: 0.2s;">
+                    Transforming abstract digital potential into real-world solutions. 
+                    38 Provinces. 12 Months. <br>
+                    <span class="text-cyan-400 font-semibold">National Survivability & Sovereignty.</span>
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4 pt-4 animate-fade-in-up" style="animation-delay: 0.4s;">
+                    <a href="#roadmap" class="group bg-white text-brand-dark px-8 py-4 rounded-full font-bold transition-all hover:bg-slate-200 flex items-center justify-center gap-2">
+                        View The Roadmap
+                        <i data-lucide="arrow-right" class="group-hover:translate-x-1 transition-transform"></i>
+                    </a>
+                    <a href="#urgency" class="px-8 py-4 rounded-full border border-white/20 hover:bg-white/10 transition-all font-medium flex items-center justify-center">
+                        Why Now?
+                    </a>
+                </div>
+            </div>
+
+            <div class="relative hidden lg:block animate-fade-in-up" style="animation-delay: 0.6s;">
+                <div class="relative z-10 glass-card p-8 rounded-2xl border-t border-l border-white/20 shadow-2xl animate-float">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <p class="text-xs text-brand-accent font-bold uppercase tracking-wider">Target 2027</p>
+                            <h3 class="text-2xl font-bold">Peta Potensi AI Nusantara</h3>
+                        </div>
+                        <i data-lucide="cpu" class="text-cyan-400 w-8 h-8"></i>
+                    </div>
+                    
+                    <div class="h-48 bg-slate-800/50 rounded-lg mb-6 relative overflow-hidden border border-white/5 flex items-center justify-center group">
+                        <div class="absolute inset-0 flex items-center justify-center opacity-60">
+                            <div class="w-full h-full relative">
+                               <div class="absolute top-1/2 left-1/4 w-2 h-2 bg-brand-accent rounded-full animate-ping"></div>
+                               <div class="absolute top-1/3 left-1/2 w-3 h-3 bg-cyan-400 rounded-full animate-ping" style="animation-delay: 0.5s"></div>
+                               <div class="absolute top-2/3 right-1/4 w-2 h-2 bg-blue-500 rounded-full animate-ping" style="animation-delay: 1s"></div>
+                           </div>
+                        </div>
+                        <div class="absolute bottom-4 left-4 right-4 flex justify-between text-[10px] text-cyan-300 font-mono bg-black/40 p-2 rounded">
+                           <span>Processing Node: KALIMANTAN-04</span>
+                           <span><span class="text-green-400">●</span> Live</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+                            <p class="text-brand-accent text-xs font-bold uppercase mb-1">Impact Goal</p>
+                            <p class="text-xl font-bold text-white leading-tight">100,000</p>
+                            <p class="text-xs text-slate-400 mt-1">CDIO Certified AI Practitioners</p>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+                            <p class="text-brand-accent text-xs font-bold uppercase mb-1">Coverage</p>
+                            <p class="text-xl font-bold text-white leading-tight">38 Provinces</p>
+                            <p class="text-xs text-slate-400 mt-1">Synchronized Relay</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="absolute -z-10 top-10 -right-10 w-64 h-64 bg-cyan-500/20 rounded-full blur-2xl"></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="urgency" class="py-24 bg-white relative z-20">
+        <div class="container mx-auto px-6">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <span class="text-brand-primary font-bold tracking-wider text-sm uppercase">Strategic Context</span>
+                <h2 class="text-4xl font-bold text-brand-dark mt-3 mb-6">The Window Closes in 2030</h2>
+                <p class="text-lg text-slate-600">
+                    Three massive forces are converging. Indonesia has <span class="text-red-600 font-bold bg-red-50 px-2 py-1 rounded">5 years</span> to secure its place as a producer of AI solutions, rather than just a consumer.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-slate-50 p-8 rounded-2xl border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-6">
+                        <i data-lucide="users" class="text-red-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-brand-dark mb-3">Demographic Cliff</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        After 2030, our population begins to age. The "Demographic Bonus" creates a once-in-a-century window to build wealth before dependency ratios rise.
+                    </p>
+                </div>
+
+                <div class="bg-slate-50 p-8 rounded-2xl border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                    <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mb-6">
+                        <i data-lucide="trending-up" class="text-amber-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-brand-dark mb-3">Middle-Income Trap</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        To escape the trap before 2038, we need 6-8% annual growth. Only massive productivity gains from applied AI can deliver this trajectory.
+                    </p>
+                </div>
+
+                <div class="bg-slate-50 p-8 rounded-2xl border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
+                        <i data-lucide="bot" class="text-blue-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-brand-dark mb-3">Agentic AI</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        The question is no longer "Can we access AI?" but "Can we apply it?" We must transition from cloud experiments to grounded applications.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="mission" class="py-24 bg-slate-50 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent"></div>
+        <div class="absolute -left-10 top-20 w-64 h-64 bg-brand-primary/5 rounded-full blur-3xl"></div>
+        
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-12 items-center mb-16">
+                <div>
+                    <span class="text-brand-accent font-bold tracking-wider text-sm uppercase">Our Imperative</span>
+                    <h2 class="text-4xl font-bold text-brand-dark mt-3 mb-6">Consumer → Producer</h2>
+                    <p class="text-lg text-slate-600 leading-relaxed mb-6">
+                        Indonesia cannot compete with Singapore on high-cost R&D, nor with Vietnam on labor arbitrage alone. Our strategic advantage is <span class="font-bold text-brand-primary">Scale and Application</span>.
+                    </p>
+                    <p class="text-lg text-slate-600 leading-relaxed">
+                        We must shift from being a market for foreign AI products to becoming a market of indigenous AI solution developers. This is how we ensure economic sovereignty in the digital age.
+                    </p>
+                </div>
+                <div class="relative">
+                    <div class="absolute inset-0 bg-brand-primary/10 rounded-2xl transform rotate-3"></div>
+                    <div class="bg-white p-8 rounded-2xl shadow-xl relative border border-slate-100">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="p-3 bg-brand-dark rounded-lg text-white">
+                                <i data-lucide="cloud-lightning" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-brand-dark">Grounding the Cloud</h3>
+                        </div>
+                        <p class="text-slate-600 mb-6">
+                            Taking the borderless, abstract potential of cloud-based AI and converting it into concrete, contextualized solutions that solve real problems on the "Nusantara Soil".
+                        </p>
+                        <ul class="space-y-3">
+                            <li class="flex items-center gap-3 text-sm font-medium text-slate-700">
+                                <i data-lucide="check-circle-2" class="w-4 h-4 text-green-500"></i>
+                                Real-world problem solving (not just theory)
+                            </li>
+                            <li class="flex items-center gap-3 text-sm font-medium text-slate-700">
+                                <i data-lucide="check-circle-2" class="w-4 h-4 text-green-500"></i>
+                                Localized datasets & context
+                            </li>
+                            <li class="flex items-center gap-3 text-sm font-medium text-slate-700">
+                                <i data-lucide="check-circle-2" class="w-4 h-4 text-green-500"></i>
+                                Sovereign talent capability
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 hover:border-brand-primary/30 transition-colors group">
+                    <i data-lucide="layers" class="w-8 h-8 text-brand-primary mb-4 group-hover:scale-110 transition-transform"></i>
+                    <h4 class="text-lg font-bold text-brand-dark mb-2">The Application Engine</h4>
+                    <p class="text-sm text-slate-500">
+                        Focusing on applying AI to agriculture, maritime, and SMEs—where 80% of our economy lives—rather than abstract research.
+                    </p>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 hover:border-brand-primary/30 transition-colors group">
+                    <i data-lucide="map" class="w-8 h-8 text-brand-accent mb-4 group-hover:scale-110 transition-transform"></i>
+                    <h4 class="text-lg font-bold text-brand-dark mb-2">Sovereign Intelligence</h4>
+                    <p class="text-sm text-slate-500">
+                        Building "Peta Potensi AI"—a national data asset mapping our talent and innovation clusters to guide government policy.
+                    </p>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 hover:border-brand-primary/30 transition-colors group">
+                    <i data-lucide="network" class="w-8 h-8 text-blue-600 mb-4 group-hover:scale-110 transition-transform"></i>
+                    <h4 class="text-lg font-bold text-brand-dark mb-2">Triple Helix Sync</h4>
+                    <p class="text-sm text-slate-500">
+                        Unifying Academia, Government, and Industry into a synchronized feedback loop for rapid curriculum adaptation.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 bg-white border-t border-slate-200">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="text-2xl font-bold text-brand-dark">6 Key Sectors for National Impact</h2>
+                <p class="text-slate-600 mt-2">Solving real problems where 80% of the economy operates.</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div class="bg-slate-50 p-4 rounded-xl text-center shadow-sm hover:shadow-md transition-shadow border border-slate-200 group">
+                    <i data-lucide="sprout" class="w-8 h-8 text-green-600 mx-auto mb-3 group-hover:-translate-y-1 transition-transform"></i>
+                    <div class="font-bold text-sm text-slate-800">Agriculture</div>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl text-center shadow-sm hover:shadow-md transition-shadow border border-slate-200 group">
+                    <i data-lucide="anchor" class="w-8 h-8 text-blue-600 mx-auto mb-3 group-hover:-translate-y-1 transition-transform"></i>
+                    <div class="font-bold text-sm text-slate-800">Maritime</div>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl text-center shadow-sm hover:shadow-md transition-shadow border border-slate-200 group">
+                    <i data-lucide="store" class="w-8 h-8 text-amber-600 mx-auto mb-3 group-hover:-translate-y-1 transition-transform"></i>
+                    <div class="font-bold text-sm text-slate-800">MSMEs</div>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl text-center shadow-sm hover:shadow-md transition-shadow border border-slate-200 group">
+                    <i data-lucide="landmark" class="w-8 h-8 text-slate-600 mx-auto mb-3 group-hover:-translate-y-1 transition-transform"></i>
+                    <div class="font-bold text-sm text-slate-800">Public Sector</div>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl text-center shadow-sm hover:shadow-md transition-shadow border border-slate-200 group">
+                    <i data-lucide="graduation-cap" class="w-8 h-8 text-brand-primary mx-auto mb-3 group-hover:-translate-y-1 transition-transform"></i>
+                    <div class="font-bold text-sm text-slate-800">Education</div>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl text-center shadow-sm hover:shadow-md transition-shadow border border-slate-200 group">
+                    <i data-lucide="rocket" class="w-8 h-8 text-purple-600 mx-auto mb-3 group-hover:-translate-y-1 transition-transform"></i>
+                    <div class="font-bold text-sm text-slate-800">Fintech</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="roadmap" class="py-24 bg-brand-dark text-white relative overflow-hidden">
+        <div class="absolute inset-0 opacity-5" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="text-center mb-20">
+                <span class="text-cyan-400 font-bold tracking-wider text-sm uppercase">The Campaign Timeline</span>
+                <h2 class="text-4xl md:text-5xl font-bold mt-4">12 Months to Transformation</h2>
+            </div>
+
+            <div class="relative">
+                <div class="absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-gradient-to-b from-cyan-500 via-blue-500 to-brand-accent opacity-30 hidden md:block"></div>
+
+                <div class="flex flex-col md:flex-row items-center justify-center gap-8 mb-20 relative">
+                    <div class="md:w-5/12 text-right order-2 md:order-1">
+                        <h3 class="text-2xl font-bold text-cyan-400">Phase 1: THE CLOUD</h3>
+                        <p class="text-slate-400 text-sm mt-2">Strategic Alignment & Protocol</p>
+                        <p class="mt-4 text-slate-300">Convening Global Tech, Government, and Academia to ratify the "Nusantara AI Protocol" and launch the Digital Torch.</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-cyan-500 border-4 border-brand-dark z-10 flex items-center justify-center shrink-0 order-1 md:order-2 shadow-[0_0_20px_rgba(6,182,212,0.5)]">
+                        <span class="font-bold text-white">1</span>
+                    </div>
+                    <div class="md:w-5/12 pl-8 order-3 border-l-2 md:border-l-0 border-cyan-500 md:pl-0">
+                        <div class="inline-block bg-white/10 px-4 py-2 rounded-lg backdrop-blur-sm border border-white/5">
+                            <div class="font-mono text-cyan-300 mb-1">JUNE 2026</div>
+                            <div class="text-sm font-semibold flex items-center gap-2">
+                                <i data-lucide="map-pin" class="w-4 h-4"></i> Bali (UID Campus)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center justify-center gap-8 mb-20 relative">
+                    <div class="md:w-5/12 text-right order-2 md:order-1 md:text-left md:pr-0 md:pl-8">
+                        <div class="inline-block bg-white/10 px-4 py-2 rounded-lg backdrop-blur-sm border border-white/5">
+                            <div class="font-mono text-blue-300 mb-1">JULY - DEC 2026</div>
+                            <div class="text-sm font-semibold flex items-center gap-2">
+                                <i data-lucide="map-pin" class="w-4 h-4"></i> 38 Provinces (Relay)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-blue-500 border-4 border-brand-dark z-10 flex items-center justify-center shrink-0 order-1 md:order-2 shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+                        <span class="font-bold text-white">2</span>
+                    </div>
+                    <div class="md:w-5/12 order-3 border-l-2 md:border-l-0 border-blue-500 pl-8 md:pl-0">
+                         <h3 class="text-2xl font-bold text-blue-400">Phase 2: THE GROUNDING</h3>
+                        <p class="text-slate-400 text-sm mt-2">Operational Deployment</p>
+                        <p class="mt-4 text-slate-300">The "Torch" travels across the archipelago. Bootcamps solve local problems in Agro, Maritime, SME, and Public Sectors.</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center justify-center gap-8 relative">
+                    <div class="md:w-5/12 text-right order-2 md:order-1">
+                        <h3 class="text-2xl font-bold text-brand-accent">Phase 3: THE HORIZON</h3>
+                        <p class="text-slate-400 text-sm mt-2">Aggregation & Legacy</p>
+                        <p class="mt-4 text-slate-300">National AI Summit. Launching "Peta Potensi AI Nusantara"—a sovereign data asset for government planning and investment.</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-brand-accent border-4 border-brand-dark z-10 flex items-center justify-center shrink-0 order-1 md:order-2 shadow-[0_0_20px_rgba(245,158,11,0.5)]">
+                        <span class="font-bold text-white">3</span>
+                    </div>
+                    <div class="md:w-5/12 pl-8 order-3 border-l-2 md:border-l-0 border-brand-accent md:pl-0">
+                        <div class="inline-block bg-white/10 px-4 py-2 rounded-lg backdrop-blur-sm border border-white/5">
+                            <div class="font-mono text-amber-300 mb-1">JANUARY 2027</div>
+                            <div class="text-sm font-semibold flex items-center gap-2">
+                                <i data-lucide="map-pin" class="w-4 h-4"></i> Jakarta
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="tech" class="py-24 bg-slate-50">
+        <div class="container mx-auto px-6">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div>
+                    <span class="text-brand-primary font-bold tracking-wider text-sm uppercase">The Methodology</span>
+                    <h2 class="text-3xl md:text-4xl font-bold text-brand-dark mt-3 mb-6">Not Just Theory.<br>Real Problem Solving.</h2>
+                    <p class="text-slate-600 mb-8 leading-relaxed">
+                        We use the **CDIO Framework** (Conceive, Design, Implement, Operate). Participants don't just watch videos; they build working AI prototypes for real local challenges.
+                    </p>
+
+                    <div class="space-y-6">
+                        <div class="flex gap-4">
+                            <div class="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center shrink-0">
+                                <i data-lucide="lightbulb" class="text-cyan-600 w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-brand-dark">Day 1: In-Person Bootcamp</h4>
+                                <p class="text-sm text-slate-600">Conceive & Define problems with local industry partners.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                                <i data-lucide="laptop" class="text-blue-600 w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-brand-dark">Weeks 2-4: The T6 Platform</h4>
+                                <p class="text-sm text-slate-600">Design & Implement using our cloud-hosted AI environments.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                                <i data-lucide="award" class="text-amber-600 w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-brand-dark">Blockchain Certification</h4>
+                                <p class="text-sm text-slate-600">Successful projects earn immutable, verifiable credentials.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-brand-dark rounded-2xl p-8 shadow-2xl relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-cyan-900/50 to-purple-900/50"></div>
+                    
+                    <div class="relative z-10 flex flex-col h-full">
+                        <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                            <div class="text-white font-mono font-bold">T6 Platform <span class="text-xs text-cyan-400 bg-cyan-900/50 px-2 py-1 rounded ml-2">v.Beta</span></div>
+                            <div class="flex gap-2">
+                                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 font-mono text-sm mb-8">
+                            <div class="bg-black/30 p-4 rounded border border-white/5">
+                                <p class="text-green-400">>> project.load("Maritime_Logistics_Bali")</p>
+                                <p class="text-slate-400">Loading Dataset: Benoa_Port_Traffic.csv...</p>
+                                <p class="text-slate-400">Initializing Socratic AI Tutor...</p>
+                                <p class="text-cyan-300 mt-2">AI Tutor: "Have you considered how monsoon seasonality affects your predictive model?"</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-auto text-center">
+                            <a href="https://t6.tsea.asia" target="_blank" class="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-cyan-500/50 w-full justify-center">
+                                Access T6 Platform
+                                <i data-lucide="external-link" class="w-4 h-4"></i>
+                            </a>
+                            <p class="text-xs text-slate-500 mt-2">Authentication required for access</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-24 bg-gradient-to-br from-brand-primary to-cyan-700 text-white text-center">
+        <div class="container mx-auto px-6 max-w-4xl">
+            <h2 class="text-4xl font-bold mb-6">Let Us Ground The Cloud.</h2>
+            <p class="text-xl text-cyan-100 mb-10">
+                Ekspedisi AI Nusantara 2026 is executable, lean, and urgent. 
+                The plan is ready. The window is open. Join the Hexa-Helix collaboration.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button class="bg-brand-accent hover:bg-amber-600 text-white font-bold py-4 px-10 rounded-full shadow-lg transition-transform hover:scale-105">
+                    Become a Partner
+                </button>
+                <a href="https://ekspedisi.tsea.asia/Ekspedisi-AI-Nusantara.pdf" target="_blank" class="bg-transparent border-2 border-white hover:bg-white/10 text-white font-bold py-4 px-10 rounded-full transition-all flex items-center justify-center">
+                    Download Full PDF (6.6MB)
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-brand-dark py-12 border-t border-white/10">
+        <div class="container mx-auto px-6 text-center">
+            <div class="flex justify-center items-center gap-8 mb-8 opacity-70 grayscale hover:grayscale-0 transition-all">
+                <div class="text-white font-bold text-xl">Tsinghua SEA</div>
+                <div class="text-white font-bold text-xl">United in Diversity</div>
+            </div>
+            <p class="text-slate-500 text-sm">
+                &copy; 2025 Ekspedisi AI Nusantara. Directed by Putra Nasution.<br>
+                Supporting Indonesia Emas 2045.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+| ID  | Role         | Name                 | Email                          |
+|-----|--------------|----------------------|--------------------------------|
+| 1   | instructor   | Mats Hanson          | mats@uid.or.id                 |
+| 2   | instructor   | Dr. Siti             | dr.siti@tsea.asia              |
+| 3   | instructor   | James Wong           | james.w@tsea.asia              |
+| 4   | student      | Alice Tan            | alice@tsea.asia                |
+| 5   | student      | Bob Nguyen           | bob@tsea.asia                  |
+| 6   | student      | Charlie Lee          | charlie@tsea.asia              |
+| 7   | student      | David Chen           | david@tsea.asia                |
+| 8   | student      | Eve Sato             | eve@tsea.asia                  |
+| 9   | partner      | MIT Admin            | partner.mit@tsea.asia          |
+| 10  | student      | Frank Wright         | frank@tsea.asia                |
+| 11  | student      | Grace Ho             | grace@tsea.asia                |
+| 12  | student      | Harry Potter         | harry@tsea.asia                |

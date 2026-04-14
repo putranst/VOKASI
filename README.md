@@ -1,90 +1,77 @@
-# VOKASI
+# TSEA-X Platform
 
-Starter monorepo for building the VOKASI vocational learning platform.
+TSEA-X is an AI-powered competency learning platform featuring Soulbound Credentials, Socratic Bots, and real-time policy-to-practice integration.
 
-## Repository Scope
+## 🚀 Getting Started
 
-This repository is intentionally a focused starter project. It is separate from the larger `CENDIKIA-MAIC` workspace.
+### Prerequisites
+- Node.js 20+
+- Python 3.11+
+- Docker & Docker Compose (optional, for production/containerized dev)
 
-Current tracked structure:
+### Quick Start (Windows)
 
-- `frontend/` - Next.js app shell + auth flow starter
-- `backend/` - FastAPI API starter (health, auth, users)
-- `docs/` - architecture notes
-- `docker-compose.yml` - one-command local stack startup
+1. **Run the setup script:**
+   ```powershell
+   .\dev-setup.ps1
+   ```
+   This will set up virtual environments, install dependencies, and create environment files.
 
-## Fresh Machine Setup
+2. **Start Development Servers:**
+   You can use the Makefile if you have `make` installed:
+   ```bash
+   make dev
+   ```
+   Or run them manually in separate terminals:
 
+   **Backend:**
+   ```bash
+   cd backend
+   .\venv\Scripts\activate
+   uvicorn main:app --reload
+   ```
+
+   **Frontend:**
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+
+3. **Access the App:**
+   - Frontend: [http://localhost:3000](http://localhost:3000)
+   - Backend API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+## 🛠️ CI/CD Pipeline
+
+This project uses GitHub Actions for Continuous Integration and Continuous Deployment.
+
+### Workflows
+- **Backend CI**: Runs on push/PR to `backend/**`. Performs linting (flake8) and testing (pytest).
+- **Frontend CI**: Runs on push/PR to `frontend/**`. Performs linting and build verification.
+
+### Deployment (Docker)
+The project is containerized for production deployment.
+
+**Build and Run Production Containers:**
 ```bash
-git clone https://github.com/putranst/VOKASI.git
-cd VOKASI
+docker-compose -f docker-compose.production.yml up --build -d
 ```
 
-## Option A: Docker Compose (Recommended)
+## 📁 Project Structure
 
-```bash
-docker compose up --build
-```
+- `backend/`: FastAPI application
+- `frontend/`: Next.js application
+- `.github/workflows/`: CI/CD configurations
+- `docker-compose.production.yml`: Production orchestration
 
-Services:
+## 🔑 Environment Variables
 
-- Frontend: `http://localhost:3000`
-- Backend: `http://localhost:8000`
+Copy the example files to create your local configuration:
+- Backend: `cp backend/.env.example backend/.env`
+- Frontend: `cp frontend/.env.local.example frontend/.env.local`
 
-## Operations Shortcuts
-
-### Windows PowerShell
-
-```bash
-powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 setup
-powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 up
-powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 health
-powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 logs
-powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 down
-```
-
-### Makefile (macOS/Linux/WSL)
-
-```bash
-make setup
-make up
-make health
-make logs
-make down
-```
-
-## Option B: Run Services Manually
-
-Backend:
-
-```bash
-cd backend
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-```
-
-Frontend (new terminal):
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## Environment
-
-- Backend template: `backend/.env.example`
-- Frontend template: `frontend/.env.example`
-
-## API Endpoints
-
-- `GET /api/v1/health`
-- `POST /api/v1/auth/login`
-- `GET /api/v1/users/me` (requires `Authorization: Bearer <token>`)
-
-Demo credentials:
-
-- `student@vokasi.dev` / `student123`
-- `instructor@vokasi.dev` / `instructor123`
+**Required Secrets for GitHub Actions:**
+- `OPENAI_API_KEY`
+- `GEMINI_API_KEY`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`

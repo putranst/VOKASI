@@ -1,0 +1,33 @@
+name: Deploy to GCP VM
+
+on:
+  push:
+    branches: [ "master", "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /app/TSEA-X
+            
+            echo "⬇️ Pulling latest code..."
+            git pull origin master
+            
+            echo "📦 Installing Dependencies..."
+            cd backend
+            source venv/bin/activate
+            pip install -r requirements.txt
+            deactivate
+            cd ../frontend
+            npm install
+            npm run build
+            
+            echo "🚀 Restarting Servers..."
+            pm2 restart all

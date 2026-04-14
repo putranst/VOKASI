@@ -1,0 +1,72 @@
+﻿============================================================
+Smart Course Creation - Real PDF Test
+============================================================
+
+[PDF] Reading: C:\Users\PT\Desktop\TSEA-X\backend\..\PAPERS\NUSA_Framework_Academic_Paper.md.pdf
+   Size: 426,515 bytes
+   Base64 length: 568,688 chars
+
+[SEND] Sending to http://localhost:8000/api/v1/courses/smart-create/parse...
+   Status: 200
+
+[SUCCESS]
+   Provider: mock
+
+[PARSED CONTENT]
+   Title: Course from NUSA_Framework_Academic_Paper.md.pdf
+   Summary: AI-analyzed course content from uploaded materials....
+   Difficulty: Intermediate
+   Duration: 4 weeks
+   Target: Professionals and students
+
+[MAIN TOPICS]
+   1. Introduction: Getting started with the subject...
+   2. Core Concepts: Main theories and frameworks...
+   3. Applications: Practical applications...
+   4. Advanced Topics: Deep dive content...
+
+[LEARNING OBJECTIVES]
+   1. Understand fundamental concepts...
+   2. Apply theoretical knowledge to real problems...
+   3. Analyze and evaluate solutions...
+   4. Create original implementations...
+
+[NOTE] Using MOCK data (AI providers may not have parsed the file)
+
+============================================================
+Teaching Agenda Generation Test
+============================================================
+
+[SEND] Sending to http://localhost:8000/api/v1/courses/smart-create/agenda...
+   Status: 200
+
+[SUCCESS]
+   Provider: mock
+
+[TEACHING AGENDA]
+   Course: Course from NUSA_Framework_Academic_Paper.md.pdf
+   Tagline: Transform your skills with structured learning
+   Modules: 4
+   Total Actions: 20
+
+[MODULES]
+   Week 1: Week 1: Understanding & Exploration (IMMERSE)
+      - [EXPLAIN] Introduction to Week 1 (30 min)
+      - [DISCUSS] Discussion: Key Questions (20 min)
+      - [PRACTICE] Hands-on Exercise (45 min)
+   Week 2: Week 2: Planning & Design (REALIZE)
+      - [EXPLAIN] Introduction to Week 2 (30 min)
+      - [DISCUSS] Discussion: Key Questions (20 min)
+      - [PRACTICE] Hands-on Exercise (45 min)
+   Week 3: Week 3: Building & Testing (ITERATE)
+      - [EXPLAIN] Introduction to Week 3 (30 min)
+      - [DISCUSS] Discussion: Key Questions (20 min)
+      - [PRACTICE] Hands-on Exercise (45 min)
+   Week 4: Week 4: Deployment & Iteration (SCALE)
+      - [EXPLAIN] Introduction to Week 4 (30 min)
+      - [DISCUSS] Discussion: Key Questions (20 min)
+      - [PRACTICE] Hands-on Exercise (45 min)
+
+============================================================
+Test Complete
+============================================================

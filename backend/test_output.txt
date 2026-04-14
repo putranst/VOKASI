@@ -1,0 +1,64 @@
+﻿============================================================
+Smart Course Creation - Real PDF Test
+============================================================
+.\venv\Scripts\python : Traceback (most 
+recent call last):
+At line:1 char:1
++ .\venv\Scripts\python 
+test_real_pdf_parsing.py 2>&1 | 
+Out-File -FileP ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecif 
+   ied: (Traceback (most recent call l  
+  ast)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCom 
+   mandError
+ 
+  File "C:\Users\PT\Desktop\TSEA-X\backe
+nd\test_real_pdf_parsing.py", line 178, 
+in <module>
+    asyncio.run(main())
+    ~~~~~~~~~~~^^^^^^^^
+  File 
+"C:\Python314\Lib\asyncio\runners.py", 
+line 204, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File 
+"C:\Python314\Lib\asyncio\runners.py", 
+line 127, in run
+    return 
+self._loop.run_until_complete(task)
+           
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Python314\Lib\asyncio\base_ev
+ents.py", line 719, in 
+run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "C:\Users\PT\Desktop\TSEA-X\backe
+nd\test_real_pdf_parsing.py", line 167, 
+in main
+    parsed = await 
+test_real_pdf_parsing()
+             
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PT\Desktop\TSEA-X\backe
+nd\test_real_pdf_parsing.py", line 37, 
+in test_real_pdf_parsing
+    print(f"\n\U0001f4c4 Reading PDF: 
+{pdf_path}")
+    
+~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"C:\Python314\Lib\encodings\cp1252.py", 
+line 19, in encode
+    return codecs.charmap_encode(input,s
+elf.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec 
+can't encode character '\U0001f4c4' in 
+position 2: character maps to 
+<undefined>

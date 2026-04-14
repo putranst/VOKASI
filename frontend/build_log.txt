@@ -1,0 +1,50 @@
+﻿
+> frontend@0.1.0 build
+> next build
+
+   Γû▓ Next.js 16.0.7 (Turbopack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully in 13.1s
+   Running TypeScript ...
+   Collecting page data using 11 workers ...
+   Generating static pages using 11 workers (0/21) ...
+   Generating static pages using 11 workers (5/21) 
+   Generating static pages using 11 workers (10/21) 
+   Generating static pages using 11 workers (15/21) 
+ Γ£ô Generating static pages using 11 workers (21/21) in 1774.2ms
+   Finalizing page optimization ...
+
+Route (app)
+Γöî Γùï /
+Γö£ Γùï /_not-found
+Γö£ Γùï /admin
+Γö£ Γùï /courses
+Γö£ ╞Æ /courses/[id]
+Γö£ ╞Æ /courses/[id]/conceive
+Γö£ ╞Æ /courses/[id]/design
+Γö£ ╞Æ /courses/[id]/implement
+Γö£ ╞Æ /courses/[id]/learn
+Γö£ ╞Æ /courses/[id]/operate
+Γö£ Γùï /dashboard
+Γö£ Γùï /enterprise
+Γö£ Γùï /government
+Γö£ Γùï /hexahelix
+Γö£ Γùï /instructor
+Γö£ Γùï /instructor/create-course
+Γö£ Γùï /instructor/grading
+Γö£ Γùï /instructor/grading/review
+Γö£ Γùï /instructor/profile
+Γö£ Γùï /instructor/students
+Γö£ Γùï /login
+Γö£ Γùï /partner
+Γö£ Γùï /partners
+Γö£ ╞Æ /partners/[id]
+Γö£ Γùï /pathways
+Γöö Γùï /verify-credential
+
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

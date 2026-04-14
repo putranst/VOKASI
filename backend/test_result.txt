@@ -1,0 +1,72 @@
+﻿============================================================
+Smart Course Creation - Real PDF Test
+============================================================
+
+[PDF] Reading: C:\Users\PT\Desktop\TSEA-X\backend\..\PAPERS\NUSA_Framework_Academic_Paper.md.pdf
+   Size: 426,515 bytes
+   Base64 length: 568,688 chars
+
+[SEND] Sending to http://localhost:8000/api/v1/courses/smart-create/parse...
+   Status: 200
+
+[SUCCESS]
+   Provider: mock
+
+[PARSED CONTENT]
+   Title: Course from NUSA_Framework_Academic_Paper.md.pdf
+   Summary: AI-analyzed course content from uploaded materials....
+   Difficulty: Intermediate
+   Duration: 4 weeks
+   Target: Professionals and students
+
+[MAIN TOPICS]
+   1. Introduction: Getting started with the subject...
+   2. Core Concepts: Main theories and frameworks...
+   3. Applications: Practical applications...
+   4. Advanced Topics: Deep dive content...
+
+[LEARNING OBJECTIVES]
+   1. Understand fundamental concepts...
+   2. Apply theoretical knowledge to real problems...
+   3. Analyze and evaluate solutions...
+   4. Create original implementations...
+
+[NOTE] Using MOCK data (AI providers may not have parsed the file)
+
+============================================================
+Teaching Agenda Generation Test
+============================================================
+
+[SEND] Sending to http://localhost:8000/api/v1/courses/smart-create/agenda...
+   Status: 200
+
+[SUCCESS]
+   Provider: openrouter
+
+[TEACHING AGENDA]
+   Course: Mastering Advanced Concepts
+   Tagline: From Theory to Application.
+   Modules: 4
+   Total Actions: 19
+
+[MODULES]
+   Week 1: Understanding the Fundamentals (IMMERSE)
+      - [EXPLAIN] Introduction to Concepts (45 min)
+      - [DISCUSS] Importance of Key Terms (20 min)
+      - [PRACTICE] Concept Mapping (40 min)
+   Week 2: Core Theories and Frameworks (REALIZE)
+      - [EXPLAIN] Theory 1 Explained (40 min)
+      - [EXPLAIN] Theory 2 Explained (40 min)
+      - [DISCUSS] Comparative Analysis (20 min)
+   Week 3: Practical Applications and Use Cases (ITERATE)
+      - [EXPLAIN] Use Case 1 Deep Dive (30 min)
+      - [EXPLAIN] Use Case 2 Deep Dive (30 min)
+      - [DEMO] Live Demo (30 min)
+   Week 4: Advanced Topics and Future Directions (SCALE)
+      - [EXPLAIN] Advanced Topic 1 (40 min)
+      - [EXPLAIN] Advanced Topic 2 (40 min)
+      - [DISCUSS] Ethical Considerations (20 min)
+
+============================================================
+Test Complete
+============================================================

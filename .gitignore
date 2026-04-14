@@ -1,38 +1,40 @@
-# OS
+# General
 .DS_Store
+*.log
+**/.idea/
+**/.vscode/
+**/__pycache__/
+*.pyc
+
+# Backend
+backend/venv/
+backend/.env
+backend/.env.production
+backend/*.db
+backend/api_test_output.txt
+backend/available_models.txt
+backend/debug_*.log
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+frontend/.env.production
+frontend/.env.production.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# OS specific
 Thumbs.db
 
-# Editors
-.vscode/
-.idea/
-*.swp
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Env
-.env
-.env.*
-!.env.example
-
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-.venv/
-venv/
-.pytest_cache/
-.mypy_cache/
-
-# Node
-node_modules/
-.next/
-out/
-dist/
-coverage/
-
-# Build
-build/
+# Secrets and keys - NEVER commit these!
+*.pem
+*.key
+.env.production
+backend/.env
+**/secrets/**
+service-account.json
