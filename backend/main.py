@@ -178,13 +178,6 @@ def sync_user(request: SyncUserRequest, db: Session = Depends(get_db)):
         "instructor_type": user.instructor_type
     }
 
-@app.get("/api/v1/courses", response_model=List[schemas.Course])
-def get_courses(category: Optional[str] = None, db: Session = Depends(get_db)):
-    query = db.query(models.Course)
-    if category:
-        query = query.filter(models.Course.category == category)
-    return query.all()
-
 @app.get("/api/v1/pathways", response_model=List[schemas.Pathway])
 def get_pathways():
     # Pathways are still static for now as they are UI configuration
@@ -1434,38 +1427,6 @@ Also consider: How does this connect to what you learned in earlier sections?
         "scaffolding_level": request.scaffolding_level,
         "provider": "error"
     }
-
-
-@app.get("/api/v1/courses", response_model=List[schemas.Course])
-def get_courses(db: Session = Depends(get_db)):
-    """Get all courses"""
-    return db.query(models.Course).all()
-
-@app.post("/api/v1/courses", response_model=schemas.Course, status_code=status.HTTP_201_CREATED)
-def create_course(course_data: schemas.CourseCreate, db: Session = Depends(get_db)):
-    """Create a new course with validation"""
-    
-    new_course = models.Course(
-        title=course_data.title,
-        instructor=course_data.instructor,
-        instructor_id=course_data.instructor_id,  # Link to instructor
-        org=course_data.org,
-        image=course_data.image,
-        tag=course_data.tag,
-        level=course_data.level,
-        category=course_data.category,
-        description=course_data.description,
-        duration=course_data.duration,
-        rating=0.0,
-        students_count="0",
-        institution_id=course_data.institution_id
-    )
-    
-    db.add(new_course)
-    db.commit()
-    db.refresh(new_course)
-    
-    return new_course
 
 
 # ===== INSTRUCTOR DASHBOARD ENDPOINTS =====

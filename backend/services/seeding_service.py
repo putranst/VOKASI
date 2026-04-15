@@ -8,6 +8,9 @@ from mock_db import (
     CREDENTIALS_DB, clear_mock_db
 )
 from models import Quiz, QuizQuestion, DiscussionThread, Credential
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from seeds.ai_fundamentals_seed import seed_ai_fundamentals_content
 
 def init_sample_data(db: Session, force: bool = False):
     """
@@ -208,6 +211,13 @@ def init_sample_data(db: Session, force: bool = False):
                     db.add(new_course)
             
             db.commit()
+
+            # Seed AI Fundamentals course with full 24-module content
+            try:
+                ai_fundamentals_course = seed_ai_fundamentals_content(db, force=force)
+                print(f"DEBUG: Seeded AI Fundamentals course (ID: {ai_fundamentals_course.id if ai_fundamentals_course else 'existing'})")
+            except Exception as e:
+                print(f"WARN: Failed to seed AI Fundamentals content: {e}")
 
             # Seed Modules
             courses_with_content = db.query(models.Course).filter(models.Course.instructor_id == mats_user.id).all()

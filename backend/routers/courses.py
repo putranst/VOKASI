@@ -4,6 +4,7 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from database import get_db
 import sql_models as models
+import models as schemas
 import json
 from datetime import datetime
 from services.openai_service import (
@@ -150,6 +151,17 @@ async def create_agenda(request: AgendaRequest):
     }
     
     return {"success": True, "agenda": agenda}
+
+
+@router.get("/", response_model=List[schemas.Course])
+def get_courses(category: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    Get all courses with optional category filter
+    """
+    query = db.query(models.Course)
+    if category:
+        query = query.filter(models.Course.category == category)
+    return query.all()
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
