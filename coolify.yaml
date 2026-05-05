@@ -1,0 +1,70 @@
+# VOKASI2 — Coolify Deployment Configuration
+# https://docs.coolify.io/
+
+comments:
+  - "# Deploy VOKASI2 to Coolify with these settings"
+  - "# 1. Create a new project: VOKASI2"
+  - "# 2. Add a new application: frontend (Next.js)"
+  - "# 3. Add a new application: sandbox-worker (Docker)"
+  - "# 4. Add a new database: PostgreSQL 16 with pgvector"
+  - "# 5. Add a new database: Redis 7"
+  - "# Environment variables: see backend/.env.example"
+
+databases:
+  postgres:
+    image: pgvector/pgvector:pg16
+    port: 5432
+    volumes:
+      - /data/vokasi2/db:/var/lib/postgresql/data
+    env:
+      POSTGRES_DB: vokasi2
+      POSTGRES_USER: vokasi
+      POSTGRES_PASSWORD:
+        $VOKASI2_DB_PASSWORD
+    health_check: pg_isready -U vokasi -d vokasi2
+
+  redis:
+    image: redis:7-alpine
+    port: 6379
+    volumes:
+      - /data/vokasi2/redis:/data
+    health_check: redis-cli ping
+
+applications:
+  frontend:
+    git_repository: https://github.com/YOUR_ORG/vokasi2.git
+    branch: main
+    build_pack: nixpacks
+    port: 3000
+    env:
+      DATABASE_URL:
+        $VOKASI2_DATABASE_URL
+      REDIS_URL:
+        $VOKASI2_REDIS_URL
+      OPENROUTER_API_KEY:
+        $OPENROUTER_API_KEY
+      DEFAULT_MODEL: anthropic/claude-3.5-sonnet
+      EVALUATION_MODEL: anthropic/claude-3.5-sonnet
+      TUTOR_MODEL: anthropic/claude-3.5-sonnet
+      NEXT_PUBLIC_APP_URL:
+        $PUBLIC_URL
+    health_check:
+      path: /api/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    domains:
+      - vokasi2.yourdomain.com
+
+  sandbox-worker:
+    git_repository: https://github.com/YOUR_ORG/vokasi2.git
+    branch: main
+    dockerfile: backend/sandbox/Dockerfile
+    port: 8080
+    env:
+      JUPYTERHUB_API_TOKEN:
+        $JUPYTERHUB_TOKEN
+      REDIS_URL:
+        $VOKASI2_REDIS_URL
+      COOKIE_SECRET:
+        $COOKIE_SECRET

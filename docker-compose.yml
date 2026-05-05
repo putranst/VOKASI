@@ -1,63 +1,73 @@
-version: '3.8'
+# VOKASI2 — Docker Compose
+# PRD v2.3 §8: PostgreSQL 15 + pgvector, Redis, Next.js API
 
 services:
-  backend:
-    build: ./backend
-    container_name: vokasi-backend
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: vokasi2-db
     restart: unless-stopped
-    env_file:
-      - ./backend/.env
     environment:
-      - PORT=8000
-    expose:
-      - "8000"
+      POSTGRES_DB: vokasi2
+      POSTGRES_USER: vokasi
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-vokasi2_dev_password}
     ports:
-      - "8000:8000"
+      - "5432:5432"
     volumes:
-      - backend_data:/app/data
+      - vokasi2_db:/var/lib/postgresql/data
+      - ./backend/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD-SHELL", "pg_isready -U vokasi -d vokasi2"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://localhost:8000}
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
-        NEXT_PUBLIC_ENVIRONMENT: ${NEXT_PUBLIC_ENVIRONMENT:-development}
-        NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: ${NEXT_PUBLIC_MIDTRANS_CLIENT_KEY:-}
-        NEXT_PUBLIC_MIDTRANS_ENV: ${NEXT_PUBLIC_MIDTRANS_ENV:-sandbox}
-    container_name: vokasi-frontend
+  redis:
+    image: redis:7-alpine
+    container_name: vokasi2-redis
     restart: unless-stopped
-    expose:
-      - "3000"
+    ports:
+      - "6379:6379"
+    volumes:
+      - vokasi2_redis:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Optional: CodeSandbox worker for cloud sandboxes
+  sandbox-worker:
+    build:
+      context: ./backend/sandbox
+      dockerfile: Dockerfile
+    container_name: vokasi2-sandbox-worker
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      REDIS_URL: redis://redis:6379
+      SANDBOX_TIMEOUT: 7200
     depends_on:
-      backend:
+      redis:
         condition: service_healthy
 
-  caddy:
-    image: caddy:alpine
-    container_name: vokasi-caddy
+  # Optional: SocraticChat streaming endpoint
+  socratic-worker:
+    build:
+      context: ./backend/socratic
+      dockerfile: Dockerfile
+    container_name: vokasi2-socratic-worker
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
+      - "8081:8081"
+    environment:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      REDIS_URL: redis://redis:6379
     depends_on:
-      - backend
-      - frontend
+      redis:
+        condition: service_healthy
 
 volumes:
-  backend_data:
-  caddy_data:
-  caddy_config:
+  vokasi2_db:
+  vokasi2_redis:

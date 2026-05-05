@@ -1,24 +1,42 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
-import { Providers } from "@/components/Providers";
-import { AICompanion } from "@/components/ui/AICompanion";
-import { ThemeInjector } from "@/components/ThemeInjector";
 
 const inter = Inter({
-  subsets: ["latin"],
   variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
   variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "VOKASI | AI-native Vocational Education for Indonesia",
+  title: {
+    default: "VOKASI — Brain-Based AI Learning Platform",
+    template: "%s | VOKASI",
+  },
   description:
-    "AI-native vocational education platform — build, teach, and learn with AI-grounded courses tailored for Indonesian SMK, politeknik, and BLK.",
+    "AI-native vocational education platform that builds demonstrable AI capabilities — not just certificates. For Indonesian SMK, polytechnics, and universities.",
+  keywords: [
+    "AI learning",
+    "vocational education",
+    "Indonesia",
+    "SMK",
+    "polytechnic",
+    "brain-based learning",
+    "AI skills",
+  ],
+  authors: [{ name: "VOKASI" }],
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    siteName: "VOKASI",
+  },
 };
 
 export default function RootLayout({
@@ -27,15 +45,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
+    <html lang="id" suppressHydrationWarning>
       <body
-        className={`${inter.className} antialiased overflow-x-hidden`}
+        className={`${inter.variable} ${jetbrainsMono.variable} antialiased font-sans`}
       >
-        <Providers>
-          <ThemeInjector />
-          {children}
-          <AICompanion />
-        </Providers>
+        {children}
+        <Toaster position="bottom-right" richColors />
       </body>
     </html>
   );

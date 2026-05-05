@@ -1,0 +1,47 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0",
+    "lint": "eslint",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "@puckeditor/core": "^0.21.2",
+    "@supabase/supabase-js": "^2.86.0",
+    "@tanstack/react-query": "^5.99.2",
+    "@tiptap/extension-history": "^3.22.4",
+    "@tiptap/extension-list": "^3.22.4",
+    "@tiptap/react": "^3.22.4",
+    "@types/canvas-confetti": "^1.9.0",
+    "canvas-confetti": "^1.9.4",
+    "framer-motion": "^12.23.25",
+    "lucide-react": "^0.554.0",
+    "next": "^16.0.7",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-force-graph-2d": "^1.29.0",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "baseline-browser-mapping": "latest",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.3",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
