@@ -16,6 +16,7 @@ export interface ChatOptions {
   max_tokens?: number;
 }
 
+/** Generic chat — returns raw Response for streaming, parsed JSON for non-streaming */
 export async function chat(options: ChatOptions): Promise<Response> {
   const {
     model = process.env.DEFAULT_MODEL ?? "anthropic/claude-3.5-sonnet",
@@ -23,7 +24,6 @@ export async function chat(options: ChatOptions): Promise<Response> {
     temperature = 0.7,
     max_tokens = 2048,
   } = options;
-
   return fetch(`${OPENROUTER_BASE}/chat/completions`, {
     method: "POST",
     headers: {
@@ -32,15 +32,12 @@ export async function chat(options: ChatOptions): Promise<Response> {
       "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
       "X-Title": "VOKASI2",
     },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature,
-      max_tokens,
-      stream: options.stream ?? false,
-    }),
+    body: JSON.stringify({ model, messages, temperature, max_tokens }),
   });
 }
+
+/** Alias for openrouterChat — used by API routes for generic chat */
+export const openrouterChat = chat;
 
 // Structured evaluation: rubric-based AI feedback for challenge submissions
 export async function evaluateSubmission(
@@ -58,9 +55,7 @@ export async function evaluateSubmission(
   narrative: string;
   suggestedResources: string[];
 }> {
-  const rubric = await import("@/types").then((m) => {
-    // Return the system prompt for evaluation
-    return `You are an expert AI educator evaluating a student's submission for the challenge: "${challengeTitle}".
+  const rubric = `You are an expert AI educator evaluating a student's submission for the challenge: "${challengeTitle}".
 
 Challenge Rubric Context:
 ${rubricRawContent}
@@ -90,7 +85,6 @@ Return a JSON object with this exact structure:
 }
 
 Be fair, specific, and constructive. Focus on the reasoning process, not just the output.`;
-  });
 
   const response = await chat({
     model: process.env.EVALUATION_MODEL ?? "anthropic/claude-3.5-sonnet",

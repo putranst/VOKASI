@@ -1,0 +1,11 @@
+/* VOKASI2 — Puck Editor Custom Styles */
+[data-puck-theme] {
+  --puck-color-accent: #0d9488;
+  --puck-color-accent-bg: #f0fdfa;
+}
+.PuckEditor_sidebar {
+  border-left: 1px solid #e2e8f0;
+}
+.PuckEditor_component-wrapper[data-selected] {
+  box-shadow: 0 0 0 2px #0d9488;
+}
