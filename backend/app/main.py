@@ -1,3 +1,25 @@
+"""
+DEPRECATED — Do not use.
+========================
+
+This FastAPI app (`backend/app/main.py`, ASGI: `app.main:app`) was an early
+scaffold with a separate in-memory auth service. It is NOT the production
+entrypoint and is not wired into any deployment tooling.
+
+The canonical application lives in `backend/main.py` (`main:app`).
+
+This file is retained only so existing imports within `backend/app/*` still
+resolve until that directory is removed. New features MUST NOT be added here.
+"""
+
+import warnings
+
+warnings.warn(
+    "backend/app/main.py is deprecated; use backend/main.py (main:app).",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

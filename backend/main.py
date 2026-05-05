@@ -1,9 +1,31 @@
-from fastapi import FastAPI, Query, HTTPException, status, Depends, Form
+"""
+VOKASI Backend — Canonical FastAPI Entrypoint
+=============================================
+
+This module (`backend/main.py`, ASGI app: `main:app`) is the single authoritative
+backend application. All production tooling points here:
+
+- `backend/Dockerfile`             -> CMD ["uvicorn", "main:app", ...]
+- `Makefile` (dev-backend)         -> uvicorn main:app --reload --port 8000
+- `vm_setup.sh` (pm2)              -> uvicorn main:app --host 0.0.0.0 --port 8000
+- `README.md` (root instructions)  -> uvicorn main:app --reload --port 8000
+
+Do NOT introduce a second FastAPI app. `backend/app/*` is a deprecated scaffold
+retained for reference only (see `backend/app/main.py` header) and is not wired
+into this process.
+
+New routers/features should be added as modules under `backend/routers/` and
+registered below via `app.include_router(...)`.
+"""
+
+from fastapi import FastAPI, Request, HTTPException, status, Depends, Form, Query, Header
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict
 from datetime import datetime
 import uvicorn
 import os
+from hashlib import sha256
+from uuid import uuid4
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -18,9 +40,17 @@ from mock_db import (
     CREDENTIALS_DB
 )
 from services.seeding_service import init_sample_data
+from services.email_service import send_transactional_email
+from services.funnel_migrations import run_funnel_migrations
+from routers.auth_utils import create_access_token, hash_password, verify_password
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
+run_funnel_migrations(engine)
 
 
 class GradingQueueItem(BaseModel):
@@ -40,6 +70,20 @@ app = FastAPI(
     version="2.1.0"
 )
 
+# Rate limiting configuration
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request, exc):
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Please try again later."},
+    )
+
 # DEBUG: Print DB Config
 print(f"DEBUG: CWD = {os.getcwd()}")
 try:
@@ -58,19 +102,65 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def enforce_admin_auth(request: Request, call_next):
+    """Guard all /api/v1/admin/* paths with admin-role enforcement."""
+    if request.url.path.startswith("/api/v1/admin/"):
+        from fastapi.responses import JSONResponse
+        from database import SessionLocal
+        authorization = request.headers.get("authorization")
+        db = SessionLocal()
+        try:
+            _require_admin(authorization, db)
+        except HTTPException as exc:
+            return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+        finally:
+            db.close()
+    return await call_next(request)
+
 from routers import naska, ai, courses
 from routers.debug import router as debug_router
+from routers.classroom import router as classroom_router
+from routers.admin_settings import router as admin_settings_router, _require_admin
+from routers.puck_courses import router as puck_router, CourseVersion
+from routers.enrollments import router as enrollments_router
+from routers.projects import router as projects_router
+from routers.dashboard import router as dashboard_router
+from routers.credentials import router as credentials_router
+from routers.cohorts import router as cohorts_router
+from routers.capstone import router as capstone_router
+from routers.alumni import router as alumni_router
+from routers.onboarding import router as onboarding_router
+# Ensure CourseVersion table exists (imported after initial create_all)
+models.Base.metadata.create_all(bind=engine)
 app.include_router(naska.router)
 app.include_router(ai.router)
 app.include_router(courses.router)
 app.include_router(debug_router)
+app.include_router(classroom_router)
+app.include_router(admin_settings_router)
+app.include_router(puck_router)
+app.include_router(enrollments_router)
+app.include_router(projects_router)
+app.include_router(dashboard_router)
+app.include_router(credentials_router)
+app.include_router(cohorts_router)
+app.include_router(capstone_router)
+app.include_router(alumni_router)
+app.include_router(onboarding_router)
 
 @app.get("/")
 def read_root():
-    return {"message": "TSEA-X Backend API is running"}
+    return {"message": "VOKASI Backend API is running"}
 
 @app.get("/api/health")
 def health_check():
+    return {"status": "ok"}
+
+@app.get("/api/v1/health")
+@limiter.limit("60/minute")
+def health_check_v1(request: Request):
     return {"status": "ok"}
 
 # --- Mock Data ---
@@ -122,25 +212,91 @@ class SyncUserRequest(BaseModel):
     role: str = "student"
 
 
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+    name: str
+    role: str = "student"
+
+
+@app.post("/api/v1/auth/register")
+@limiter.limit("30/minute")
+def register_user(req: RegisterRequest, request: Request, db: Session = Depends(get_db)):
+    """Backend-only registration for demo/fallback mode (when Supabase not configured)"""
+    normalized_email = req.email.strip().lower()
+
+    # Check if user already exists
+    existing = db.query(models.User).filter(func.lower(models.User.email) == normalized_email).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    user = models.User(
+        email=normalized_email,
+        full_name=req.name,
+        name=req.name,
+        role=req.role,
+        password_hash=hash_password(req.password),
+        registration_status="registered",
+        funnel_status="registered",
+        onboarding_phase="none",
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    try:
+        send_transactional_email(
+            db,
+            template_key="registration_received",
+            to_email=user.email,
+            context={"full_name": user.full_name or user.name or "Learner"},
+        )
+    except Exception:
+        pass
+
+    # Generate JWT access token
+    access_token = create_access_token({"sub": str(user.id)})
+
+    return {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+        "access_token": access_token
+    }
+
+
 @app.post("/api/v1/auth/login")
-def demo_login(request: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("30/minute")
+def demo_login(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
     """Demo login for testing - accepts 'test' as password for all seeded users"""
-    user = db.query(models.User).filter(models.User.email == request.email).first()
-    
+    normalized_email = req.email.strip().lower()
+    user = db.query(models.User).filter(func.lower(models.User.email) == normalized_email).first()
+
     if not user:
         raise HTTPException(status_code=401, detail="Invalid login credentials")
-    
-    # For demo purposes, accept 'test' as password for all seeded users
-    if request.password != "test":
+
+    if hasattr(user, "status") and getattr(user, "status", "active") == "suspended":
+        raise HTTPException(status_code=403, detail="Account is suspended")
+
+    matches_demo_password = req.password == "test"
+    stored_hash = getattr(user, "password_hash", None)
+    matches_hash = bool(stored_hash) and verify_password(req.password, stored_hash)
+
+    if not matches_demo_password and not matches_hash:
         raise HTTPException(status_code=401, detail="Invalid login credentials")
-    
+
+    # Generate JWT access token
+    access_token = create_access_token({"sub": str(user.id)})
+
     return {
         "id": user.id,
         "email": user.email,
         "name": user.full_name,
         "role": user.role,
         "institution_id": user.institution_id,
-        "instructor_type": user.instructor_type
+        "instructor_type": user.instructor_type,
+        "access_token": access_token
     }
 
 
@@ -162,12 +318,24 @@ def sync_user(request: SyncUserRequest, db: Session = Depends(get_db)):
                 email=request.email,
                 full_name=request.full_name,
                 role=request.role,
-                supabase_id=request.supabase_id
+                supabase_id=request.supabase_id,
+                registration_status="registered",
+                funnel_status="registered",
+                onboarding_phase="none",
             )
             db.add(user)
     
     db.commit()
     db.refresh(user)
+    try:
+        send_transactional_email(
+            db,
+            template_key="registration_received",
+            to_email=user.email,
+            context={"full_name": user.full_name or "Learner"},
+        )
+    except Exception:
+        pass
     
     return {
         "id": user.id,
@@ -887,20 +1055,169 @@ async def generate_course(
     target_audience: str = Form("Beginner"),
     files: List[UploadFile] = File(None)
 ):
-    """Generate course structure using AI, optionally with uploaded materials"""
-    
+    """Generate a rich Alexandria AI course draft from topic and optional materials."""
+
     material_content = ""
+    parsed_content = None
+    parsed_provider = None
+
     if files:
-        for file in files:
+        first_file = files[0]
+        try:
+            file_bytes = await first_file.read()
+            mime_type = first_file.content_type or "application/octet-stream"
+
+            import base64
+
+            parse_result = await openai_service.parse_materials_multimodal(
+                file_base64=base64.b64encode(file_bytes).decode("utf-8"),
+                file_name=first_file.filename or "uploaded-material",
+                mime_type=mime_type,
+            )
+
+            if parse_result.get("success") and parse_result.get("data"):
+                parsed_content = parse_result["data"]
+                parsed_provider = parse_result.get("provider")
+            else:
+                text = file_bytes.decode("utf-8", errors="ignore")
+                material_content += f"\n\n--- File: {first_file.filename} ---\n{text}"
+        except Exception as e:
+            print(f"Error parsing file {getattr(first_file, 'filename', 'unknown')}: {e}")
+
+        for file in files[1:]:
             try:
                 content = await file.read()
-                # Simple text decoding, assume utf-8
                 text = content.decode("utf-8", errors="ignore")
                 material_content += f"\n\n--- File: {file.filename} ---\n{text}"
             except Exception as e:
                 print(f"Error reading file {file.filename}: {e}")
-    
-    return await openai_service.generate_course_structure(topic, target_audience, material_content)
+
+    if not parsed_content:
+        key_concepts = [word.strip().title() for word in topic.replace("/", " ").replace("-", " ").split() if len(word.strip()) > 2][:6]
+        if not key_concepts:
+            key_concepts = [topic.title()]
+
+        parsed_content = {
+            "title": topic.title(),
+            "summary": f"A {target_audience.lower()} course draft for {topic}, designed with Alexandria AI to produce a rigorous, structured learning journey.",
+            "main_topics": [
+                {
+                    "name": key_concepts[0] if key_concepts else topic.title(),
+                    "description": f"Core foundations and practical applications of {topic}.",
+                    "subtopics": key_concepts[1:4],
+                }
+            ],
+            "learning_objectives": [
+                f"Understand the core concepts behind {topic}",
+                f"Apply {topic} ideas in practical contexts",
+                f"Evaluate trade-offs and best practices in {topic}",
+            ],
+            "key_concepts": key_concepts,
+            "visual_elements": [],
+            "difficulty_level": target_audience,
+            "estimated_duration": "4 weeks",
+            "target_audience": target_audience,
+            "prerequisites": [],
+        }
+
+    if material_content:
+        parsed_content["summary"] = f"{parsed_content.get('summary', '')}\n\nInstructor materials were supplied and incorporated into the agenda generation process."
+        existing_topics = parsed_content.get("main_topics") or []
+        existing_topics.append(
+            {
+                "name": "Instructor Materials",
+                "description": "Supporting context extracted from uploaded reference materials.",
+                "subtopics": [],
+            }
+        )
+        parsed_content["main_topics"] = existing_topics
+
+    agenda_result = await openai_service.generate_teaching_agenda(
+        parsed_content=parsed_content,
+        target_audience=target_audience,
+        duration_weeks=4,
+    )
+
+    agenda = agenda_result.get("agenda") if isinstance(agenda_result, dict) else None
+    if not agenda:
+        fallback_structure = await openai_service.generate_course_structure(topic, target_audience, material_content)
+        return {
+            **fallback_structure,
+            "parsed_content": parsed_content,
+            "agenda": None,
+            "knowledge_graph": None,
+            "provider": agenda_result.get("provider") if isinstance(agenda_result, dict) else None,
+        }
+
+    graph_input = "\n".join(
+        [
+            parsed_content.get("summary", ""),
+            "\n".join(parsed_content.get("learning_objectives", [])),
+            "\n".join(parsed_content.get("key_concepts", [])),
+        ]
+    ).strip()
+
+    knowledge_graph = None
+    if graph_input:
+        graph_result = await openai_service.extract_knowledge_points(graph_input)
+        if graph_result.get("success"):
+            knowledge_graph = graph_result.get("graph")
+
+    preview_modules = []
+    for module in agenda.get("modules", []):
+        learning_objectives = module.get("learning_objectives", [])
+        learning_goals = module.get("learning_goals", [])
+        session_schedule = module.get("session_schedule", [])
+        teaching_actions = module.get("teaching_actions", [])
+        content_parts = []
+
+        subtitle = module.get("subtitle")
+        if subtitle:
+            content_parts.append(subtitle)
+
+        objective_lines = []
+        for lo in learning_objectives:
+            if isinstance(lo, dict):
+                text = lo.get("text") or lo.get("objective")
+                if text:
+                    objective_lines.append(f"- {text}")
+        for goal in learning_goals:
+            if goal:
+                objective_lines.append(f"- {goal}")
+        if objective_lines:
+            content_parts.append("Learning goals:\n" + "\n".join(objective_lines[:6]))
+
+        action_lines = []
+        for action in (session_schedule or teaching_actions):
+            if not isinstance(action, dict):
+                continue
+            title_text = action.get("title") or action.get("description") or action.get("type")
+            if title_text:
+                action_lines.append(f"- {title_text}")
+        if action_lines:
+            content_parts.append("Activities:\n" + "\n".join(action_lines[:6]))
+
+        preview_modules.append(
+            {
+                "title": module.get("title", "Untitled Module"),
+                "content": "\n\n".join([part for part in content_parts if part]).strip(),
+            }
+        )
+
+    return {
+        "title": agenda.get("course_title", topic.title()),
+        "description": agenda.get("description") or agenda.get("tagline") or parsed_content.get("summary", ""),
+        "level": target_audience,
+        "duration": f"{agenda.get('duration_weeks', 4)} weeks",
+        "category": (parsed_content.get("key_concepts") or [topic])[0],
+        "image": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800",
+        "modules": preview_modules,
+        "capstone_project": (agenda.get("capstone_project") or {}).get("description", "") if isinstance(agenda.get("capstone_project"), dict) else agenda.get("capstone_project"),
+        "parsed_content": parsed_content,
+        "agenda": agenda,
+        "knowledge_graph": knowledge_graph,
+        "provider": agenda_result.get("provider") or parsed_provider,
+    }
 
 
 # ===== SMART COURSE CREATION (Alexandria AI Engine) =====
@@ -912,6 +1229,13 @@ class SmartParseRequest(BaseModel):
 
 class SmartAgendaRequest(BaseModel):
     parsed_content: Dict
+    target_audience: str = "Intermediate"
+    duration_weeks: int = 4
+
+class SmartAgendaRefineRequest(BaseModel):
+    parsed_content: Dict
+    current_agenda: Dict
+    refinement_prompt: str
     target_audience: str = "Intermediate"
     duration_weeks: int = 4
 
@@ -955,6 +1279,21 @@ async def smart_generate_agenda(request: SmartAgendaRequest):
         parsed_content=request.parsed_content,
         target_audience=request.target_audience,
         duration_weeks=request.duration_weeks
+    )
+    return result
+
+
+@app.post("/api/v1/courses/smart-create/refine")
+async def smart_refine_agenda(request: SmartAgendaRefineRequest):
+    """
+    Refine an existing Alexandria teaching agenda using a natural-language instruction.
+    """
+    result = await openai_service.refine_teaching_agenda(
+        parsed_content=request.parsed_content,
+        current_agenda=request.current_agenda,
+        refinement_prompt=request.refinement_prompt,
+        target_audience=request.target_audience,
+        duration_weeks=request.duration_weeks,
     )
     return result
 
@@ -2635,9 +2974,13 @@ def get_student_dashboard(user_id: int = 1, db: Session = Depends(get_db)):
             hash=cred.transaction_hash or "Pending"
         ))
         
-    # 3. Recommended Courses (Simple logic: courses not enrolled in)
-    enrolled_ids = [p.course_id for p in user_projects]
-    recommended_courses = db.query(models.Course).filter(models.Course.id.notin_(enrolled_ids)).limit(3).all()
+    # 3. Recommended Courses — live courses first, Coming Soon last
+    all_enrolled_ids = {e.course_id for e in db.query(models.Enrollment).filter(models.Enrollment.user_id == user_id).all()}
+    rec_all = db.query(models.Course).filter(
+        models.Course.id.notin_(all_enrolled_ids)
+    ).all()
+    rec_all.sort(key=lambda c: 1 if c.tag == "Coming Soon" else 0)
+    recommended_courses = rec_all[:4]
     
     # 4. Upcoming Deadlines (Mock)
     upcoming_deadlines = [
@@ -2645,12 +2988,28 @@ def get_student_dashboard(user_id: int = 1, db: Session = Depends(get_db)):
         {"id": 2, "title": "Peer Review", "course": "AI Governance", "date": "Dec 15, 2024", "urgent": False}
     ]
     
+    rec_list = [
+        schemas.Course(
+            id=c.id,
+            title=c.title,
+            instructor=c.instructor or "",
+            org=c.org or "",
+            rating=c.rating or 0.0,
+            students_count=c.students_count or "0",
+            image=c.image or "",
+            tag=c.tag,
+            level=c.level or "Beginner",
+            category=c.category,
+        )
+        for c in recommended_courses
+    ]
+
     return schemas.StudentDashboardData(
         enrolled_courses=enrolled_courses,
         credentials=credentials,
         total_learning_hours=42, # Mock
         average_progress=avg_progress,
-        recommended_courses=recommended_courses,
+        recommended_courses=rec_list,
         upcoming_deadlines=upcoming_deadlines,
         career_pathway_id=career_pathway_id
     )
@@ -4021,24 +4380,42 @@ def get_admin_activity():
 def get_admin_users(db: Session = Depends(get_db)):
     """Get all users for admin dashboard"""
     users = db.query(models.User).order_by(models.User.id.desc()).all()
-    return [
-        {
-            "id": u.id,
-            "name": u.full_name or u.email.split('@')[0] if u.email else 'Unknown',
-            "email": u.email,
-            "role": u.role or 'student',
-            "status": getattr(u, 'status', 'active') or 'active',
-            "joinedDate": u.created_at.strftime('%Y-%m-%d') if u.created_at else 'N/A',
-            "lastActive": "Recently",
-            "coursesEnrolled": db.query(models.Enrollment).filter(models.Enrollment.user_id == u.id).count()
-        }
-        for u in users
-    ]
+    return [_serialize_admin_user(u, db) for u in users]
 
 class ImportUserRequest(BaseModel):
     name: str
     email: str
     role: str = "student"
+
+
+class AdminUserUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[str] = None
+    status: Optional[str] = None
+
+
+class AdminInviteRequest(BaseModel):
+    name: str
+    email: str
+    role: str = "admin"
+
+
+class AdminResetPasswordRequest(BaseModel):
+    new_password: Optional[str] = None
+
+
+def _serialize_admin_user(user: models.User, db: Session):
+    return {
+        "id": user.id,
+        "name": user.full_name or (user.email.split('@')[0] if user.email else 'Unknown'),
+        "email": user.email,
+        "role": user.role or "student",
+        "status": getattr(user, "status", "active") or "active",
+        "joinedDate": user.created_at.strftime('%Y-%m-%d') if user.created_at else 'N/A',
+        "lastActive": "Recently",
+        "coursesEnrolled": db.query(models.Enrollment).filter(models.Enrollment.user_id == user.id).count(),
+    }
 
 @app.post("/api/v1/admin/import-user")
 def import_user(user_data: ImportUserRequest, db: Session = Depends(get_db)):
@@ -4059,6 +4436,142 @@ def import_user(user_data: ImportUserRequest, db: Session = Depends(get_db)):
     db.refresh(new_user)
     
     return {"success": True, "message": "User imported", "id": new_user.id}
+
+
+@app.put("/api/v1/admin/users/{user_id}")
+def update_admin_user(user_id: int, payload: AdminUserUpdateRequest, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if payload.email is not None:
+        normalized_email = payload.email.strip().lower()
+        existing = db.query(models.User).filter(func.lower(models.User.email) == normalized_email, models.User.id != user_id).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        user.email = normalized_email
+
+    if payload.name is not None:
+        user.full_name = payload.name.strip()
+
+    if payload.role is not None:
+        allowed_roles = {"student", "instructor", "admin", "institution_admin"}
+        role = payload.role.strip().lower()
+        if role not in allowed_roles:
+            raise HTTPException(status_code=400, detail="Invalid role")
+        user.role = role
+
+    if payload.status is not None and hasattr(user, "status"):
+        status_value = payload.status.strip().lower()
+        if status_value not in {"active", "suspended", "pending"}:
+            raise HTTPException(status_code=400, detail="Invalid status")
+        setattr(user, "status", status_value)
+
+    db.commit()
+    db.refresh(user)
+
+    return _serialize_admin_user(user, db)
+
+
+@app.post("/api/v1/admin/users/invite")
+def invite_admin_user(payload: AdminInviteRequest, db: Session = Depends(get_db)):
+    name = payload.name.strip()
+    email = payload.email.strip().lower()
+    role = payload.role.strip().lower()
+
+    if role not in {"student", "instructor", "admin", "institution_admin"}:
+        raise HTTPException(status_code=400, detail="Invalid role")
+
+    existing = db.query(models.User).filter(func.lower(models.User.email) == email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="User already exists")
+
+    temporary_password = f"tmp-{uuid4().hex[:10]}"
+    new_user = models.User(
+        email=email,
+        full_name=name or email.split('@')[0],
+        role=role,
+        password_hash=_hash_password(temporary_password),
+        created_at=datetime.now(),
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {
+        "success": True,
+        "user": _serialize_admin_user(new_user, db),
+        "temporary_password": temporary_password,
+        "message": "User invited successfully",
+    }
+
+
+@app.post("/api/v1/admin/users/{user_id}/reset-password")
+def reset_admin_user_password(user_id: int, payload: AdminResetPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if payload.new_password is not None and len(payload.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    temporary_password = payload.new_password or f"tmp-{uuid4().hex[:10]}"
+    user.password_hash = _hash_password(temporary_password)
+    db.commit()
+
+    return {
+        "success": True,
+        "user_id": user_id,
+        "email": user.email,
+        "temporary_password": temporary_password,
+        "message": "Password reset successful",
+    }
+
+
+@app.post("/api/v1/admin/users/{user_id}/activate")
+def activate_admin_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if hasattr(user, "status"):
+        setattr(user, "status", "active")
+    db.commit()
+    return {"success": True, "user_id": user_id, "status": getattr(user, "status", "active")}
+
+
+@app.post("/api/v1/admin/users/{user_id}/suspend")
+def suspend_admin_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if hasattr(user, "status"):
+        setattr(user, "status", "suspended")
+    db.commit()
+    return {"success": True, "user_id": user_id, "status": getattr(user, "status", "suspended")}
+
+
+@app.delete("/api/v1/admin/users/{user_id}")
+def delete_admin_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if (user.role or "").lower() == "admin":
+        admin_count = db.query(models.User).filter(func.lower(models.User.role) == "admin").count()
+        if admin_count <= 1:
+            raise HTTPException(status_code=400, detail="Cannot delete the last admin account")
+
+    email = user.email
+    try:
+        db.delete(user)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Unable to delete user: {e}")
+
+    return {"success": True, "user_id": user_id, "email": email}
 
 @app.get("/api/v1/admin/courses")
 def get_admin_courses(db: Session = Depends(get_db)):
@@ -4937,12 +5450,36 @@ def get_student_dashboard(user_id: int, db: Session = Depends(get_db)):
     total_hours = len(enrolled_courses) * 8  # Estimate 8 hours per course
     avg_progress = sum(c['progress'] for c in enrolled_courses) / len(enrolled_courses) if enrolled_courses else 0
     
+    # Recommended: published courses not yet enrolled in, live ones first
+    enrolled_ids = {e.course_id for e in enrollments}
+    rec_query = db.query(models.Course).filter(
+        ~models.Course.id.in_(enrolled_ids),
+        models.Course.approval_status.in_(["published", "approved"])
+    ).all()
+    # Sort: live (non-Coming-Soon) first
+    rec_query.sort(key=lambda c: 1 if c.tag == "Coming Soon" else 0)
+    recommended_courses = [
+        {
+            "id": c.id,
+            "title": c.title,
+            "instructor": c.instructor or "",
+            "org": c.org or "",
+            "rating": c.rating or 0.0,
+            "students_count": c.students_count or "0",
+            "image": c.image or "",
+            "tag": c.tag,
+            "level": c.level or "Beginner",
+            "category": c.category,
+        }
+        for c in rec_query[:4]
+    ]
+
     return {
         "enrolled_courses": enrolled_courses,
         "credentials": creds_list,
         "total_learning_hours": total_hours,
         "average_progress": round(avg_progress, 1),
-        "recommended_courses": [],  # Can be populated with ML recommendations
+        "recommended_courses": recommended_courses,
         "upcoming_deadlines": [],
         "career_pathway_id": user.career_pathway_id,
         "iris_projects": iris_projects,

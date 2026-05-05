@@ -83,5 +83,110 @@ Optional SSH deploy jobs in workflows require these repository secrets:
 
 Copy templates before running:
 
-- `backend/.env.example` -> `backend/.env`
-- `frontend/.env.local.example` -> `frontend/.env.local`
+- `.env.example` → `.env` (root, used by docker-compose)
+- `backend/.env.example` → `backend/.env`
+- `frontend/.env.production.example` → `frontend/.env.production`
+
+## Pilot Deployment (Phase 5)
+
+### 1. Configure environment
+
+```bash
+cp .env.example .env
+# Edit .env — set DATABASE_URL, JWT_SECRET, OPENROUTER_API_KEY, VOKASI_DOMAIN
+```
+
+### 2. Seed pilot institutions
+
+```bash
+python scripts/seed_pilot_institutions.py
+```
+
+### 3. Deploy with Docker Compose
+
+```bash
+# Development / staging (HTTP)
+docker compose up -d
+
+# Production (HTTPS via Caddy — requires VOKASI_DOMAIN DNS to point at this server)
+VOKASI_DOMAIN=vokasi.yourschool.id docker compose -f docker-compose.production.yml up -d
+```
+
+### 4. Configure institution branding
+
+Log in at `/admin` with `admin@vokasi.id`, open the **Branding** tab, and set colors, logo, and platform name per institution.
+
+### Key URLs
+
+| Service | URL |
+|---|---|
+| Platform | `https://VOKASI_DOMAIN/` |
+| API docs | `https://VOKASI_DOMAIN/api/docs` |
+| Admin | `https://VOKASI_DOMAIN/admin` |
+| Institution dashboard | `https://VOKASI_DOMAIN/institution-dashboard` |
+
+## Beta Scholarship Campaign (1000 seats)
+
+### Funnel
+
+`/beasiswa` → `/register` → `/onboarding` (pick any 2 courses) → `/payment/beasiswa` (Midtrans) → learning → `/capstone` → certificate → `/alumni`
+
+### Dynamic pricing (temporary campaign)
+
+| Seat index | Price |
+|---|---|
+| 1–100 | $1 |
+| 101–200 | $2 |
+| 201–300 | $3 |
+| 301–400 | $4 |
+| 401–500 | $5 |
+| 501–600 | $6 |
+| 601–700 | $7 |
+| 701–800 | $8 |
+| 801–900 | $9 |
+| 901–1000 | $10 |
+
+### Required env vars (beta payment)
+
+Add these to root `.env` and rebuild frontend:
+
+```bash
+MIDTRANS_SERVER_KEY=SB-Mid-server-xxxx
+MIDTRANS_CLIENT_KEY=SB-Mid-client-xxxx
+MIDTRANS_ENV=sandbox
+
+NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=SB-Mid-client-xxxx
+NEXT_PUBLIC_MIDTRANS_ENV=sandbox
+
+IDR_RATE=16000
+FRONTEND_URL=https://vokasi.yourschool.id
+```
+
+### Initialize beta campaign in DB
+
+Run these once after pulling the beta-funnel changes:
+
+```bash
+python scripts/migrate_beta_funnel.py
+python scripts/seed_beta_cohort.py
+```
+
+### One-command API smoke test (beta funnel)
+
+With backend running locally on port `8001`:
+
+```bash
+python scripts/smoke_beta_funnel.py
+```
+
+Override API base if needed:
+
+```bash
+API_BASE=http://127.0.0.1:8000 python scripts/smoke_beta_funnel.py
+```
+
+### Notes
+
+- Seat count (`seats_sold`) is incremented when Midtrans payment webhook is confirmed.
+- Beta tier is decoupled from full IRIS/CDIO project cycle; final assessment uses simplified capstone approval flow.
+- Learners get certificates only after instructor capstone approval.

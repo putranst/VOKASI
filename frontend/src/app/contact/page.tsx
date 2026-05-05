@@ -68,7 +68,7 @@ export default function ContactPage() {
                             </div>
                             <div>
                                 <h3 className="font-bold text-gray-900">Career Opportunities</h3>
-                                <p className="text-sm text-gray-600">Join the T6 team</p>
+                                <p className="text-sm text-gray-600">Join the VOKASI team</p>
                             </div>
                         </div>
                     </div>
@@ -162,8 +162,8 @@ export default function ContactPage() {
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-gray-900">Email</h3>
-                                            <p className="text-gray-600">program@tsea.asia</p>
-                                            <p className="text-gray-600">sscm@tsea.asia</p>
+                                            <p className="text-gray-600">hello@vokasi.id</p>
+                                            <p className="text-gray-600">partner@vokasi.id</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-4">
@@ -172,7 +172,7 @@ export default function ContactPage() {
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-gray-900">WhatsApp</h3>
-                                            <p className="text-gray-600">+62 821 3534 89350</p>
+                                            <p className="text-gray-600">+62 812 0000 8080</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-4">
@@ -180,11 +180,11 @@ export default function ContactPage() {
                                             <MapPin size={24} className="text-accent" />
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-gray-900">Campus Location</h3>
+                                            <h3 className="font-bold text-gray-900">Headquarters</h3>
                                             <p className="text-gray-600">
-                                                Tsinghua SEA Campus<br />
-                                                Kura Kura Bali<br />
-                                                Bali, Indonesia
+                                                VOKASI Indonesia<br />
+                                                Jakarta Selatan<br />
+                                                DKI Jakarta, Indonesia
                                             </p>
                                         </div>
                                     </div>
@@ -213,7 +213,7 @@ export default function ContactPage() {
                             {/* Website */}
                             <div className="bg-gradient-to-r from-primary/10 to-accent/10 p-6 rounded-2xl">
                                 <p className="text-sm text-gray-600">
-                                    Visit our main website: <a href="https://tsea.asia" target="_blank" rel="noopener noreferrer" className="text-primary font-bold hover:underline">tsea.asia</a>
+                                    Visit our platform: <a href="https://vokasi.id" target="_blank" rel="noopener noreferrer" className="text-primary font-bold hover:underline">vokasi.id</a>
                                 </p>
                             </div>
                         </div>

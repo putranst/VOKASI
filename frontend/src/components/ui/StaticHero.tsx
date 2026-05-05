@@ -21,7 +21,7 @@ export const StaticHero = () => {
                         {/* Badge */}
                         <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-bold mb-6 border border-white/20">
                             <Sparkles size={16} className="text-cyan-300" />
-                            <span>Blockchain-Verified Credentials from MIT &amp; Tsinghua</span>
+                            <span>Blockchain-Verified Credentials — Mapped to BNSP Standards</span>
                         </div>
 
                         {/* Main Headline */}

@@ -21,7 +21,7 @@ export default function GovernmentPage() {
                         </p>
                         <div className="flex justify-center gap-4">
                             <button className="bg-white text-slate-900 px-8 py-4 rounded-xl font-bold hover:bg-gray-100 transition-all">
-                                Partner with TSEA-X
+                                Partner with VOKASI
                             </button>
                             <button className="border border-white/30 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/10 transition-all">
                                 View Case Studies

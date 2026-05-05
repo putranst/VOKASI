@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { FileText, Video, BookOpen, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 
 interface ResourceCardProps {
     type: 'case-study' | 'report' | 'webinar' | 'media';
@@ -19,11 +20,11 @@ const typeConfig = {
     'media': { icon: ExternalLink, label: 'MEDIA', color: 'bg-blue-500' }
 };
 
-export function ResourceCard({ type, title, description, image, partner }: ResourceCardProps) {
+export function ResourceCard({ type, title, description, image, partner, link }: ResourceCardProps) {
     const config = typeConfig[type];
     const Icon = config.icon;
 
-    return (
+    const card = (
         <div className="group cursor-pointer bg-gray-900 rounded-2xl overflow-hidden hover:transform hover:scale-105 transition-all duration-300">
             {/* Image/Background */}
             <div className="relative h-48 overflow-hidden">
@@ -58,4 +59,9 @@ export function ResourceCard({ type, title, description, image, partner }: Resou
             </div>
         </div>
     );
+
+    if (link) {
+        return <Link href={link} className="block">{card}</Link>;
+    }
+    return card;
 }

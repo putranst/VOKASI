@@ -1,32 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FAFAFA;
-  --foreground: #1a1a1a;
+  --background: #fafaf9; /* VOKASI off-white */
+  --foreground: #1f2937; /* VOKASI charcoal */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-lato), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', var(--font-lato), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* T6 Brand Palette */
-  --color-primary: #6C5948;
-  /* Tobacco Brown */
-  --color-secondary: #969696;
-  /* Dusty Gray */
-  --color-accent: #663399;
-  /* Tsinghua Purple */
+  /* VOKASI Deep Forest Brand Palette (per vokasi2.prd §5.1 BR-002) */
+  --color-primary: #064e3b;
+  /* Deep Forest emerald */
+  --color-primary-light: #065f46;
+  --color-primary-dark: #022c22;
+  --color-secondary: #1f2937;
+  /* Charcoal */
+  --color-accent: #10b981;
+  /* Emerald accent */
   --color-gold: #D4AF37;
-  /* Gold */
+  /* Retained for existing gold accents */
 
-  /* Ekspedisi-inspired Dark Theme */
+  /* Neutral surfaces */
   --color-navy-dark: #0a1628;
   --color-navy: #0f172a;
   --color-navy-light: #1e293b;
-  --color-cyan: #00d4ff;
-  --color-cyan-muted: #06b6d4;
-  --color-cyan-dark: #0891b2;
+  --color-cyan: #10b981;
+  --color-cyan-muted: #34d399;
+  --color-cyan-dark: #059669;
 }
 
 
@@ -42,7 +45,7 @@ body {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Lato', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Inter', 'Lato', -apple-system, BlinkMacSystemFont, sans-serif;
   position: relative;
 }
 
@@ -394,3 +397,228 @@ body {
 .scroll-smooth-touch {
   -webkit-overflow-scrolling: touch;
 }
+
+/* ── Puck Editor Light Theme Overrides ────────────────────────────────────
+   Scoped to .puck-root wrapper. Inspired by OpenRouter / Linear aesthetics:
+   white surfaces, zinc-100 sidebars, crisp zinc-200 borders, Inter font.
+─────────────────────────────────────────────────────────────────────────── */
+
+/* Global font */
+.puck-root * {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+}
+
+/* Root shell */
+.puck-root {
+  background: #ffffff !important;
+  color: #18181b !important;
+}
+
+/* Layout proportions */
+.puck-root [class*="_Puck_"] {
+  --puck-space-px: 12px;
+}
+
+.puck-root [class*="_PuckLayout-inner_"] {
+  --puck-side-nav-width: 60px !important;
+  --puck-left-side-bar-width: 220px !important;
+  --puck-right-side-bar-width: 272px !important;
+  --puck-side-bar-width: 220px !important;
+}
+
+@media (min-width: 990px) {
+  .puck-root [class*="_PuckLayout-inner_"] {
+    --puck-left-side-bar-width: 232px !important;
+    --puck-right-side-bar-width: 288px !important;
+    --puck-side-bar-width: 232px !important;
+  }
+}
+
+@media (min-width: 1398px) {
+  .puck-root [class*="_PuckLayout-inner_"] {
+    --puck-left-side-bar-width: 240px !important;
+    --puck-right-side-bar-width: 300px !important;
+    --puck-side-bar-width: 240px !important;
+  }
+}
+
+/* Hide Puck's built-in header — we render our own above */
+.puck-root [class*="PuckHeader"],
+.puck-root [class*="puck-header"],
+.puck-root header[class*="Puck"] {
+  display: none !important;
+}
+
+/* Both sidebars (left = component list, right = fields) */
+.puck-root [class*="SidebarSection"],
+.puck-root [class*="Sidebar"],
+.puck-root [class*="sidebar"] {
+  background: #fafafa !important;
+  border-color: #e4e4e7 !important;
+  color: #3f3f46 !important;
+}
+
+.puck-root [class*="_Sidebar_o396p_"],
+.puck-root [class*="_SidebarSection_5otpt_"] {
+  box-shadow: none !important;
+}
+
+/* Right-side fields panel */
+.puck-root [class*="PuckFields"],
+.puck-root [class*="FieldWrapper"],
+.puck-root [class*="InputWrapper"],
+.puck-root [class*="Fields"] {
+  background: #fafafa !important;
+  border-color: #e4e4e7 !important;
+}
+
+.puck-root [class*="_PuckFields--wrapFields_"] [class*="_PuckFields-field_"] {
+  padding: 14px !important;
+  padding-bottom: 10px !important;
+}
+
+.puck-root [class*="_PuckFields--wrapFields_"] [class*="_PuckFields-field_"] + [class*="_PuckFields-field_"] {
+  margin-top: 6px !important;
+}
+
+/* All text inputs, textareas, selects */
+.puck-root input[type="text"],
+.puck-root input[type="number"],
+.puck-root input[type="url"],
+.puck-root textarea,
+.puck-root select {
+  background: #ffffff !important;
+  border: 1px solid #e4e4e7 !important;
+  border-radius: 7px !important;
+  color: #18181b !important;
+  font-size: 13px !important;
+  padding: 7px 10px !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+.puck-root input[type="text"]:focus,
+.puck-root input[type="number"]:focus,
+.puck-root input[type="url"]:focus,
+.puck-root textarea:focus,
+.puck-root select:focus {
+  border-color: #a1a1aa !important;
+  box-shadow: 0 0 0 3px rgba(161,161,170,0.15) !important;
+  outline: none !important;
+}
+
+/* Field labels */
+.puck-root label {
+  color: #71717a !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 4px !important;
+  display: block !important;
+}
+
+/* Canvas background */
+.puck-root [class*="PuckCanvas"],
+.puck-root [class*="canvas"],
+.puck-root [class*="Canvas"] {
+  background: #f4f4f5 !important;
+}
+
+/* Section headings inside sidebars */
+.puck-root [class*="SidebarSection__title"],
+.puck-root [class*="sectionTitle"],
+.puck-root [class*="Title"] {
+  color: #71717a !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.puck-root [class*="_SidebarSection-title_"] {
+  padding: 12px 14px !important;
+}
+
+.puck-root [class*="_SidebarSection-content_"] {
+  padding-bottom: 8px !important;
+}
+
+/* Component list items (left panel) */
+.puck-root [class*="ComponentItem"],
+.puck-root [class*="componentItem"] {
+  background: #ffffff !important;
+  border: 1px solid #e4e4e7 !important;
+  border-radius: 10px !important;
+  color: #3f3f46 !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  margin-bottom: 4px !important;
+  padding: 9px 11px !important;
+  transition: background 0.1s, border-color 0.1s !important;
+  cursor: grab !important;
+}
+
+.puck-root [class*="_ComponentList"] [class*="ComponentItem"],
+.puck-root [class*="_ComponentList"] [class*="componentItem"] {
+  margin: 0 10px 6px !important;
+}
+.puck-root [class*="ComponentItem"]:hover,
+.puck-root [class*="componentItem"]:hover {
+  background: #f4f4f5 !important;
+  border-color: #d4d4d8 !important;
+  color: #18181b !important;
+}
+
+/* Active/selected block outline — zinc, not blue */
+.puck-root [class*="selected"],
+.puck-root [class*="DropZone--isActive"] {
+  outline: 2px solid #a1a1aa !important;
+  outline-offset: 2px !important;
+}
+
+/* Drag icons */
+.puck-root [class*="DragIcon"] {
+  color: #a1a1aa !important;
+}
+
+/* Canvas polish */
+.puck-root [class*="_PuckLayout-editor_"],
+.puck-root [class*="editor"] {
+  background: #f4f4f5 !important;
+  padding: 8px !important;
+}
+
+.puck-root [class*="_PuckPreview_"] {
+  padding: 28px 32px !important;
+}
+
+@media (min-width: 1200px) {
+  .puck-root [class*="_PuckPreview_"] {
+    padding: 32px 40px !important;
+  }
+}
+
+/* Buttons inside Puck's UI (e.g. "Add component", array add buttons) */
+.puck-root button[class*="Puck"],
+.puck-root button[class*="puck"],
+.puck-root [class*="ActionBar"] button {
+  background: #ffffff !important;
+  border: 1px solid #e4e4e7 !important;
+  border-radius: 7px !important;
+  color: #3f3f46 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  transition: background 0.1s, border-color 0.1s !important;
+}
+.puck-root button[class*="Puck"]:hover,
+.puck-root button[class*="puck"]:hover,
+.puck-root [class*="ActionBar"] button:hover {
+  background: #f4f4f5 !important;
+  border-color: #d4d4d8 !important;
+  color: #18181b !important;
+}
+
+/* Scrollbars — subtle */
+.puck-root ::-webkit-scrollbar { width: 4px; height: 4px; }
+.puck-root ::-webkit-scrollbar-track { background: transparent; }
+.puck-root ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 4px; }
+.puck-root ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }

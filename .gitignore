@@ -47,6 +47,7 @@ service-account.json
 
 # Runtime output and dumps
 *logs.txt
+backend/.admin_secret.key
 *error.txt
 deployment-error.json
 test_output.txt
@@ -55,3 +56,5 @@ users_list.txt
 vm_error.txt
 debug.sh
 debug*.sql
+# Added by code-review-graph
+.code-review-graph/

@@ -13,7 +13,6 @@ import { ObjectionCrusher } from '@/components/ui/ObjectionCrusher';
 // Existing Components  
 import { SuccessStatsCard } from '@/components/ui/SuccessStatsCard';
 import { TestimonialCard } from '@/components/ui/TestimonialCard';
-import { FacultyGrid } from '@/components/ui/FacultyGrid';
 import { ResourceCard } from '@/components/ui/ResourceCard';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -23,7 +22,7 @@ export default function Home() {
     <div className="min-h-screen bg-background text-slate-800 selection:bg-primary selection:text-white font-sans w-full max-w-[100vw] overflow-x-hidden">
       <Navbar />
 
-      {/* NEW: Dual Hero Slider (Ekspedisi AI + T6 Platform) */}
+      {/* NEW: Dual Hero Slider (Ekspedisi AI + VOKASI Platform) */}
       <HeroSlider />
 
       {/* Trusted Partner Logos - Enhanced */}
@@ -33,16 +32,16 @@ export default function Home() {
             <p className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">Trusted by World-Class Institutions</p>
           </div>
           <div className="flex gap-4 sm:gap-8 overflow-x-auto scrollbar-hide pb-2 sm:pb-0 sm:flex-wrap sm:justify-center md:justify-between items-center opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700">
-            <span className="text-base sm:text-xl font-serif font-bold text-accent whitespace-nowrap">Tsinghua University</span>
+            <span className="text-base sm:text-xl font-bold text-primary whitespace-nowrap">Kemendikbudristek</span>
             <span className="text-base sm:text-xl font-sans font-black text-[#1a1a1a] tracking-tighter whitespace-nowrap">MIT<span className="font-light">Sloan</span></span>
-            <span className="text-base sm:text-xl font-bold text-primary whitespace-nowrap">United in Diversity</span>
+            <span className="text-base sm:text-xl font-bold text-gray-700 whitespace-nowrap">BNSP</span>
             <span className="text-base sm:text-xl font-mono font-bold text-gray-600 whitespace-nowrap">GOVTECH</span>
             <span className="text-base sm:text-xl font-bold text-green-700 tracking-tight whitespace-nowrap">UN SDSN</span>
           </div>
         </div>
       </div>
 
-      {/* NEW: The T6 Difference - Value Proposition */}
+      {/* NEW: The VOKASI Difference - Value Proposition */}
       <T6Difference />
 
       {/* NEW: Career Showcase with Salaries */}
@@ -168,7 +167,7 @@ export default function Home() {
       <section className="py-20 max-w-[70rem] mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-black text-gray-900 mb-4">Student Success Stories</h2>
-          <p className="text-gray-600 text-lg">Real transformations from the T6 community</p>
+          <p className="text-gray-600 text-lg">Real transformations from the VOKASI community</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
@@ -185,7 +184,7 @@ export default function Home() {
             previousRole="Teacher"
             newRole="EdTech Developer"
             timeline="6 months"
-            quote="T6's project-based approach was perfect for my learning style. I built 4 real applications and landed my dream job before graduation."
+            quote="VOKASI's project-based approach was perfect for my learning style. I built 4 real applications and landed my dream job before graduation."
             avatar="MR"
           />
           <TestimonialCard
@@ -201,9 +200,6 @@ export default function Home() {
 
       {/* NEW: Objection Crusher */}
       <ObjectionCrusher />
-
-      {/* NEW: Comprehensive Faculty Grid */}
-      <FacultyGrid />
 
       {/* Resource Center */}
       <section className="py-20 bg-[#0a1628] text-white overflow-hidden">
@@ -227,31 +223,35 @@ export default function Home() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             <ResourceCard
               type="case-study"
-              title="Sustainability Goes Local: Empowering Community Development"
-              description="Tsinghua SEA hosts roundtable forum on local sustainability initiatives"
-              image="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=600&q=80"
-              partner="TSEA"
+              title="From SMK to Startup: How AI Skills Are Reshaping Indonesian Careers"
+              description="VOKASI graduates from vocational schools are landing roles in AI-driven industries — here's how structured upskilling made the difference."
+              image="https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=600&q=80"
+              partner="VOKASI"
+              link="/blog/smk-to-startup-ai-careers"
             />
             <ResourceCard
               type="report"
-              title="Happy Digital X 3.0: Transforming Urban Planning"
-              description="HDX program facilitates integration across cohorts for sustainable planning"
-              image="https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?auto=format&fit=crop&w=600&q=80"
+              title="State of AI Readiness in Indonesian Vocational Education 2025"
+              description="A nationwide snapshot of AI literacy, digital skills gaps, and how politeknik and BLK institutions are responding with new curricula."
+              image="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80"
+              partner="VOKASI"
+              link="/blog/ai-readiness-indonesian-vocational-education-2025"
             />
             <ResourceCard
               type="case-study"
-              title="United In Diversity: Forging Solutions Through Social Innovation"
-              description="UID invites collaboration to address climate change and inequality"
-              image="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=600&q=80"
-              partner="UID"
+              title="Building AI-Native Courses in Under 10 Minutes with VOKASI"
+              description="Instructors across Indonesia are using VOKASI's AI course generator to create Bloom's Taxonomy-aligned, SFIA-mapped courses at unprecedented speed."
+              image="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=600&q=80"
+              partner="VOKASI"
+              link="/blog/building-ai-courses-with-vokasi"
             />
           </div>
 
           <div className="text-center">
-            <button className="bg-cyan-500 hover:bg-cyan-400 text-white px-8 py-4 rounded-lg font-bold text-sm transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/50 flex items-center gap-2 mx-auto">
+            <Link href="/blog" className="bg-cyan-500 hover:bg-cyan-400 text-white px-8 py-4 rounded-lg font-bold text-sm transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/50 inline-flex items-center gap-2">
               <Sparkles size={18} />
-              Explore all resources
-            </button>
+              Explore all insights
+            </Link>
           </div>
         </div>
       </section>
@@ -307,9 +307,9 @@ export default function Home() {
                   Switch between desktop and<br />mobile to continue learning
                 </h2>
                 <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
-                  Unlock skills faster in the T6 Mobile app by practicing code, watching videos, and keeping your streak alive!
+                  Unlock skills faster in the VOKASI Mobile app by practicing code, watching videos, and keeping your streak alive!
                 </p>
-                <p className="text-cyan-400 font-semibold text-sm mb-6">Download the T6 app.</p>
+                <p className="text-cyan-400 font-semibold text-sm mb-6">Download the VOKASI app.</p>
 
                 {/* App Store Buttons - Exact Style */}
                 <div className="flex gap-3 justify-center">

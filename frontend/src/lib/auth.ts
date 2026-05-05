@@ -19,41 +19,69 @@ export const ACCESS_TOKEN_KEY = "vokasi_access_token";
 export const USER_KEY = "vokasi_user";
 
 export function getApiBase(): string {
-  return process?.env?.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  const explicit =
+    process?.env?.NEXT_PUBLIC_BACKEND_URL ??
+    process?.env?.NEXT_PUBLIC_API_URL ??
+    "";
+  return explicit.replace(/\/+$/, "");
+}
+
+function buildApiCandidates(path: string): string[] {
+  const base = getApiBase();
+  const urls = base ? [`${base}${path}`, path] : [path];
+  return Array.from(new Set(urls));
 }
 
 export async function loginRequest(email: string, password: string): Promise<LoginResponse> {
-  const res = await fetch(`${getApiBase()}/api/v1/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email, password }),
-  });
+  let lastError = "Login failed";
 
-  if (!res.ok) {
-    const body = await safeJson(res);
-    const message = body?.detail ?? body?.message ?? "Login failed";
-    throw new Error(message);
+  for (const url of buildApiCandidates("/api/v1/auth/login")) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (res.ok) {
+        return (await res.json()) as LoginResponse;
+      }
+
+      const body = await safeJson(res);
+      lastError = body?.detail ?? body?.message ?? lastError;
+    } catch {
+      continue;
+    }
   }
 
-  return (await res.json()) as LoginResponse;
+  throw new Error(lastError);
 }
 
 export async function fetchMe(token: string): Promise<UserPublic> {
-  const res = await fetch(`${getApiBase()}/api/v1/users/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  let lastError = "Failed to fetch current user";
 
-  if (!res.ok) {
-    const body = await safeJson(res);
-    const message = body?.detail ?? body?.message ?? "Failed to fetch current user";
-    throw new Error(message);
+  for (const url of buildApiCandidates("/api/v1/users/me")) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        return (await res.json()) as UserPublic;
+      }
+
+      const body = await safeJson(res);
+      lastError = body?.detail ?? body?.message ?? lastError;
+    } catch {
+      continue;
+    }
   }
 
-  return (await res.json()) as UserPublic;
+  throw new Error(lastError);
 }
 
 export function saveSession(token: string, user: UserPublic): void {

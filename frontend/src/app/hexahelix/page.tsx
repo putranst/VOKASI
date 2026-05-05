@@ -12,7 +12,7 @@ export default function HexahelixPage() {
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-100 rounded-full text-xs font-bold text-accent shadow-sm tracking-wide mb-6">
                         <Hexagon size={14} fill="currentColor" />
-                        THE TSEA-X FRAMEWORK
+                        THE VOKASI FRAMEWORK
                     </div>
                     <h1 className="text-5xl font-black text-gray-900 mb-6">The Hexahelix Model</h1>
                     <p className="text-xl text-gray-600 leading-relaxed">

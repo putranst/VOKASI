@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import IRISStepper from '@/components/ui/IRISStepper';
 import { useAuth } from '@/lib/AuthContext';
+import { useEnrollmentGuard } from '@/hooks/useEnrollmentGuard';
+import { useIrisProject } from '@/hooks/useIrisProject';
 import { EnhancedSocraticTutor } from '@/components/EnhancedSocraticTutor';
 import { GradingFeedback } from '@/components/GradingFeedback';
 import { RefreshCw, Lightbulb, BarChart3, Code, FileText, Send, CheckCircle, Plus, Sparkles } from 'lucide-react';
@@ -28,9 +30,12 @@ export default function IteratePage() {
     const params = useParams();
     const courseId = Number(params.id);
     const { user } = useAuth();
+    const { checking } = useEnrollmentGuard(courseId);
+    const { project, loading: projectLoading } = useIrisProject(courseId);
 
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [iterations, setIterations] = useState<Iteration[]>([
         { number: 1, hypothesis: '', learnings: '', completed: false }
     ]);
@@ -48,46 +53,47 @@ export default function IteratePage() {
     const [aiFeedback, setAiFeedback] = useState<GradingFeedbackData | null>(null);
     const [backendIterationId, setBackendIterationId] = useState<number | null>(null);
 
-    // Fetch existing project/iteration data
+    // Load existing iteration data when project is resolved
     React.useEffect(() => {
-        async function fetchProject() {
-            if (!user) return;
+        if (!project) return;
+        async function loadExistingIteration() {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/courses/${courseId}/projects?user_id=${user.id}`);
-                const projects = await res.json();
-                if (projects && projects.length > 0) {
-                    const proj = projects[0];
-
-                    // Fetch details
-                    const detailsRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/projects/${proj.id}`);
-                    const details = await detailsRes.json();
-
-                    if (details.iteration) {
-                        setBackendIterationId(details.iteration.id);
-                        if (details.iteration.ai_feedback) {
-                            setAiFeedback(details.iteration.ai_feedback);
-                        }
-                        // Restore form data if needed (skipped for brevity/demo)
-                    }
+                const detailsRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/projects/${project!.id}`);
+                if (!detailsRes.ok) return;
+                const details = await detailsRes.json();
+                if (details.iteration) {
+                    setBackendIterationId(details.iteration.id);
+                    if (details.iteration.ai_feedback) setAiFeedback(details.iteration.ai_feedback);
                 }
-            } catch (e) {
-                console.error("Failed to fetch project data", e);
-            }
+            } catch { /* ignore */ }
         }
-        fetchProject();
-    }, [courseId, user]);
+        loadExistingIteration();
+    }, [project]);
 
     const handleAnalyzeCycle = async () => {
-        if (!backendIterationId) return;
+        if (!formData.hypothesis && !formData.learnings) return;
         setGradingLoading(true);
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/ai/grade-iteration/${backendIterationId}`, { method: 'POST' });
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/ai/grade`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    phase: 'iterate',
+                    submission: {
+                        hypothesis: formData.hypothesis,
+                        build_description: formData.code_snapshot || formData.prototype_url,
+                        learnings: formData.learnings,
+                        next_steps: formData.next_hypothesis,
+                        cycle_number: currentIteration + 1,
+                    }
+                })
+            });
             if (res.ok) {
                 const feedback = await res.json();
                 setAiFeedback(feedback);
             }
         } catch (e) {
-            console.error("Grading failed", e);
+            console.error('Grading failed', e);
         } finally {
             setGradingLoading(false);
         }
@@ -96,31 +102,43 @@ export default function IteratePage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setError(null);
 
+        if (!project) { setError('Project not initialised. Please refresh.'); setLoading(false); return; }
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/projects/${courseId}/iteration`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/iris/iteration?project_id=${project.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    iteration_number: currentIteration + 1,
-                    ...formData,
+                    cycle_number: currentIteration + 1,
+                    hypothesis: formData.hypothesis,
+                    build_description: formData.code_snapshot || formData.prototype_url || '',
+                    measurement_data: formData.prototype_url,
+                    learnings: formData.learnings,
+                    next_steps: formData.next_hypothesis,
                     user_id: user?.id
                 })
             });
 
-            if (response.ok) {
-                const savedIteration = await response.json();
-                if (savedIteration && savedIteration.id) {
-                    setBackendIterationId(savedIteration.id);
-                }
-                // Mark current iteration complete
-                setIterations(prev => prev.map((it, i) =>
-                    i === currentIteration ? { ...it, hypothesis: formData.hypothesis, learnings: formData.learnings, completed: true } : it
-                ));
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                setError(data.detail || `Server error (${response.status}). Please try again.`);
+                return;
+            }
 
-                if (formData.next_hypothesis) {
-                    // Add new iteration
-                    setIterations(prev => [...prev, {
+            const savedIteration = await response.json();
+            if (savedIteration && savedIteration.id) {
+                setBackendIterationId(savedIteration.id);
+            }
+
+            // Mark current iteration complete
+            setIterations(prev => prev.map((it, i) =>
+                i === currentIteration ? { ...it, hypothesis: formData.hypothesis, learnings: formData.learnings, completed: true } : it
+            ));
+
+            if (formData.next_hypothesis) {
+                // Add new iteration
+                setIterations(prev => [...prev, {
                         number: prev.length + 1,
                         hypothesis: formData.next_hypothesis,
                         learnings: '',
@@ -137,13 +155,20 @@ export default function IteratePage() {
                 } else {
                     setSubmitted(true);
                 }
-            }
         } catch (error) {
-            console.error('Failed to submit iteration:', error);
+            setError('Network error — please check your connection and try again.');
         } finally {
             setLoading(false);
         }
     };
+
+    if (checking || projectLoading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
 
     if (submitted) {
         return (
@@ -243,6 +268,11 @@ export default function IteratePage() {
                                 </div>
                             )}
 
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+                                    <p className="text-sm font-bold text-red-700">⚠ {error}</p>
+                                </div>
+                            )}
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 {/* Hypothesis */}
                                 <div>

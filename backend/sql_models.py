@@ -1,23 +1,44 @@
+import os
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Float, Text, JSON, ARRAY
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from database import Base
 from datetime import datetime
-from pgvector.sqlalchemy import Vector
+
+_DB_URL = os.getenv("DATABASE_URL", "sqlite")
+_USE_VECTOR = "postgresql" in _DB_URL or "postgres" in _DB_URL
+if _USE_VECTOR:
+    from pgvector.sqlalchemy import Vector
+    _EmbeddingCol = lambda: Column(Vector(1536), nullable=True)
+else:
+    _EmbeddingCol = lambda: Column(JSON, nullable=True)
 
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
     full_name = Column(String)
-    role = Column(String)  # student, instructor, admin, institution
+    name = Column(String, nullable=True)          # alias used by seed script & beta funnel
+    role = Column(String)  # student, instructor, admin, institution_admin
     password_hash = Column(String, nullable=True)
-    supabase_id = Column(String, unique=True, nullable=True, index=True)  # Link to Supabase Auth
-    career_pathway_id = Column(String, nullable=True)  # ID from careerData.ts (e.g., 'ai-ml-engineer')
-    
+    supabase_id = Column(String, unique=True, nullable=True, index=True)
+    career_pathway_id = Column(String, nullable=True)
+
     # Instructor-specific fields
-    institution_id = Column(Integer, ForeignKey("institutions.id"), nullable=True)  # NULL = individual instructor
+    institution_id = Column(Integer, ForeignKey("institutions.id"), nullable=True)
     instructor_type = Column(String, nullable=True)  # 'institutional' or 'individual'
-    
+
+    # Beta funnel fields
+    onboarding_completed = Column(Boolean, default=False)
+    onboarding_prepay_completed = Column(Boolean, default=False)
+    onboarding_postpay_completed = Column(Boolean, default=False)
+    registration_status = Column(String, default="registered")  # lead, registered, verified
+    onboarding_phase = Column(String, default="none")  # none, prepay_complete, postpay_in_progress, postpay_complete
+    funnel_status = Column(String, default="registered")  # lead, registered, payment_pending, paid, active, at_risk, completed
+    bio = Column(Text, nullable=True)
+    linkedin_url = Column(String, nullable=True)
+    github_url = Column(String, nullable=True)
+    learning_goals = Column(JSON, nullable=True)   # list of goal strings
+
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -41,6 +62,12 @@ class Institution(Base):
     country = Column(String)
     website_url = Column(String, nullable=True)
     is_featured = Column(Boolean, default=False)
+    # BR-003: White-label theming
+    primary_color = Column(String, nullable=True)   # hex e.g. #064e3b
+    accent_color = Column(String, nullable=True)    # hex e.g. #10b981
+    favicon_url = Column(String, nullable=True)
+    custom_logo_url = Column(String, nullable=True)
+    platform_name = Column(String, nullable=True)   # override "VOKASI"
     
     courses = relationship("Course", back_populates="institution")
 
@@ -258,9 +285,17 @@ class Enrollment(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     course_id = Column(Integer, ForeignKey("courses.id"))
-    status = Column(String, default="active")
+    status = Column(String, default="active")  # active, dropped, completed
     enrolled_at = Column(DateTime, default=datetime.utcnow)
-    
+    # Beta funnel fields
+    cohort_id = Column(Integer, ForeignKey("beta_cohorts.id"), nullable=True)
+    payment_status = Column(String, nullable=True)  # pending, paid, scholarship
+    payment_reference = Column(String, nullable=True)  # Midtrans order_id
+    amount_usd = Column(Float, nullable=True)          # locked-in tier price
+    payment_attempt_status = Column(String, default="initiated")  # initiated, pending, paid, failed, expired
+    payment_expires_at = Column(DateTime, nullable=True)
+    payment_confirmed_at = Column(DateTime, nullable=True)
+
     user = relationship("User", back_populates="enrollments")
     course = relationship("Course", back_populates="enrollments")
 
@@ -308,7 +343,7 @@ class KnowledgeNode(Base):
     content = Column(Text, nullable=True)
     node_type = Column(String, default="concept") # concept, note, resource, project_artifact
     source_id = Column(String, nullable=True)
-    embedding = Column(JSON, nullable=True)
+    embedding = _EmbeddingCol()
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
@@ -347,6 +382,176 @@ class CodeSnapshot(Base):
     file_name = Column(String, nullable=True)
     
     project = relationship("CDIOProject", back_populates="snapshots")
+
+
+class LessonProgress(Base):
+    """Tracks which modules a student has completed within a course"""
+    __tablename__ = "lesson_progress"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    module_id = Column(Integer, ForeignKey("course_modules.id"), nullable=False)
+    completed = Column(Boolean, default=False)
+    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+class PuckBlockProgress(Base):
+    """LE-002: Per-block completion for Puck-generated course content"""
+    __tablename__ = "puck_block_progress"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    block_id = Column(String, nullable=False)
+    status = Column(String, default="completed")
+    completed_at = Column(DateTime, nullable=True, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ReflectionEntry(Base):
+    """LE-007: Student reflection journal entry with AI feedback"""
+    __tablename__ = "reflection_entries"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    block_id = Column(String, nullable=False)
+    text = Column(String, nullable=False)
+    word_count = Column(Integer, default=0)
+    ai_feedback = Column(String, nullable=True)
+    submitted_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class CourseCertificate(Base):
+    """LE-006: Verifiable course completion certificate"""
+    __tablename__ = "course_certificates"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    capstone_id = Column(Integer, ForeignKey("capstone_submissions.id"), nullable=True)
+    cert_code = Column(String, unique=True, nullable=False, index=True)
+    issued_at = Column(DateTime, default=datetime.utcnow)
+    student_name = Column(String, nullable=True)
+    course_title = Column(String, nullable=True)
+
+
+class DiscussionPost(Base):
+    """LE-008: Live forum post for DiscussionSeed blocks"""
+    __tablename__ = "discussion_posts"
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    block_id = Column(String, nullable=False, index=True)
+    parent_id = Column(Integer, ForeignKey("discussion_posts.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    author_name = Column(String, nullable=True)
+    body = Column(Text, nullable=False)
+    upvotes = Column(Integer, default=0)
+    upvoters = Column(JSON, default=list)  # list of user_ids who upvoted
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+    replies = relationship(
+        "DiscussionPost",
+        backref=backref("parent", remote_side=[id]),
+        foreign_keys=[parent_id],
+    )
+
+
+# ── Beta Funnel Models ──────────────────────────────────────────────────────
+
+class BetaCohort(Base):
+    """Beta launch cohort with tiered pricing and seat cap."""
+    __tablename__ = "beta_cohorts"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)           # e.g. "Beta 2026"
+    slug = Column(String, unique=True, nullable=False, index=True)  # e.g. "beta-2026"
+    description = Column(Text, nullable=True)
+    seat_cap = Column(Integer, default=1000)
+    seats_sold = Column(Integer, default=0)         # incremented atomically on payment confirm
+    is_active = Column(Boolean, default=True)
+    # Tiered pricing: list of {"max_seat": N, "price_usd": X}
+    pricing_tiers = Column(JSON, default=list)      # [{max_seat:100,price_usd:1}, ...]
+    # Bundled course IDs (NULL = learner picks)
+    fixed_course_ids = Column(JSON, nullable=True)  # [course_id, ...] or null
+    midtrans_merchant_id = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+    enrollments = relationship("Enrollment", backref="cohort")
+
+
+class PaymentEvent(Base):
+    """Audit/event stream for payment lifecycle and reconciliation."""
+    __tablename__ = "payment_events"
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(String, index=True, nullable=False)
+    cohort_slug = Column(String, nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    event_type = Column(String, nullable=False)  # initiated, webhook_paid, webhook_pending, expired, failed, reconciled
+    provider = Column(String, default="midtrans")
+    payload = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class EmailDeliveryLog(Base):
+    """Email delivery audit for observability and retry outcomes."""
+    __tablename__ = "email_delivery_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    template_key = Column(String, nullable=False, index=True)
+    to_email = Column(String, nullable=False, index=True)
+    status = Column(String, nullable=False)  # sent, failed
+    attempts = Column(Integer, default=1)
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class CapstoneSubmission(Base):
+    """Beta funnel: simplified capstone (no full IRIS cycle)."""
+    __tablename__ = "capstone_submissions"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    cohort_id = Column(Integer, ForeignKey("beta_cohorts.id"), nullable=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    artifact_url = Column(String, nullable=True)    # deployed URL
+    github_url = Column(String, nullable=True)
+    additional_notes = Column(Text, nullable=True)
+    # AI pre-grade
+    ai_score = Column(Integer, nullable=True)       # 0-100
+    ai_feedback = Column(Text, nullable=True)
+    ai_graded_at = Column(DateTime, nullable=True)
+    # Instructor review
+    status = Column(String, default="pending")      # pending, ai_graded, approved, rejected, revision_requested
+    instructor_score = Column(Integer, nullable=True)
+    instructor_feedback = Column(Text, nullable=True)
+    reviewed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    submitted_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AlumniProfile(Base):
+    """Post-graduation public profile for beta alumni network."""
+    __tablename__ = "alumni_profiles"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    cohort_id = Column(Integer, ForeignKey("beta_cohorts.id"), nullable=True)
+    display_name = Column(String, nullable=False)
+    headline = Column(String, nullable=True)        # e.g. "Web Developer at Tokopedia"
+    avatar_url = Column(String, nullable=True)
+    bio = Column(Text, nullable=True)
+    linkedin_url = Column(String, nullable=True)
+    github_url = Column(String, nullable=True)
+    portfolio_url = Column(String, nullable=True)
+    skills = Column(JSON, default=list)             # ["Python", "FastAPI", ...]
+    capstone_title = Column(String, nullable=True)
+    capstone_url = Column(String, nullable=True)
+    cert_code = Column(String, nullable=True)       # links to CourseCertificate
+    is_visible = Column(Boolean, default=True)      # learner can hide profile
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", backref="alumni_profile")
 
 
 class LearningStreak(Base):

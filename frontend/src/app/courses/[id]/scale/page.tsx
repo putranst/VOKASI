@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import IRISStepper from '@/components/ui/IRISStepper';
 import { useAuth } from '@/lib/AuthContext';
+import { useEnrollmentGuard } from '@/hooks/useEnrollmentGuard';
+import { useIrisProject } from '@/hooks/useIrisProject';
 import { EnhancedSocraticTutor } from '@/components/EnhancedSocraticTutor';
 import { Rocket, Target, Users, BookOpen, Send, CheckCircle, Award, ExternalLink } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -12,8 +14,11 @@ export default function ScalePage() {
     const params = useParams();
     const courseId = Number(params.id);
     const { user } = useAuth();
+    const { checking } = useEnrollmentGuard(courseId);
+    const { project, loading: projectLoading } = useIrisProject(courseId);
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Form Data
     const [formData, setFormData] = useState({
@@ -50,28 +55,46 @@ export default function ScalePage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setError(null);
 
+        if (!project) { setError('Project not initialised. Please refresh.'); setLoading(false); return; }
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/projects/${courseId}/scale?user_id=${user?.id}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/iris/scale?project_id=${project.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    ...formData,
-                    impact_metrics: { summary: formData.impact_metrics }, // Wrap for JSON field
-                    sfia_evidence: { evidence: formData.sfia_evidence }
+                    deployment_url: formData.deployment_url,
+                    handoff_documentation: formData.institutional_handoff,
+                    institution_partner: formData.deployment_platform,
+                    adoption_metrics: formData.impact_metrics,
+                    sfia_achieved_level: 3,
+                    ready_for_credential: true,
+                    stakeholder_training: formData.stakeholder_training,
+                    sfia_evidence: formData.sfia_evidence
                 })
             });
 
             if (response.ok) {
                 setSubmitted(true);
                 triggerConfetti();
+            } else {
+                const data = await response.json().catch(() => ({}));
+                setError(data.detail || `Server error (${response.status}). Please try again.`);
             }
-        } catch (error) {
-            console.error('Failed to submit scale artifact:', error);
+        } catch (err) {
+            setError('Network error — please check your connection and try again.');
         } finally {
             setLoading(false);
         }
     };
+
+    if (checking || projectLoading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
 
     if (submitted) {
         return (
@@ -137,6 +160,11 @@ export default function ScalePage() {
                                 </div>
                             </div>
 
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+                                    <p className="text-sm font-bold text-red-700">⚠ {error}</p>
+                                </div>
+                            )}
                             <form onSubmit={handleSubmit} className="space-y-8">
                                 {/* Deployment Info */}
                                 <section>

@@ -12,7 +12,7 @@ export default function EnterprisePage() {
                 <section className="bg-[#1a1a1a] text-white py-24">
                     <div className="max-w-[70rem] mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
                         <div>
-                            <h1 className="text-5xl font-black mb-6">TSEA-X for Enterprise</h1>
+                            <h1 className="text-5xl font-black mb-6">VOKASI for Enterprise</h1>
                             <p className="text-xl text-gray-400 mb-8 leading-relaxed">
                                 Upskill your workforce with the same rigorous curriculum used by top Asian governments and universities.
                             </p>

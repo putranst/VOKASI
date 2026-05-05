@@ -56,7 +56,7 @@ export default function VerifyCredentialPage() {
                         </div>
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">Verify a Credential</h2>
                         <p className="text-gray-600">
-                            Enter the Token ID to verify the authenticity of a TSEA-X credential
+                            Enter the Token ID to verify the authenticity of a VOKASI credential
                         </p>
                     </div>
 
@@ -66,7 +66,7 @@ export default function VerifyCredentialPage() {
                                 type="text"
                                 value={tokenId}
                                 onChange={(e) => setTokenId(e.target.value)}
-                                placeholder="Enter Token ID (e.g., T6C-000001)"
+                                placeholder="Enter Token ID (e.g., VOK-000001)"
                                 className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#663399] focus:border-transparent text-lg"
                                 disabled={loading}
                             />
@@ -217,11 +217,11 @@ export default function VerifyCredentialPage() {
                 <div className="mt-12 bg-white rounded-xl p-6 border border-gray-200">
                     <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
                         <Shield className="w-5 h-5 text-[#663399]" />
-                        About TSEA-X Credentials
+                        About VOKASI Credentials
                     </h3>
                     <div className="space-y-3 text-sm text-gray-700">
                         <p>
-                            TSEA-X credentials are issued as <strong>Soulbound Tokens (SBTs)</strong> on the Polygon
+                            VOKASI credentials are issued as <strong>Soulbound Tokens (SBTs)</strong> on the Polygon
                             blockchain. These are non-transferable, blockchain-verified certificates that provide
                             immutable proof of skill acquisition and course completion.
                         </p>
@@ -231,7 +231,7 @@ export default function VerifyCredentialPage() {
                         </p>
                         <p>
                             Employers, institutions, and other third parties can use this portal to instantly verify
-                            the legitimacy of any TSEA-X credential.
+                            the legitimacy of any VOKASI credential.
                         </p>
                     </div>
                 </div>

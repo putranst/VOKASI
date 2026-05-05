@@ -104,9 +104,9 @@ export default function InstitutionDashboardPage() {
     const getMockData = (): InstitutionData => ({
         institution: {
             id: 1,
-            name: 'United in Diversity Foundation',
-            short_name: 'UID',
-            logo_url: 'https://ui-avatars.com/api/?name=UID&background=0066cc&color=fff&size=128',
+            name: 'SMK Negeri 1 Jakarta',
+            short_name: 'SMKN1JKT',
+            logo_url: 'https://ui-avatars.com/api/?name=SMK+1&background=064e3b&color=fff&size=128',
             type: 'nonprofit'
         },
         stats: {
@@ -253,7 +253,7 @@ export default function InstitutionDashboardPage() {
                                         Welcome back! 👋
                                     </h2>
                                     <p className="text-gray-600">
-                                        Here's an overview of your institution's performance on T6.
+                                        Here's an overview of your institution's performance on VOKASI.
                                     </p>
                                 </div>
 
@@ -402,9 +402,13 @@ export default function InstitutionDashboardPage() {
                                                 <Plus size={18} />
                                                 Create Course
                                             </Link>
-                                            <button className="bg-white/10 text-white px-6 py-3 rounded-xl font-bold hover:bg-white/20 transition-colors border border-white/20">
+                                            <Link
+                                                href="/institution-dashboard/analytics"
+                                                className="bg-white/10 text-white px-6 py-3 rounded-xl font-bold hover:bg-white/20 transition-colors border border-white/20 flex items-center gap-2"
+                                            >
+                                                <BarChart3 size={16} />
                                                 View Analytics
-                                            </button>
+                                            </Link>
                                         </div>
                                     </div>
                                 </div>

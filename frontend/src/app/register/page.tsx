@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+export const dynamic = 'force-dynamic';
+
+import React, { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/lib/AuthContext';
@@ -24,20 +26,29 @@ const GitHubIcon = () => (
     </svg>
 );
 
-export default function RegisterPage() {
+function RegisterContent() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [role, setRole] = useState<'student' | 'instructor'>('student');
+    // Instructor registration disabled for now - default to student
+    const role = 'student';
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [agreedToTerms, setAgreedToTerms] = useState(false);
 
+    // Check if Supabase is configured
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const isSupabaseConfigured = supabaseUrl &&
+        supabaseUrl.includes('supabase.co') &&
+        !supabaseUrl.includes('placeholder');
+
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { register, loginWithProvider } = useAuth();
+    const cohortSlug = searchParams.get('cohort');
 
     // Password strength checker
     const getPasswordStrength = (pwd: string) => {
@@ -80,9 +91,16 @@ export default function RegisterPage() {
 
             if (result.success) {
                 setSuccess(true);
+                if (cohortSlug) {
+                    sessionStorage.setItem('cohort_slug', cohortSlug);
+                }
                 // Redirect after showing success message
                 setTimeout(() => {
-                    router.push('/login?registered=true');
+                    if (cohortSlug) {
+                        router.push(`/login?registered=true&next=/onboarding&cohort=${encodeURIComponent(cohortSlug)}`);
+                    } else {
+                        router.push('/login?registered=true');
+                    }
                 }, 2000);
             } else {
                 setError(result.error || 'Registration failed');
@@ -96,7 +114,7 @@ export default function RegisterPage() {
 
     const handleOAuthLogin = async (provider: 'google' | 'github') => {
         try {
-            await loginWithProvider(provider);
+            await loginWithProvider(provider, role);
         } catch (err: any) {
             setError(err.message || `Failed to login with ${provider}`);
         }
@@ -130,25 +148,36 @@ export default function RegisterPage() {
                             <Logo />
                         </div>
                         <h1 className="text-2xl font-black text-gray-900 mb-1">Create Account</h1>
-                        <p className="text-sm text-gray-600">Join T6 and start your learning journey</p>
+                        <p className="text-sm text-gray-600">Join VOKASI and start your learning journey</p>
                     </div>
 
-                    {/* OAuth Buttons */}
+                    {/* OAuth Buttons - only enabled when Supabase configured */}
                     <div className="space-y-3 mb-6">
-                        <button
-                            onClick={() => handleOAuthLogin('google')}
-                            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                            <GoogleIcon />
-                            <span className="text-sm font-medium text-gray-700">Continue with Google</span>
-                        </button>
-                        <button
-                            onClick={() => handleOAuthLogin('github')}
-                            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                            <GitHubIcon />
-                            <span className="text-sm font-medium text-gray-700">Continue with GitHub</span>
-                        </button>
+                        {isSupabaseConfigured ? (
+                            <>
+                                <button
+                                    onClick={() => handleOAuthLogin('google')}
+                                    className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                    <GoogleIcon />
+                                    <span className="text-sm font-medium text-gray-700">Continue with Google</span>
+                                </button>
+                                <button
+                                    onClick={() => handleOAuthLogin('github')}
+                                    className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                    <GitHubIcon />
+                                    <span className="text-sm font-medium text-gray-700">Continue with GitHub</span>
+                                </button>
+                            </>
+                        ) : (
+                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+                                <p className="text-xs text-amber-700">
+                                    SSO (Google/GitHub) temporarily unavailable.<br/>
+                                    Please register with email below.
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="relative mb-6">
@@ -203,29 +232,10 @@ export default function RegisterPage() {
                         {/* Role Selection */}
                         <div>
                             <label className="block text-xs font-bold text-gray-700 mb-1.5">I am a...</label>
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setRole('student')}
-                                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${role === 'student'
-                                            ? 'border-primary bg-primary/5 text-primary'
-                                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                                        }`}
-                                >
-                                    <GraduationCap size={18} />
-                                    <span className="text-sm font-medium">Student</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setRole('instructor')}
-                                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${role === 'instructor'
-                                            ? 'border-primary bg-primary/5 text-primary'
-                                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                                        }`}
-                                >
-                                    <Briefcase size={18} />
-                                    <span className="text-sm font-medium">Instructor</span>
-                                </button>
+                            {/* Instructor registration disabled - Student only */}
+                            <div className="p-4 rounded-xl border-2 border-emerald-600 bg-emerald-50 text-emerald-700 flex items-center justify-center gap-2">
+                                <GraduationCap className="w-5 h-5" />
+                                <span className="font-medium">Student Registration</span>
                             </div>
                         </div>
 
@@ -350,5 +360,18 @@ export default function RegisterPage() {
                 </p>
             </div>
         </div>
+    );
+}
+
+// Wrapper with Suspense for useSearchParams
+export default function RegisterPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gradient-to-br from-[#1a1a1a] via-primary/20 to-accent/20 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+            </div>
+        }>
+            <RegisterContent />
+        </Suspense>
     );
 }

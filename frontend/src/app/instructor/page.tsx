@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
     LayoutDashboard, CheckCircle, Clock, AlertCircle, Search,
     Filter, ChevronRight, BookOpen, Code, X, Sparkles, Save,
-    Users, TrendingUp, LogOut, Award, FileText, Plus
+    Users, TrendingUp, LogOut, Award, FileText, Plus, BarChart2, Pencil, GraduationCap
 } from 'lucide-react';
 import { CourseModal, CourseFormData } from '@/components/instructor/CourseModal';
 import SyllabusManager from '@/components/instructor/SyllabusManager';
@@ -24,6 +24,21 @@ interface GradingQueueItem {
     course_title: string;
     submitted_at: string;
     status: 'pending' | 'graded' | 'needs_review';
+}
+
+interface CapstoneSubmission {
+    id: number;
+    user_id: number;
+    title: string;
+    description: string;
+    artifact_url?: string;
+    github_url?: string;
+    status: 'pending' | 'ai_graded' | 'approved' | 'rejected' | 'revision_requested';
+    ai_score?: number;
+    ai_feedback?: string;
+    instructor_score?: number;
+    instructor_feedback?: string;
+    submitted_at: string;
 }
 
 interface GradingResult {
@@ -161,12 +176,14 @@ const GradingQueueTable = ({ items, loading, onGrade, limit }: { items: GradingQ
 export default function InstructorDashboard() {
     const { user, logout } = useAuth();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'overview' | 'courses' | 'syllabus' | 'students' | 'grading'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'courses' | 'syllabus' | 'students' | 'grading' | 'capstone'>('overview');
 
     const [loading, setLoading] = useState(true);
     const [queue, setQueue] = useState<GradingQueueItem[]>([]);
     const [courses, setCourses] = useState<Course[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
+    const [capstoneQueue, setCapstoneQueue] = useState<CapstoneSubmission[]>([]);
+    const [capstoneLoading, setCapstoneLoading] = useState(false);
     const [stats, setStats] = useState<InstructorStats>({
         totalStudents: 0,
         pendingReviews: 0,
@@ -192,11 +209,82 @@ export default function InstructorDashboard() {
     const [filter, setFilter] = useState('all');
     const [search, setSearch] = useState('');
 
+    // AM-006: Puck course list
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+    const [puckCourses, setPuckCourses] = useState<Array<{
+        course_id: number;
+        title: string;
+        approval_status: string;
+        total_blocks: number;
+        unique_learners: number;
+        avg_completion_pct: number;
+        certificates_issued: number;
+        reflections_submitted: number;
+    }>>([]);
+
+    useEffect(() => {
+        fetch(`${API_BASE}/api/v1/puck/courses`)
+            .then(r => r.ok ? r.json() : [])
+            .then(setPuckCourses)
+            .catch(() => {});
+    }, [API_BASE]);
+
     useEffect(() => {
         if (user) {
             fetchDashboardData();
+            fetchCapstoneQueue();
         }
     }, [user]);
+
+    const fetchCapstoneQueue = async () => {
+        setCapstoneLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE}/api/v1/instructor/capstone`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            });
+            if (!res.ok) throw new Error('Failed to fetch capstone submissions');
+            const data = await res.json();
+            setCapstoneQueue(Array.isArray(data) ? data : []);
+        } catch (e) {
+            console.error('Failed to fetch capstone queue:', e);
+            setCapstoneQueue([]);
+        } finally {
+            setCapstoneLoading(false);
+        }
+    };
+
+    const reviewCapstone = async (submissionId: number, decision: 'approved' | 'rejected' | 'revision_requested') => {
+        try {
+            const token = localStorage.getItem('token');
+            const reviewerId = Number(user?.id || 0);
+            const res = await fetch(`${API_BASE}/api/v1/capstone/${submissionId}/review`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({
+                    decision,
+                    reviewer_id: reviewerId,
+                    instructor_feedback:
+                        decision === 'approved'
+                            ? 'Good work. Capstone approved.'
+                            : decision === 'revision_requested'
+                                ? 'Please improve your documentation and resubmit.'
+                                : 'Capstone does not meet minimum criteria yet.',
+                }),
+            });
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(err || 'Failed to review capstone');
+            }
+            await fetchCapstoneQueue();
+        } catch (e) {
+            console.error(e);
+            alert('Failed to update capstone status. Please try again.');
+        }
+    };
 
     const fetchDashboardData = async () => {
         if (!user?.email) return;
@@ -210,16 +298,24 @@ export default function InstructorDashboard() {
                 fetch(`${BACKEND_URL}/api/v1/instructor/students?user_email=${user.email}`)
             ]);
 
-            let queueData = [];
-            let coursesData = [];
-            let studentsData = [];
+            let queueData: GradingQueueItem[] = [];
+            let coursesData: Course[] = [];
+            let studentsData: Student[] = [];
 
             if (queueRes.ok) {
-                const data = await queueRes.json();
-                queueData = data.map((item: any) => ({
+                const data: Array<{ [key: string]: unknown }> = await queueRes.json();
+                queueData = data.map((item) => ({
+                    id: Number(item.id),
+                    project_id: Number(item.project_id),
+                    student_name: String(item.student_name ?? ''),
+                    project_title: String(item.project_title ?? ''),
+                    course_title: String(item.course_title ?? ''),
+                    submitted_at: String(item.submitted_at ?? new Date().toISOString()),
                     ...item,
-                    status: item.status.toLowerCase(),
-                    submission_type: item.submission_type === 'Blueprint' ? 'design' : item.submission_type.toLowerCase()
+                    status: String(item.status ?? 'pending').toLowerCase() as GradingQueueItem['status'],
+                    submission_type: (String(item.submission_type ?? '').toLowerCase() === 'blueprint'
+                        ? 'design'
+                        : String(item.submission_type ?? 'implementation').toLowerCase()) as GradingQueueItem['submission_type']
                 }));
                 setQueue(queueData);
             }
@@ -236,7 +332,7 @@ export default function InstructorDashboard() {
 
             setStats({
                 totalStudents: studentsData.length,
-                pendingReviews: queueData.filter((i: any) => i.status === 'pending').length,
+                pendingReviews: queueData.filter((i) => i.status === 'pending').length,
                 averageRating: 4.8, // Mock for now
                 activeCourses: coursesData.length
             });
@@ -315,7 +411,7 @@ export default function InstructorDashboard() {
                     body: JSON.stringify({
                         ...courseData,
                         instructor: user?.name || 'Instructor',
-                        org: 'TSEA',
+                        org: 'VOKASI',
                         institution_id: 1
                     })
                 });
@@ -373,6 +469,7 @@ export default function InstructorDashboard() {
                         <NavItem icon={BookOpen} label="My Courses" active={activeTab === 'courses'} onClick={() => setActiveTab('courses')} />
                         <NavItem icon={Users} label="Students" active={activeTab === 'students'} onClick={() => setActiveTab('students')} />
                         <NavItem icon={CheckCircle} label="Grading Queue" active={activeTab === 'grading'} onClick={() => setActiveTab('grading')} badge={stats.pendingReviews > 0 ? stats.pendingReviews : undefined} />
+                        <NavItem icon={GraduationCap} label="Capstone Review" active={activeTab === 'capstone'} onClick={() => setActiveTab('capstone')} badge={capstoneQueue.filter(c => c.status === 'ai_graded' || c.status === 'pending').length || undefined} />
                         <NavItem icon={FileText} label="Syllabus" active={activeTab === 'syllabus'} onClick={() => setActiveTab('syllabus')} />
                     </nav>
 
@@ -392,7 +489,8 @@ export default function InstructorDashboard() {
                             <h1 className="text-xl font-bold text-gray-900 truncate pr-2">
                                 {activeTab === 'overview' ? 'Instructor Dashboard' :
                                     activeTab === 'courses' ? 'My Courses' :
-                                        activeTab === 'students' ? 'Student Management' : 'Grading Queue'}
+                                        activeTab === 'students' ? 'Student Management' :
+                                            activeTab === 'capstone' ? 'Capstone Review' : 'Grading Queue'}
                             </h1>
                             <div className="flex items-center gap-4 shrink-0">
                                 <div className="text-right hidden sm:block">
@@ -457,6 +555,86 @@ export default function InstructorDashboard() {
                                     </div>
                                 </div>
 
+                                {/* AM-006: VOKASI Courses (Puck) */}
+                                {puckCourses.length > 0 && (
+                                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                                            <div className="flex items-center gap-2">
+                                                <LayoutDashboard size={16} className="text-emerald-600" />
+                                                <h3 className="text-base font-bold text-gray-900">Kursus VOKASI</h3>
+                                                <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">{puckCourses.length}</span>
+                                            </div>
+                                            <button
+                                                onClick={() => router.push('/instructor/create-course')}
+                                                className="flex items-center gap-1.5 rounded-xl bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-700"
+                                            >
+                                                <Plus size={12} /> New Course
+                                            </button>
+                                        </div>
+                                        <div className="divide-y divide-gray-100">
+                                            {puckCourses.map((c) => (
+                                                <div key={c.course_id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
+                                                    {/* Status dot */}
+                                                    <div className={`h-2 w-2 shrink-0 rounded-full ${
+                                                        c.approval_status === 'published' ? 'bg-emerald-500' :
+                                                        c.approval_status === 'approved' ? 'bg-blue-500' :
+                                                        'bg-zinc-300'
+                                                    }`} />
+                                                    {/* Title + stats */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-semibold text-gray-900 truncate">{c.title}</p>
+                                                        <div className="mt-1.5 flex items-center gap-3">
+                                                            {/* progress bar */}
+                                                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                                                <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                                                                    <div
+                                                                        className={`h-full rounded-full ${
+                                                                            c.avg_completion_pct >= 80 ? 'bg-emerald-500' :
+                                                                            c.avg_completion_pct >= 40 ? 'bg-blue-400' : 'bg-zinc-300'
+                                                                        }`}
+                                                                        style={{ width: `${c.avg_completion_pct}%` }}
+                                                                    />
+                                                                </div>
+                                                                <span className="shrink-0 text-[11px] text-gray-400">{c.avg_completion_pct}%</span>
+                                                            </div>
+                                                            <span className="shrink-0 flex items-center gap-1 text-[11px] text-gray-400">
+                                                                <Users size={10} />{c.unique_learners}
+                                                            </span>
+                                                            <span className="shrink-0 flex items-center gap-1 text-[11px] text-gray-400">
+                                                                <Award size={10} />{c.certificates_issued}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    {/* Actions */}
+                                                    <div className="flex items-center gap-1.5 shrink-0">
+                                                        <button
+                                                            onClick={() => router.push(`/instructor/builder/${c.course_id}`)}
+                                                            className="flex items-center gap-1 rounded-lg border border-zinc-200 px-2.5 py-1 text-[11px] font-medium text-zinc-600 hover:bg-zinc-50"
+                                                            title="Open Builder"
+                                                        >
+                                                            <Pencil size={10} /> Builder
+                                                        </button>
+                                                        <button
+                                                            onClick={() => router.push(`/instructor/builder/${c.course_id}?analytics=1`)}
+                                                            className="flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-600 hover:bg-blue-100"
+                                                            title="Analytics"
+                                                        >
+                                                            <BarChart2 size={10} /> Analytics
+                                                        </button>
+                                                        <button
+                                                            onClick={() => window.open(`/courses/${c.course_id}/learn/puck`, '_blank')}
+                                                            className="flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-100"
+                                                            title="Student View"
+                                                        >
+                                                            <ChevronRight size={10} /> Preview
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Recent Submissions (Preview) */}
                                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 overflow-hidden">
                                     <div className="flex items-center justify-between mb-6">
@@ -479,7 +657,7 @@ export default function InstructorDashboard() {
                         )}
 
                         {activeTab === 'grading' && (
-                            <div className={activeTab === 'overview' ? 'mt-8' : ''}>
+                            <div>
                                 {/* Filters */}
                                 <div className="flex flex-col md:flex-row gap-4 mb-6">
                                     <div className="relative flex-1">
@@ -561,6 +739,13 @@ export default function InstructorDashboard() {
                                                 >
                                                     <LayoutDashboard size={14} />
                                                     Manage Content
+                                                </button>
+                                                <button
+                                                    onClick={() => router.push(`/instructor/builder/${course.id}`)}
+                                                    className="w-full mt-2 py-2 bg-gradient-to-r from-emerald-700 to-teal-700 text-white font-medium rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                                                >
+                                                    <LayoutDashboard size={14} />
+                                                    Visual Builder
                                                 </button>
                                             </div>
                                         </div>
@@ -665,6 +850,105 @@ export default function InstructorDashboard() {
                                             )}
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'capstone' && (
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-xl font-bold text-gray-900">Capstone Review Queue</h2>
+                                    <button
+                                        onClick={fetchCapstoneQueue}
+                                        className="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+                                    >
+                                        Refresh
+                                    </button>
+                                </div>
+
+                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left whitespace-nowrap">
+                                            <thead className="bg-gray-50 border-b border-gray-200">
+                                                <tr>
+                                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Submission</th>
+                                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">AI Score</th>
+                                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Submitted</th>
+                                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                                {capstoneLoading ? (
+                                                    <tr>
+                                                        <td colSpan={5} className="px-6 py-12 text-center text-gray-500">Loading capstone submissions...</td>
+                                                    </tr>
+                                                ) : capstoneQueue.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan={5} className="px-6 py-12 text-center text-gray-500">No capstone submissions yet.</td>
+                                                    </tr>
+                                                ) : (
+                                                    capstoneQueue.map((s) => (
+                                                        <tr key={s.id} className="hover:bg-gray-50 transition-colors align-top">
+                                                            <td className="px-6 py-4">
+                                                                <div className="max-w-xs">
+                                                                    <p className="font-medium text-gray-900 truncate">{s.title}</p>
+                                                                    <p className="text-xs text-gray-500 mt-1 line-clamp-2 whitespace-normal">{s.description}</p>
+                                                                    <div className="flex items-center gap-3 mt-2 text-xs">
+                                                                        {s.artifact_url && (
+                                                                            <a href={s.artifact_url} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline">Artifact</a>
+                                                                        )}
+                                                                        {s.github_url && (
+                                                                            <a href={s.github_url} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">GitHub</a>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-sm text-gray-700">
+                                                                {s.ai_score ?? '-'}
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                                                    s.status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
+                                                                    s.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                                                    s.status === 'revision_requested' ? 'bg-orange-100 text-orange-800' :
+                                                                    s.status === 'ai_graded' ? 'bg-blue-100 text-blue-800' :
+                                                                    'bg-yellow-100 text-yellow-800'
+                                                                }`}>
+                                                                    {s.status.replace('_', ' ')}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-sm text-gray-500">
+                                                                {new Date(s.submitted_at).toLocaleDateString()}
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    <button
+                                                                        onClick={() => reviewCapstone(s.id, 'approved')}
+                                                                        className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold hover:bg-emerald-100"
+                                                                    >
+                                                                        Approve
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => reviewCapstone(s.id, 'revision_requested')}
+                                                                        className="px-3 py-1.5 rounded-lg bg-orange-50 text-orange-700 text-xs font-semibold hover:bg-orange-100"
+                                                                    >
+                                                                        Request Revision
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => reviewCapstone(s.id, 'rejected')}
+                                                                        className="px-3 py-1.5 rounded-lg bg-red-50 text-red-700 text-xs font-semibold hover:bg-red-100"
+                                                                    >
+                                                                        Reject
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         )}

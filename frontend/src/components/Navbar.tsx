@@ -9,7 +9,7 @@ import {
     Building2, Briefcase, Landmark,
     FileText, HelpCircle, BookMarked,
     Users, Mail, ShieldCheck, Info,
-    MessageSquare, Calendar, Flame
+    MessageSquare, Calendar
 } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { NavDropdown } from '@/components/ui/NavDropdown';
@@ -45,7 +45,6 @@ export const Navbar = () => {
     const communityItems = [
         { label: 'Discussions', href: '/community', icon: <MessageSquare size={18} />, description: 'Join the conversation' },
         { label: 'Events', href: '/community', icon: <Calendar size={18} />, description: 'Meetups & Hackathons' },
-        { label: 'Ekspedisi AI', href: '/community', icon: <Flame size={18} />, description: 'National Leaderboard' },
     ];
 
     const partnersItems = [
@@ -175,7 +174,6 @@ export const Navbar = () => {
                             <div className="space-y-1">
                                 <Link href="/community" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Discussions</Link>
                                 <Link href="/community" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Events</Link>
-                                <Link href="/community" className="block py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium" onClick={() => setIsMenuOpen(false)}>Ekspedisi AI leaderboard</Link>
                             </div>
                         </div>
 

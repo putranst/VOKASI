@@ -12,53 +12,53 @@ export default function AboutPage() {
             <Navbar />
 
             {/* Hero */}
-            <section className="relative bg-gradient-to-br from-[#0f172a] via-[#1e3a5f] to-[#0f172a] text-white py-24 overflow-hidden">
+            <section className="relative bg-gradient-to-br from-[#022c22] via-[#064e3b] to-[#065f46] text-white py-24 overflow-hidden">
                 <div className="absolute inset-0">
-                    <div className="absolute top-20 left-20 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl" />
-                    <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+                    <div className="absolute top-20 left-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
+                    <div className="absolute bottom-20 right-20 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl" />
                 </div>
 
                 <div className="max-w-[70rem] mx-auto px-4 relative z-10">
                     <div className="text-center max-w-3xl mx-auto">
                         <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-bold mb-6">
-                            <Heart size={16} className="text-red-400" />
+                            <Heart size={16} className="text-emerald-400" />
                             OUR MISSION
                         </div>
                         <h1 className="text-5xl lg:text-6xl font-black mb-6 leading-tight">
-                            Tsinghua Southeast Asia
-                            <span className="block bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                                Center (TSEA)
+                            Pendidikan Vokasi
+                            <span className="block bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
+                                Berbasis AI untuk Indonesia
                             </span>
                         </h1>
-                        <p className="text-xl text-gray-300 leading-relaxed">
-                            A dynamic hub for research, collaboration, and knowledge exchange between China, Southeast Asia, and the world.
+                        <p className="text-xl text-emerald-100 leading-relaxed">
+                            VOKASI is Indonesia's sovereign AI-native vocational education platform — built for SMK, politeknik, and BLK institutions to create, deliver, and verify skills at scale.
                         </p>
                     </div>
                 </div>
             </section>
 
-            {/* About TSEA */}
+            {/* About VOKASI */}
             <section className="py-20 bg-white">
                 <div className="max-w-[70rem] mx-auto px-4">
                     <div className="grid md:grid-cols-2 gap-12 items-center">
                         <div>
-                            <h2 className="text-4xl font-black text-gray-900 mb-6">About TSEA</h2>
+                            <h2 className="text-4xl font-black text-gray-900 mb-6">About VOKASI</h2>
                             <div className="space-y-4 text-gray-600 leading-relaxed">
                                 <p>
-                                    <strong>Tsinghua Southeast Asia Center (TSEA)</strong> is a prestigious institution established to strengthen academic, cultural, and economic ties between China, Southeast Asia, and beyond.
+                                    <strong>VOKASI</strong> is an AI-native vocational education platform that unifies course creation, adaptive learning, and blockchain-verified credentialing under one sovereign, white-label system tailored for Indonesia.
                                 </p>
                                 <p>
-                                    The center was officially established in <strong>October 2018</strong> and its campus was inaugurated on <strong>November 16, 2022</strong>, in Bali, Indonesia, during the 17th Group of 20 (G20) Summit.
+                                    Built to serve <strong>SMK (Sekolah Menengah Kejuruan)</strong>, <strong>politeknik</strong>, and <strong>BLK (Balai Latihan Kerja)</strong> ecosystems, VOKASI lets instructors generate Kurikulum Merdeka-aligned courses in minutes using AI, then deliver them through an adaptive student experience.
                                 </p>
                                 <p>
-                                    TSEA operates from the <strong>Kura Kura Bali campus</strong>, developed in partnership with the <strong>United in Diversity (UID) Foundation</strong>. It is managed by Tsinghua University's School of Continuing Education.
+                                    Our platform aligns with <strong>UN SDG 4 (Quality Education)</strong> and Indonesia's national digital transformation agenda, empowering every learner — regardless of connectivity or geography — to access world-class vocational education.
                                 </p>
                             </div>
                         </div>
                         <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-3xl p-8 text-center">
-                            <div className="text-6xl font-black text-primary/30 mb-4">TSEA</div>
-                            <div className="text-lg font-bold text-gray-700">Est. 2018 • Bali, Indonesia</div>
-                            <div className="text-sm text-gray-500 mt-2">Part of Tsinghua University's global strategy</div>
+                            <div className="text-6xl font-black text-primary/30 mb-4">VOKASI</div>
+                            <div className="text-lg font-bold text-gray-700">Indonesia-First • AI-Native</div>
+                            <div className="text-sm text-gray-500 mt-2">Aligned with Kurikulum Merdeka & UN SDG 4</div>
                         </div>
                     </div>
                 </div>
@@ -69,30 +69,30 @@ export default function AboutPage() {
                 <div className="max-w-[70rem] mx-auto px-4">
                     <div className="grid md:grid-cols-2 gap-12">
                         <div className="bg-white p-10 rounded-3xl shadow-lg">
-                            <Target size={48} className="text-cyan-600 mb-6" />
+                            <Target size={48} className="text-emerald-600 mb-6" />
                             <h2 className="text-2xl font-black text-gray-900 mb-4">Our Mission</h2>
                             <p className="text-gray-600 leading-relaxed">
-                                To promote mutual understanding, cooperation, and sustainable growth. TSEA is committed to strengthening academic, cultural, and economic ties between China and Southeast Asia, partnering with global allies to contribute to humanity's sustainable future and the United Nations Sustainable Development Goals.
+                                To democratize high-quality vocational education across Indonesia by giving every instructor the power of AI course generation and every student a personalized, competency-tracked learning journey — verified by blockchain credentials that employers trust.
                             </p>
                         </div>
                         <div className="bg-white p-10 rounded-3xl shadow-lg">
-                            <Lightbulb size={48} className="text-purple-600 mb-6" />
+                            <Lightbulb size={48} className="text-teal-600 mb-6" />
                             <h2 className="text-2xl font-black text-gray-900 mb-4">Our Vision</h2>
                             <p className="text-gray-600 leading-relaxed">
-                                To build an innovative ecosystem platform for cooperation, innovation, co-creation, and sharing among academia, government, and the private sector. We address the demands of Industry 4.0 and advance the UN SDGs through talent development and cross-border exchanges.
+                                To become Indonesia's sovereign vocational education infrastructure — the platform that connects SMK graduates to industry, politeknik programs to global standards, and BLK instructors to AI-powered course creation tools, all without dependency on foreign platforms.
                             </p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* T6 Platform */}
+            {/* Platform pillars */}
             <section className="py-20 bg-white">
                 <div className="max-w-[70rem] mx-auto px-4">
                     <div className="text-center mb-12">
-                        <h2 className="text-4xl font-black text-gray-900 mb-4">The T6 Platform</h2>
+                        <h2 className="text-4xl font-black text-gray-900 mb-4">The VOKASI Platform</h2>
                         <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-                            T6 is TSEA's digital learning platform, combining world-class curriculum with AI-powered education
+                            Three integrated layers: AI course creation, adaptive student learning, and verifiable credentials.
                         </p>
                     </div>
 
@@ -100,22 +100,22 @@ export default function AboutPage() {
                         {[
                             {
                                 icon: Sparkles,
-                                title: 'AI-Powered Learning',
-                                description: 'Socratic AI tutor that guides learners through project-based education using the IRIS framework.',
+                                title: 'AI Course Generation',
+                                description: 'Instructors type a prompt in Bahasa Indonesia; VOKASI generates a full Kurikulum Merdeka-aligned module with quizzes, videos, and Socratic chat blocks in under 60 seconds.',
                                 color: 'text-yellow-600',
                                 bg: 'bg-yellow-50'
                             },
                             {
                                 icon: Award,
                                 title: 'Blockchain Credentials',
-                                description: 'Verifiable digital credentials that prove your skills and achievements to employers worldwide.',
+                                description: 'Soulbound Token (SBT) certificates are minted on completion — permanently verifiable, unforgeable, and shareable with Indonesian employers and BNSP.',
                                 color: 'text-purple-600',
                                 bg: 'bg-purple-50'
                             },
                             {
                                 icon: Globe,
-                                title: 'Global Impact',
-                                description: 'Education aligned with UN Sustainable Development Goals, creating positive change across Southeast Asia.',
+                                title: 'Offline-First Delivery',
+                                description: 'VOKASI caches course content locally for low-bandwidth regions across the Indonesian archipelago, syncing progress when connectivity returns.',
                                 color: 'text-blue-600',
                                 bg: 'bg-blue-50'
                             }
@@ -132,21 +132,25 @@ export default function AboutPage() {
                 </div>
             </section>
 
-            {/* Partners */}
+            {/* Ecosystem partners */}
             <section className="py-20 bg-gray-50">
                 <div className="max-w-[70rem] mx-auto px-4 text-center">
-                    <h2 className="text-3xl font-black text-gray-900 mb-4">Our Partners</h2>
+                    <h2 className="text-3xl font-black text-gray-900 mb-4">Ecosystem Partners</h2>
                     <p className="text-gray-600 mb-12 max-w-2xl mx-auto">
-                        TSEA is a joint initiative of Tsinghua University and the United in Diversity Foundation
+                        VOKASI integrates with Indonesia's national education and credentialing infrastructure
                     </p>
-                    <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
+                    <div className="grid md:grid-cols-3 gap-8 max-w-3xl mx-auto">
                         <div className="bg-white p-8 rounded-2xl shadow-lg">
-                            <div className="text-2xl font-black text-primary mb-2">Tsinghua University</div>
-                            <p className="text-sm text-gray-600">One of China's most prestigious universities, managing TSEA through its School of Continuing Education</p>
+                            <div className="text-2xl font-black text-primary mb-2">Kemendikbudristek</div>
+                            <p className="text-sm text-gray-600">Aligned with the Ministry of Education's Kurikulum Merdeka and Merdeka Belajar initiatives</p>
                         </div>
                         <div className="bg-white p-8 rounded-2xl shadow-lg">
-                            <div className="text-2xl font-black text-accent mb-2">UID Foundation</div>
-                            <p className="text-sm text-gray-600">United in Diversity Foundation provides the Kura Kura Bali campus and operational support</p>
+                            <div className="text-2xl font-black text-accent mb-2">BNSP</div>
+                            <p className="text-sm text-gray-600">Credentials mapped to national competency standards for professional certification recognition</p>
+                        </div>
+                        <div className="bg-white p-8 rounded-2xl shadow-lg">
+                            <div className="text-2xl font-black text-teal-600 mb-2">UN SDSN</div>
+                            <p className="text-sm text-gray-600">Contributing to SDG 4 Quality Education targets through accessible, AI-powered vocational learning</p>
                         </div>
                     </div>
                 </div>
@@ -159,24 +163,24 @@ export default function AboutPage() {
                         <Link href="/team" className="bg-gray-50 p-8 rounded-2xl hover:shadow-lg transition-all group">
                             <Users size={32} className="text-primary mb-4" />
                             <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors">
-                                Meet the Faculty
+                                Meet the Team
                             </h3>
-                            <p className="text-gray-600">World-class academics from MIT, Tsinghua, and beyond</p>
+                            <p className="text-gray-600">The educators and engineers building VOKASI</p>
                         </Link>
                         <Link href="/hexahelix" className="bg-gray-50 p-8 rounded-2xl hover:shadow-lg transition-all group">
                             <Globe size={32} className="text-accent mb-4" />
                             <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-accent transition-colors">
                                 Hexahelix Model
                             </h3>
-                            <p className="text-gray-600">Our unique approach to multi-stakeholder innovation</p>
+                            <p className="text-gray-600">Our multi-stakeholder approach to education innovation</p>
                         </Link>
-                        <a href="https://tsea.asia" target="_blank" rel="noopener noreferrer" className="bg-gray-50 p-8 rounded-2xl hover:shadow-lg transition-all group">
-                            <ExternalLink size={32} className="text-green-600 mb-4" />
-                            <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-green-600 transition-colors">
-                                Visit TSEA.asia
+                        <Link href="/contact" className="bg-gray-50 p-8 rounded-2xl hover:shadow-lg transition-all group">
+                            <ExternalLink size={32} className="text-emerald-600 mb-4" />
+                            <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-emerald-600 transition-colors">
+                                Get in Touch
                             </h3>
-                            <p className="text-gray-600">Learn more about Tsinghua Southeast Asia Center</p>
-                        </a>
+                            <p className="text-gray-600">Partner with us or request a pilot for your institution</p>
+                        </Link>
                     </div>
                 </div>
             </section>

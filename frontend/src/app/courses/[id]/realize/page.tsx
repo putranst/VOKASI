@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import IRISStepper from '@/components/ui/IRISStepper';
 import { useAuth } from '@/lib/AuthContext';
+import { useEnrollmentGuard } from '@/hooks/useEnrollmentGuard';
+import { useIrisProject } from '@/hooks/useIrisProject';
 import { EnhancedSocraticTutor } from '@/components/EnhancedSocraticTutor';
 import { Brain, Target, BookOpen, MessageSquare, PenTool, Send, CheckCircle, HelpCircle } from 'lucide-react';
 
@@ -12,9 +14,12 @@ export default function RealizePage() {
     const params = useParams();
     const courseId = Number(params.id);
     const { user } = useAuth();
+    const { checking } = useEnrollmentGuard(courseId);
+    const { project, loading: projectLoading } = useIrisProject(courseId);
 
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         gap_analysis: '',
         learning_plan: '',
@@ -41,23 +46,33 @@ export default function RealizePage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setError(null);
 
+        if (!project) { setError('Project not initialised. Please refresh.'); setLoading(false); return; }
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/projects/${courseId}/reflection`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/iris/reflection?project_id=${project.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    ...formData,
-                    question_log: formData.question_log.filter(q => q.trim()),
+                    q_what_i_know: formData.question_log.filter(q => q.trim()),
+                    p_what_i_need: formData.learning_plan ? [formData.learning_plan] : [],
+                    sfia_current_level: 1,
+                    sfia_target_level: 3,
+                    skill_gaps: [formData.gap_analysis],
+                    learning_resources: [],
+                    sfia_assessment: formData.sfia_assessment,
                     user_id: user?.id
                 })
             });
 
             if (response.ok) {
                 setSubmitted(true);
+            } else {
+                const data = await response.json().catch(() => ({}));
+                setError(data.detail || `Server error (${response.status}). Please try again.`);
             }
-        } catch (error) {
-            console.error('Failed to submit reflection:', error);
+        } catch (err) {
+            setError('Network error — please check your connection and try again.');
         } finally {
             setLoading(false);
         }
@@ -76,6 +91,14 @@ export default function RealizePage() {
             sfia_assessment: { ...prev.sfia_assessment, [code]: level }
         }));
     };
+
+    if (checking || projectLoading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
 
     if (submitted) {
         return (
@@ -131,6 +154,11 @@ export default function RealizePage() {
                                 </p>
                             </div>
 
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+                                    <p className="text-sm font-bold text-red-700">⚠ {error}</p>
+                                </div>
+                            )}
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 {/* Gap Analysis */}
                                 <div>

@@ -68,7 +68,7 @@ export default function SDGPage() {
                             <span className="block text-cyan-300">Sustainable Future</span>
                         </h1>
                         <p className="text-xl text-blue-100 leading-relaxed">
-                            TSEA-X is committed to advancing the United Nations Sustainable Development Goals through accessible, quality education and meaningful partnerships.
+                            VOKASI is committed to advancing the United Nations Sustainable Development Goals through accessible, quality education and meaningful partnerships.
                         </p>
                     </div>
                 </div>

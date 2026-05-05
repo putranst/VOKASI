@@ -1,22 +1,37 @@
-# TSEA-X Caddyfile
-# Caddy automatically provisions HTTPS via Let's Encrypt when using a real domain.
-# For IP-only access, use :80 instead.
+# VOKASI Caddyfile
+# Caddy automatically provisions HTTPS via Let's Encrypt when a real domain is set.
+#
+# Usage:
+#   Option A: Domain with auto-HTTPS — set VOKASI_DOMAIN env var or replace placeholder below
+#   Option B: IP-only (HTTP)         — use the :80 block at the bottom for local/testing
 
-# Option A: Domain with auto-HTTPS (uncomment when DNS is ready)
-# t6.tsea.asia {
-#     handle_path /api/* {
+# Option A: Domain with auto-HTTPS (uncomment and set your domain when DNS is ready)
+# {$VOKASI_DOMAIN:vokasi.example.com} {
+#     encode gzip
+#
+#     header {
+#         X-Content-Type-Options nosniff
+#         X-Frame-Options DENY
+#         Referrer-Policy strict-origin-when-cross-origin
+#     }
+#
+#     handle /api/* {
 #         reverse_proxy backend:8000
 #     }
+#
 #     handle {
 #         reverse_proxy frontend:3000
 #     }
 # }
 
-# Option B: IP-only (HTTP) — use this for initial testing
+# Option B: IP-only (HTTP) — default for dev/staging
 :80 {
-    handle_path /api/* {
+    encode gzip
+
+    handle /api/* {
         reverse_proxy backend:8000
     }
+
     handle {
         reverse_proxy frontend:3000
     }

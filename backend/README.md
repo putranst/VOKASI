@@ -14,9 +14,14 @@ You can copy `backend/.env.example` to `.env` before running.
 
 ## Run
 
+The canonical FastAPI entrypoint is `backend/main.py` (ASGI: `main:app`).
+
 ```bash
-uvicorn app.main:app --reload --port 8000
+uvicorn main:app --reload --port 8000
 ```
+
+> Note: `backend/app/*` is a deprecated scaffold retained only for reference.
+> Do not add new features there; see `backend/main.py` top-of-file docstring.
 
 ## Docker Run
 

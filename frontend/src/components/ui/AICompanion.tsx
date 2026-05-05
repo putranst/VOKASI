@@ -35,7 +35,7 @@ export function AICompanion() {
     useEffect(() => {
         if (!initialized) {
             setMessages([
-                { role: 'ai', text: 'Hi! I\'m your TSEA-X Companion. How can I help you with your learning journey today?', timestamp: Date.now() }
+                { role: 'ai', text: 'Hi! I\'m your VOKASI Companion. How can I help you with your learning journey today?', timestamp: Date.now() }
             ]);
             setInitialized(true);
         }

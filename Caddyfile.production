@@ -1,25 +1,26 @@
-t6.tsea.asia {
-    # Automatic HTTPS via Let's Encrypt (Caddy handles this automatically)
+# VOKASI Production Caddyfile
+# Set VOKASI_DOMAIN in your environment (e.g. vokasi.id or smk1-bandung.vokasi.id)
+# Caddy provisions HTTPS via Let's Encrypt automatically.
 
-    # Route API calls to the FastAPI backend
+{$VOKASI_DOMAIN:vokasi.example.com} {
+    encode gzip
+
     handle /api/* {
         reverse_proxy backend:8000
     }
 
-    # Route everything else to the Next.js frontend
     handle {
         reverse_proxy frontend:3000
     }
 
-    # Security headers
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         X-Content-Type-Options "nosniff"
         X-Frame-Options "SAMEORIGIN"
         Referrer-Policy "strict-origin-when-cross-origin"
+        X-Powered-By "VOKASI"
     }
 
-    # Logging
     log {
         output file /var/log/caddy/access.log {
             roll_size 10mb

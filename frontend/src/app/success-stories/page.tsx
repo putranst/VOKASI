@@ -23,7 +23,7 @@ export default function SuccessStoriesPage() {
                             Real Transformations
                         </h1>
                         <p className="text-xl text-green-100 leading-relaxed mb-8">
-                            Discover how T6 graduates have transformed their careers through project-based learning and AI-powered education.
+                            Discover how VOKASI graduates have transformed their careers through project-based learning and AI-powered education.
                         </p>
                     </div>
                 </div>
@@ -38,7 +38,7 @@ export default function SuccessStoriesPage() {
                         </div>
                         <h2 className="text-3xl font-black text-gray-900 mb-4">Stories Coming Soon</h2>
                         <p className="text-gray-600 mb-8 leading-relaxed">
-                            We're currently collecting and documenting success stories from our T6 graduates. Check back soon to read inspiring stories of career transformation through our IRIS-based learning programs.
+                            We're currently collecting and documenting success stories from our VOKASI graduates. Check back soon to read inspiring stories of career transformation through our IRIS-based learning programs.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Link
@@ -62,7 +62,7 @@ export default function SuccessStoriesPage() {
             <section className="py-20 bg-gray-50">
                 <div className="max-w-[70rem] mx-auto px-4">
                     <div className="text-center mb-12">
-                        <h2 className="text-3xl font-black text-gray-900 mb-4">What T6 Graduates Achieve</h2>
+                        <h2 className="text-3xl font-black text-gray-900 mb-4">What VOKASI Graduates Achieve</h2>
                         <p className="text-gray-600">Skills and outcomes from our career pathways</p>
                     </div>
 
@@ -97,7 +97,7 @@ export default function SuccessStoriesPage() {
                 <div className="max-w-[70rem] mx-auto px-4 text-center">
                     <h2 className="text-4xl font-black mb-6">Write Your Success Story</h2>
                     <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
-                        Join T6 and begin your career transformation journey today
+                        Join VOKASI and begin your career transformation journey today
                     </p>
                     <Link
                         href="/pathways"

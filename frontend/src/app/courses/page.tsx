@@ -2,41 +2,71 @@
 
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
-import { CourseCard } from '@/components/ui/CourseCard';
+import { CourseCard, type Course } from '@/components/ui/CourseCard';
 import { CourseCardSkeleton } from '@/components/ui/CourseCardSkeleton';
-import { TABBED_COURSES, CATEGORIES } from '@/lib/data';
+import { TABBED_COURSES } from '@/lib/data';
 import { Search, X } from 'lucide-react';
 import { useSearch } from '@/lib/SearchContext';
 import { Footer } from '@/components/Footer';
+
+const STATIC_COURSES: Course[] = Object.values(TABBED_COURSES).flat();
 
 export default function CoursesPage() {
     const [activeCategory, setActiveCategory] = useState("All");
     const [currentPage, setCurrentPage] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
+    const [allCourses, setAllCourses] = useState<Course[]>(STATIC_COURSES);
     const itemsPerPage = 8;
     const { searchTerm, setSearchTerm, clearSearch } = useSearch();
 
-    // Simulate loading state on mount
+    // Fetch live courses from API; fall back to static data on error
     useEffect(() => {
-        setIsLoading(true);
-        const timer = setTimeout(() => setIsLoading(false), 500);
-        return () => clearTimeout(timer);
+        const fetchCourses = async () => {
+            setIsLoading(true);
+            try {
+                const res = await fetch(
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/courses/`
+                );
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const raw = await res.json();
+                // Support both paginated { items: [...] } and legacy flat array shapes
+                const data: Course[] = Array.isArray(raw) ? raw : (raw.items ?? []);
+                // Merge: API courses take priority; supplement with any static courses not returned by API
+                const apiIds = new Set(data.map((c: Course) => c.id));
+                const staticOnly = STATIC_COURSES.filter(c => !apiIds.has(c.id));
+                const merged = [...data, ...staticOnly];
+                // Live/enrollable courses first, Coming Soon last
+                merged.sort((a, b) => {
+                    const aCs = a.tag === 'Coming Soon' ? 1 : 0;
+                    const bCs = b.tag === 'Coming Soon' ? 1 : 0;
+                    return aCs - bCs;
+                });
+                setAllCourses(merged);
+            } catch {
+                setAllCourses(STATIC_COURSES);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchCourses();
     }, []);
 
-    // Flatten courses for "All" view
-    const allCourses = Object.values(TABBED_COURSES).flat();
+    // Derive categories from live data
+    const categories = Array.from(
+        new Set(allCourses.map(c => c.category).filter(Boolean) as string[])
+    );
 
     // Filter by category
     const categoryFiltered = activeCategory === "All"
         ? allCourses
-        : TABBED_COURSES[activeCategory as keyof typeof TABBED_COURSES] || [];
+        : allCourses.filter(c => c.category === activeCategory);
 
     // Filter by search term
     const filteredCourses = searchTerm
         ? categoryFiltered.filter(course =>
             course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            course.instructor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            course.org.toLowerCase().includes(searchTerm.toLowerCase())
+            (course.instructor || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (course.org || '').toLowerCase().includes(searchTerm.toLowerCase())
         )
         : categoryFiltered;
 
@@ -61,7 +91,7 @@ export default function CoursesPage() {
                         <p className="text-gray-600">
                             {searchTerm
                                 ? `Showing results for "${searchTerm}"`
-                                : "Discover world-class education from T6 partners."
+                                : "Discover world-class education from VOKASI partners."
                             }
                         </p>
                     </div>
@@ -97,7 +127,7 @@ export default function CoursesPage() {
                     >
                         All Courses
                     </button>
-                    {CATEGORIES.map(cat => (
+                    {categories.map((cat: string) => (
                         <button
                             key={cat}
                             onClick={() => handleCategoryChange(cat)}

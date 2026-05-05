@@ -27,9 +27,28 @@ export default function CourseDetailPage() {
         }
     }, [courseId, router]);
 
-    // Find course across all categories
-    const allCourses = Object.values(TABBED_COURSES).flat();
-    const course = allCourses.find(c => c.id === courseId);
+    const staticCourse = Object.values(TABBED_COURSES).flat().find(c => c.id === courseId);
+    const [course, setCourse] = useState<typeof staticCourse | null>(staticCourse ?? null);
+    const [courseLoading, setCourseLoading] = useState(!staticCourse);
+
+    // Fetch from API if not in static list
+    useEffect(() => {
+        if (staticCourse) return;
+        const fetchCourse = async () => {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/courses/${courseId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setCourse(data);
+                }
+            } catch {
+                // leave course null → not-found shown below
+            } finally {
+                setCourseLoading(false);
+            }
+        };
+        fetchCourse();
+    }, [courseId, staticCourse]);
 
     useEffect(() => {
         // Check enrollment status on page load
@@ -57,6 +76,14 @@ export default function CourseDetailPage() {
             setLoading(false);
         }
     }, [courseId, user]);
+
+    if (courseLoading) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
 
     if (!course) {
         return (
@@ -114,7 +141,7 @@ export default function CourseDetailPage() {
                                 {isEnrolled ? (
                                     <>
                                         <a
-                                            href={`/courses/${course.id}/immersion`}
+                                            href={`/courses/${course.id}/immerse`}
                                             className="bg-primary text-white px-8 py-4 rounded-xl font-bold hover:bg-[#5a4a3b] transition-all flex items-center gap-2"
                                         >
                                             <PlayCircle size={20} />

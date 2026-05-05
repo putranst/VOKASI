@@ -22,8 +22,8 @@ export default function InstructorProfilePage() {
     const instructorData = {
         name: 'Mats Hanson',
         title: 'Senior Instructor',
-        org: 'TSEA-X Institute',
-        email: 'mats.hanson@tsea-x.edu',
+        org: 'VOKASI Institute',
+        email: 'mats.hanson@vokasi.edu',
         joinDate: 'January 2022',
         bio: 'Passionate educator specializing in AI and sustainable technology. Over 10 years of experience in training professionals and students across Southeast Asia.',
         stats: {

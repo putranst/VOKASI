@@ -8,7 +8,8 @@ import json
 import asyncio
 import random
 import base64
-from typing import Dict, List, Optional
+import logging
+from typing import Any, Dict, List, Optional, Tuple
 import io
 import pypdf
 from pptx import Presentation
@@ -18,42 +19,176 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Configuration
-# Configuration
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+logger = logging.getLogger("openai_service")
 
-# Initialize Clients
-clients = {}
+clients: Dict[str, object] = {}
+PRIORITY: List[str] = ["openai", "openrouter", "gemini", "mock"]
+MODELS: Dict[str, str] = {
+    "openai": os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
+    "openrouter": os.getenv("OPENROUTER_MODEL", "google/gemma-4-31b-it:free"),  # User's default from dashboard
+    "gemini": "gemini-2.0-flash",
+}
+CLIENT_TYPES: Dict[str, str] = {}
 
-if OPENAI_API_KEY:
+
+def _init_openai_compatible(api_key: str, base_url: Optional[str] = None) -> object:
     from openai import AsyncOpenAI
-    clients["openai"] = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
-if OPENROUTER_API_KEY:
-    from openai import AsyncOpenAI
-    clients["openrouter"] = AsyncOpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=OPENROUTER_API_KEY,
+    kwargs: Dict[str, Any] = {"api_key": api_key}
+    if base_url:
+        kwargs["base_url"] = base_url
+    return AsyncOpenAI(**kwargs)
+
+
+def _init_gemini(api_key: str):
+    import google.generativeai as genai
+
+    genai.configure(api_key=api_key)
+    return genai
+
+
+def _resolve_key(name: str, overrides: Dict[str, Optional[str]], db_keys: Optional[Dict[str, str]] = None) -> Optional[str]:
+    if name in overrides:
+        return overrides[name] or None
+    if db_keys and name in db_keys:
+        return db_keys[name]
+    return os.getenv(name) or None
+
+
+async def _create_chat_completion(client: Any, messages: list, model: str = "", temperature: float = 0.7, max_tokens: Optional[int] = None, **kwargs) -> Any:
+    """Create chat completion, omitting model if empty (for OpenRouter dashboard default)."""
+    params = {
+        "messages": messages,
+        "temperature": temperature,
+        **kwargs
+    }
+    if model:
+        params["model"] = model
+    if max_tokens:
+        params["max_tokens"] = max_tokens
+    return await client.chat.completions.create(**params)
+
+
+def _build_clients_from_env(overrides: Dict[str, Optional[str]]) -> Dict[str, object]:
+    new: Dict[str, object] = {}
+
+    openai_key = _resolve_key("OPENAI_API_KEY", overrides)
+    openrouter_key = _resolve_key("OPENROUTER_API_KEY", overrides)
+    gemini_key = _resolve_key("GEMINI_API_KEY", overrides)
+
+    if openai_key:
+        new["openai"] = _init_openai_compatible(openai_key)
+    if openrouter_key:
+        new["openrouter"] = _init_openai_compatible(openrouter_key, base_url="https://openrouter.ai/api/v1")
+    if gemini_key:
+        genai = _init_gemini(gemini_key)
+        new["gemini"] = genai.GenerativeModel("gemini-2.0-flash")
+        new["gemini_vision"] = genai.GenerativeModel("gemini-2.0-flash")
+
+    return new
+
+
+def _build_clients_from_db(
+    db_session: Any,
+    overrides: Dict[str, Optional[str]],
+) -> Tuple[Dict[str, object], Dict[str, str], Dict[str, str], List[str]]:
+    from routers.admin_settings import AdminSecret, AiProvider, _decrypt
+
+    secret_rows = db_session.query(AdminSecret).all()
+    db_keys: Dict[str, str] = {}
+    for row in secret_rows:
+        try:
+            db_keys[row.key_name] = _decrypt(row.encrypted_value)
+        except Exception:
+            continue
+
+    providers = (
+        db_session.query(AiProvider)
+        .filter(AiProvider.is_active == "true")
+        .order_by(AiProvider.priority)
+        .all()
     )
 
-if GEMINI_API_KEY:
-    import google.generativeai as genai
-    genai.configure(api_key=GEMINI_API_KEY)
-    clients["gemini"] = genai.GenerativeModel('gemini-2.0-flash')
-    # Vision model for multi-modal parsing (slides, images, PDFs)
-    clients["gemini_vision"] = genai.GenerativeModel('gemini-2.0-flash')
+    new: Dict[str, object] = {}
+    client_types: Dict[str, str] = {}
+    models: Dict[str, str] = {}
+    priority: List[str] = []
 
-# Provider priority
-PRIORITY = ["openai", "openrouter", "gemini", "mock"]
+    for provider in providers:
+        api_key = _resolve_key(provider.api_key_name, overrides, db_keys)
+        if not api_key:
+            continue
 
-# Models Configuration
-MODELS = {
-    "openai": os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
-    "openrouter": os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-001"),
-    "gemini": "gemini-2.0-flash"
-}
+        if provider.provider_type == "gemini":
+            genai = _init_gemini(api_key)
+            new[provider.name] = genai.GenerativeModel(provider.model)
+            client_types[provider.name] = "gemini"
+            if provider.vision_capable == "true":
+                new[f"{provider.name}_vision"] = genai.GenerativeModel(provider.model)
+                client_types[f"{provider.name}_vision"] = "gemini"
+        else:
+            new[provider.name] = _init_openai_compatible(api_key, base_url=provider.base_url)
+            client_types[provider.name] = "openai_compatible"
+
+        models[provider.name] = provider.model
+        priority.append(provider.name)
+
+    return new, client_types, models, priority
+
+
+def reload_clients(
+    overrides: Optional[Dict[str, Optional[str]]] = None,
+    db_session: Any = None,
+) -> List[str]:
+    overrides = overrides or {}
+
+    new_clients: Dict[str, object] = {}
+    new_client_types: Dict[str, str] = {}
+    new_models: Dict[str, str] = {}
+    new_priority: List[str] = []
+
+    if db_session is not None:
+        try:
+            db_clients, db_types, db_models, db_priority = _build_clients_from_db(db_session, overrides)
+            if db_clients:
+                new_clients = db_clients
+                new_client_types = db_types
+                new_models = db_models
+                new_priority = db_priority
+        except Exception as e:
+            logger.warning("Failed dynamic provider load; fallback to env: %s", e)
+
+    if not new_clients:
+        new_clients = _build_clients_from_env(overrides)
+        if "openrouter" in new_clients:
+            new_client_types["openrouter"] = "openai_compatible"
+            new_models["openrouter"] = os.getenv("OPENROUTER_MODEL", "google/gemma-4-31b-it:free")  # User's dashboard default
+            new_priority.append("openrouter")
+        if "openai" in new_clients:
+            new_client_types["openai"] = "openai_compatible"
+            new_models["openai"] = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+            new_priority.append("openai")
+        if "gemini" in new_clients:
+            new_client_types["gemini"] = "gemini"
+            new_client_types["gemini_vision"] = "gemini"
+            new_models["gemini"] = "gemini-2.0-flash"
+            new_priority.append("gemini")
+
+    if "mock" not in new_priority:
+        new_priority.append("mock")
+
+    clients.clear()
+    clients.update(new_clients)
+
+    CLIENT_TYPES.clear()
+    CLIENT_TYPES.update(new_client_types)
+
+    MODELS.clear()
+    MODELS.update(new_models)
+
+    PRIORITY[:] = new_priority
+    logger.info("Reloaded providers: %s", list(clients.keys()))
+    return list(clients.keys())
 
 # Fallback models for OpenRouter if primary fails
 OPENROUTER_FALLBACKS = [
@@ -62,6 +197,9 @@ OPENROUTER_FALLBACKS = [
     "deepseek/deepseek-chat",
     "mistralai/mistral-small-24b-instruct-2501"
 ]
+
+
+reload_clients()
 
 
 print(f"[AI Service] Initialized providers: {list(clients.keys())}")
@@ -2164,3 +2302,101 @@ Extract 10-20 key concepts with meaningful relationships. Respond ONLY with vali
             continue
 
     return {"success": False, "error": f"All providers failed: {errors}", "graph": None}
+
+
+async def refine_teaching_agenda(
+    parsed_content: Dict,
+    current_agenda: Dict,
+    refinement_prompt: str,
+    target_audience: str = "Intermediate",
+    duration_weeks: int = 4,
+) -> Dict:
+    """
+    Refine an existing Alexandria teaching agenda using a natural-language instruction.
+    Keeps the same overall JSON schema while updating the curriculum plan.
+    """
+
+    parsed_json = json.dumps(parsed_content, indent=2)
+    agenda_json = json.dumps(current_agenda, indent=2)
+
+    prompt = f"""You are Alexandria AI, an expert curriculum designer.
+
+You are given:
+1. The original parsed course intent and source-derived structure
+2. The current generated teaching agenda
+3. A refinement instruction from the instructor
+
+Your task is to revise the agenda while preserving a valid, production-ready JSON structure.
+
+ORIGINAL PARSED CONTENT:
+{parsed_json}
+
+CURRENT AGENDA:
+{agenda_json}
+
+TARGET AUDIENCE: {target_audience}
+DURATION WEEKS: {duration_weeks}
+
+REFINEMENT INSTRUCTION:
+{refinement_prompt}
+
+REQUIREMENTS:
+- Return ONLY valid JSON.
+- Preserve the top-level agenda structure.
+- Keep the course aligned to IRIS/CDIO framing.
+- Preserve strong learning progression across modules.
+- Update titles, subtitles, objectives, activities, quizzes, assignments, and capstone details where needed.
+- Make the refinement concrete and specific, not superficial.
+- Keep the number of modules equal to {duration_weeks} unless the instruction explicitly requires a different structure.
+- Ensure every module still has meaningful learning actions.
+
+Respond ONLY with the full refined agenda JSON."""
+
+    errors = []
+    for provider in PRIORITY:
+        if provider == "mock":
+            await asyncio.sleep(1)
+            refined = json.loads(json.dumps(current_agenda))
+            refined["tagline"] = f"{refined.get('tagline', '')} Refined: {refinement_prompt[:80]}".strip()
+            for idx, module in enumerate(refined.get("modules", [])):
+                if idx == 0:
+                    subtitle = module.get("subtitle") or module.get("title") or ""
+                    module["subtitle"] = f"{subtitle} — refined for {target_audience.lower()} learners".strip(" —")
+            return {"success": True, "provider": "mock", "agenda": refined}
+
+        if provider not in clients:
+            continue
+
+        try:
+            response_content = ""
+            if provider == "gemini":
+                response = await clients[provider].generate_content_async(prompt)
+                response_content = response.text
+            else:
+                response = await clients[provider].chat.completions.create(
+                    model=MODELS[provider],
+                    messages=[
+                        {"role": "system", "content": "You are Alexandria AI, an expert curriculum designer. Return only valid JSON."},
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=0.6,
+                    max_tokens=8000,
+                )
+                response_content = response.choices[0].message.content
+
+            try:
+                response_content = response_content.replace("```json", "").replace("```", "").strip()
+                return {"success": True, "agenda": json.loads(response_content), "provider": provider}
+            except Exception:
+                import re
+                match = re.search(r'\{.*\}', response_content, re.DOTALL)
+                if match:
+                    return {"success": True, "agenda": json.loads(match.group()), "provider": provider}
+                raise ValueError("Failed to parse JSON")
+
+        except Exception as e:
+            print(f"[{provider}] Agenda Refine Error: {e}")
+            errors.append(f"{provider}: {str(e)}")
+            continue
+
+    return {"success": False, "error": f"All providers failed: {errors}", "agenda": current_agenda}

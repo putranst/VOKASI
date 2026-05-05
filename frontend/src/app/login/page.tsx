@@ -36,12 +36,22 @@ function LoginContent() {
     const searchParams = useSearchParams();
     const { login, loginWithProvider } = useAuth();
 
+    // Check if Supabase is configured for SSO
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const isSupabaseConfigured = supabaseUrl &&
+        supabaseUrl.includes('supabase.co') &&
+        !supabaseUrl.includes('placeholder');
+
     // Check for success messages from redirects
     useEffect(() => {
         if (searchParams.get('registered') === 'true') {
             setSuccessMessage('Account created! Please check your email to verify your account.');
         } else if (searchParams.get('reset') === 'success') {
             setSuccessMessage('Password updated successfully! You can now sign in.');
+        }
+        const cohort = searchParams.get('cohort');
+        if (cohort) {
+            sessionStorage.setItem('cohort_slug', cohort);
         }
     }, [searchParams]);
 
@@ -55,6 +65,11 @@ function LoginContent() {
             const result = await login(email, password);
 
             if (result.success) {
+                const nextPath = searchParams.get('next');
+                if (nextPath) {
+                    router.push(nextPath);
+                    return;
+                }
                 // Get user from auth context and redirect based on role
                 const storedUser = localStorage.getItem('user');
                 if (storedUser) {
@@ -100,18 +115,14 @@ function LoginContent() {
     return (
         <div className="min-h-screen w-full overflow-auto relative flex items-center justify-center p-4 pb-safe"
             style={{
-                backgroundImage: 'url("https://ekspedisi.tsea.asia/id.png")',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                backgroundColor: '#0c1222',
+                background: 'linear-gradient(135deg, #022c22 0%, #064e3b 40%, #0f172a 100%)',
             }}>
 
-            {/* Gradient Overlay matching Ekspedisi theme */}
+            {/* Subtle texture overlay */}
             <div
-                className="absolute inset-0"
+                className="absolute inset-0 opacity-30"
                 style={{
-                    background: 'linear-gradient(135deg, rgba(12, 18, 34, 0.85) 0%, rgba(15, 23, 42, 0.75) 50%, rgba(30, 20, 40, 0.8) 100%)',
+                    backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(16,185,129,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(6,78,59,0.3) 0%, transparent 50%)',
                 }}
             />
 
@@ -256,36 +267,44 @@ function LoginContent() {
                         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-600/50 to-transparent" />
                     </div>
 
-                    {/* SSO Buttons - White outlined style */}
-                    <div className="grid grid-cols-2 gap-2">
-                        <button
-                            onClick={() => handleOAuthLogin('google')}
-                            className="flex items-center justify-center gap-2 px-3 py-1.5 
-                                     bg-transparent border border-slate-500/50 rounded-lg
-                                     hover:bg-white/5 hover:border-slate-400/70 
-                                     transition-all duration-200 group"
-                        >
-                            <GoogleIcon />
-                            <span className="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">
-                                Google
-                            </span>
-                        </button>
+                    {/* SSO Buttons - White outlined style (only when Supabase configured) */}
+                    {isSupabaseConfigured ? (
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                onClick={() => handleOAuthLogin('google')}
+                                className="flex items-center justify-center gap-2 px-3 py-1.5
+                                         bg-transparent border border-slate-500/50 rounded-lg
+                                         hover:bg-white/5 hover:border-slate-400/70
+                                         transition-all duration-200 group"
+                            >
+                                <GoogleIcon />
+                                <span className="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">
+                                    Google
+                                </span>
+                            </button>
 
-                        <button
-                            onClick={() => handleOAuthLogin('github')}
-                            className="flex items-center justify-center gap-2 px-3 py-1.5 
-                                     bg-transparent border border-slate-500/50 rounded-lg
-                                     hover:bg-white/5 hover:border-slate-400/70 
-                                     transition-all duration-200 group"
-                        >
-                            <span className="text-slate-300 group-hover:text-white transition-colors">
-                                <GitHubIcon />
-                            </span>
-                            <span className="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">
-                                GitHub
-                            </span>
-                        </button>
-                    </div>
+                            <button
+                                onClick={() => handleOAuthLogin('github')}
+                                className="flex items-center justify-center gap-2 px-3 py-1.5
+                                         bg-transparent border border-slate-500/50 rounded-lg
+                                         hover:bg-white/5 hover:border-slate-400/70
+                                         transition-all duration-200 group"
+                            >
+                                <span className="text-slate-300 group-hover:text-white transition-colors">
+                                    <GitHubIcon />
+                                </span>
+                                <span className="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">
+                                    GitHub
+                                </span>
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 text-center">
+                            <p className="text-[10px] text-amber-300/80">
+                                SSO temporarily unavailable — use email/password
+                            </p>
+                        </div>
+                    )}
 
                     {/* Footer */}
                     <div className="mt-3 text-center">
@@ -321,19 +340,9 @@ function LoginLoading() {
         <div
             className="min-h-screen w-full overflow-auto flex items-center justify-center py-6 px-4 relative"
             style={{
-                backgroundImage: 'url("https://ekspedisi.tsea.asia/id.png")',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                backgroundColor: '#0c1222',
+                background: 'linear-gradient(135deg, #022c22 0%, #064e3b 40%, #0f172a 100%)',
             }}
         >
-            <div
-                className="absolute inset-0"
-                style={{
-                    background: 'linear-gradient(135deg, rgba(12, 18, 34, 0.85) 0%, rgba(15, 23, 42, 0.75) 50%, rgba(30, 20, 40, 0.8) 100%)',
-                }}
-            />
             <div
                 className="relative z-10 backdrop-blur-xl rounded-2xl p-8 border border-white/10"
                 style={{

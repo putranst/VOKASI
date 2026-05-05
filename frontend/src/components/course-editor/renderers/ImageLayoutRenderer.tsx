@@ -243,7 +243,7 @@ export default function ImageLayoutRenderer({
                             </>
                         ) : (
                             images.map((img, index) => (
-                                <div kay={index} className="aspect-square relative group">
+                                <div key={index} className="aspect-square relative group">
                                     <img
                                         src={img}
                                         alt={`Gallery image ${index + 1}`}

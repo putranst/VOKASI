@@ -10,11 +10,11 @@ const docCategories = [
     {
         icon: BookOpen,
         title: 'Getting Started',
-        description: 'New to T6? Start here.',
+        description: 'New to VOKASI? Start here.',
         color: 'text-blue-600',
         bg: 'bg-blue-50',
         docs: [
-            { title: 'Platform Overview', description: 'Learn about T6 and its features' },
+            { title: 'Platform Overview', description: 'Learn about VOKASI and its features' },
             { title: 'Creating Your Account', description: 'Sign up and set up your profile' },
             { title: 'Choosing a Career Pathway', description: 'Find the right path for you' },
             { title: 'First Steps', description: 'Navigate your first course' }
@@ -67,7 +67,7 @@ const docCategories = [
         color: 'text-orange-600',
         bg: 'bg-orange-50',
         docs: [
-            { title: 'Understanding Credentials', description: 'What T6 credentials mean' },
+            { title: 'Understanding Credentials', description: 'What VOKASI credentials mean' },
             { title: 'Earning Credentials', description: 'Complete projects to earn' },
             { title: 'Blockchain Verification', description: 'How verification works' },
             { title: 'Sharing Credentials', description: 'Add to LinkedIn and more' }
@@ -92,7 +92,7 @@ export default function DocsPage() {
                         </div>
                         <h1 className="text-5xl font-black mb-6">Platform Guides</h1>
                         <p className="text-xl text-gray-300 mb-8">
-                            Everything you need to get the most out of T6
+                            Everything you need to get the most out of VOKASI
                         </p>
 
                         {/* Search */}

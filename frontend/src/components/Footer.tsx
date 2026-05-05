@@ -2,65 +2,10 @@ import React from 'react';
 
 export const Footer: React.FC = () => {
     return (
-        <footer className="bg-white text-gray-700 pt-16 pb-8 border-t border-gray-200">
+        <footer className="bg-white text-gray-700 pt-10 pb-8 border-t border-gray-200">
             <div className="max-w-[70rem] mx-auto px-4">
-                {/* Main Footer Content */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-                    {/* Company */}
-                    <div>
-                        <h4 className="font-bold text-gray-900 mb-4 text-sm">Company</h4>
-                        <ul className="space-y-2.5 text-sm">
-                            <li><a href="#" className="hover:text-primary transition-colors">About Us</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">Why TSEA-X?</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">In the News</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">Jobs at TSEA-X</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">Become a Mentor</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">Partner with TSEA-X</a></li>
-                        </ul>
-                    </div>
-
-                    {/* TSEA-X Schools */}
-                    <div>
-                        <h4 className="font-bold text-gray-900 mb-4 text-sm">TSEA-X Schools</h4>
-                        <ul className="space-y-2.5 text-sm">
-                            <li><a href="#" className="hover:text-primary transition-colors">School of Sustainable Development</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">School of Public Policy</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">School of Data Science</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">School of Business</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">School of Urban Planning</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">Career Resources</a></li>
-                        </ul>
-                    </div>
-
-                    {/* Featured Programs */}
-                    <div>
-                        <h4 className="font-bold text-gray-900 mb-4 text-sm">Featured Programs</h4>
-                        <ul className="space-y-2.5 text-sm">
-                            <li><a href="#" className="hover:text-primary transition-colors">Happy Digital X</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">Data Analytics</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">Digital Marketing</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">AI for Business</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">Sustainable Finance</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">Smart City Planning</a></li>
-                        </ul>
-                    </div>
-
-                    {/* Resources */}
-                    <div>
-                        <h4 className="font-bold text-gray-900 mb-4 text-sm">Resources</h4>
-                        <ul className="space-y-2.5 text-sm">
-                            <li><a href="#" className="hover:text-primary transition-colors">Catalog</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">Career Outcomes</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">Help and FAQ</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">Scholarships</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">Resource Center</a></li>
-                        </ul>
-                    </div>
-                </div>
-
                 {/* Newsletter Subscription */}
-                <div className="border-t border-gray-200 pt-8 mb-8">
+                <div className="pt-8 mb-8">
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                         <div className="flex-1">
                             <p className="text-gray-900 font-medium mb-1">Submit your email to stay updated on the latest in technology</p>
@@ -82,7 +27,7 @@ export const Footer: React.FC = () => {
                 <div className="border-t border-gray-200 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
                     {/* Copyright */}
                     <div className="text-xs text-gray-600">
-                        © 2011-2025 TSEA-X, Inc. "Nanodegree" is a registered trademark of TSEA-X. © 2011-2025 TSEA-X, Inc.<br />
+                        © 2011-2025 VOKASI, Inc. "Nanodegree" is a registered trademark of VOKASI. © 2011-2025 VOKASI, Inc.<br />
                         We use cookies and other data collection technologies to provide the best experience for our customers.
                     </div>
 

@@ -12,6 +12,15 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from seeds.ai_fundamentals_seed import seed_ai_fundamentals_content
 
+# Import hash_password from auth_utils to ensure consistency
+from routers.auth_utils import hash_password as _hash_password
+
+
+# Temporary admin credentials for local development
+TEMP_ADMIN_EMAIL = "poetra@gmail.com"
+TEMP_ADMIN_PASSWORD = "TseaX2024!"
+TEMP_ADMIN_PASSWORD_HASH = _hash_password(TEMP_ADMIN_PASSWORD)
+
 def init_sample_data(db: Session, force: bool = False):
     """
     Initializes sample data for the application.
@@ -142,7 +151,8 @@ def init_sample_data(db: Session, force: bool = False):
         users_to_seed = [
             {"email": "mats@uid.or.id", "name": "Prof. Mats", "role": "instructor"},
             {"email": "putra@tsea.asia", "name": "Putra Admin", "role": "admin"},
-            {"email": "student@tsea.asia", "name": "Student User", "role": "student"}
+            {"email": "student@tsea.asia", "name": "Student User", "role": "student"},
+            {"email": TEMP_ADMIN_EMAIL, "name": "Poetra Admin", "role": "admin", "password_hash": TEMP_ADMIN_PASSWORD_HASH}
         ]
 
         mats_user = None
@@ -154,7 +164,7 @@ def init_sample_data(db: Session, force: bool = False):
                     email=u["email"],
                     full_name=u["name"],
                     role=u["role"],
-                    password_hash="hashed_secret"
+                    password_hash=u.get("password_hash", "hashed_secret")
                 )
                 db.add(new_user)
                 db.commit() # Commit each to ensure IDs are generated
@@ -165,6 +175,11 @@ def init_sample_data(db: Session, force: bool = False):
                     existing.role = u["role"]
                     existing.full_name = u["name"]
                     db.commit()
+                # Update password hash if a specific one is provided (for temp admin)
+                if "password_hash" in u and existing.password_hash != u["password_hash"]:
+                    existing.password_hash = u["password_hash"]
+                    db.commit()
+                    print(f"DEBUG: Updated password for {u['email']}")
             
             if u["email"] == "mats@uid.or.id":
                 mats_user = existing

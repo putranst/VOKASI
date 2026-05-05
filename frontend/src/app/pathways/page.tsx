@@ -52,7 +52,7 @@ export default function PathwaysPage() {
                         </p>
 
                         <p className="text-lg md:text-xl text-white/80 mb-12">
-                            Whether you want to save the planet, build the future, or start earning immediately, <strong>T6 Career Pathways</strong> give you the exact roadmap from where you are to where you want to be.
+                            Whether you want to save the planet, build the future, or start earning immediately, <strong>VOKASI Career Pathways</strong> give you the exact roadmap from where you are to where you want to be.
                         </p>
 
                         {/* Stats */}
@@ -82,7 +82,7 @@ export default function PathwaysPage() {
             <section className="bg-white py-16 border-b border-gray-200">
                 <div className="max-w-[70rem] mx-auto px-4">
                     <h2 className="text-3xl md:text-4xl font-black text-center text-gray-900 mb-12">
-                        How T6 Pathways Work
+                        How VOKASI Pathways Work
                     </h2>
                     <div className="grid md:grid-cols-4 gap-8">
                         <div className="text-center">

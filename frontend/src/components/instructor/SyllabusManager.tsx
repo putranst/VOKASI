@@ -412,7 +412,7 @@ export default function SyllabusManager({ courseId, courseTitle, courseDuration,
                                         {isGenerating ? (
                                             <>
                                                 <Loader2 className="animate-spin" size={20} />
-                                                Generating T6 Syllabus...
+                                                Generating VOKASI Syllabus...
                                             </>
                                         ) : (
                                             <>

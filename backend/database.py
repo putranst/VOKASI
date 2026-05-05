@@ -24,8 +24,20 @@ else:
 
 
 engine = create_engine(
-    DATABASE_URL, connect_args=connect_args
+    DATABASE_URL,
+    connect_args=connect_args,
+    pool_size=20,
+    max_overflow=30,
+    pool_pre_ping=True,
+    pool_recycle=300,
 )
+
+# Production guard: prevent SQLite in production
+if DATABASE_URL.startswith("sqlite://") and os.getenv("ENV") == "production":
+    raise RuntimeError(
+        "SQLite not allowed in production. Set DATABASE_URL to PostgreSQL connection string."
+    )
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

@@ -1,0 +1,487 @@
+# VOKASI Beasiswa Beta Campaign — Product Requirements Document
+
+**Version:** 1.1
+**Date:** 2026-04-24
+**Status:** Active — Phase 0 Complete, Phase 1–4 In Progress
+**Campaign:** Beasiswa Beta Launch  
+**Target:** 1,000 enrollments  
+**Related:** `vokasi2.prd` (main platform PRD)
+
+---
+
+## 1. Executive Summary
+
+The Beasiswa Beta Campaign is VOKASI's first major user acquisition initiative, targeting 1,000 enrollments through a tiered pricing scholarship funnel. The campaign leverages a dynamic pricing model (seats 1-100 at $1, scaling to $10 at 900-1000 seats), Midtrans payment integration, and automated onboarding tracking. This document captures the campaign design, technical implementation, and operational requirements.
+
+**Campaign Goal:** Validate product-market fit, collect payment data, and refine onboarding flow at scale before full platform launch.
+
+---
+
+## 2. Campaign Objectives
+
+| Objective | Metric | Target | Timeline |
+|-----------|--------|--------|----------|
+| User acquisition | Total enrollments | 1,000 | 4 weeks |
+| Conversion rate | Landing → Payment | 15% | Campaign duration |
+| Payment success rate | Completed transactions | 95% | Campaign duration |
+| Onboarding completion | Post-payment setup | 80% | Within 7 days of payment |
+| Support ticket volume | Per 100 users | < 5 tickets | Campaign duration |
+| Revenue | Total collected | $3,000–$5,000 (tiered) | Campaign duration |
+
+---
+
+## 3. Target Audience
+
+### 3.1 Primary: Indonesian Vocational Students
+- **Demographics:** Ages 17–25, SMK (Sekolah Menengah Kejuruan) students, fresh graduates
+- **Locations:** Java, Sumatra, Kalimantan (Tier 1–2 cities)
+- **Motivations:** Affordable skill acquisition, certificate for job applications, AI-powered learning
+- **Pain Points:** Expensive bootcamps, no clear career path, lack of practical projects
+
+### 3.2 Secondary: Career Switchers
+- **Demographics:** Ages 25–35, university graduates seeking tech skills
+- **Motivations:** Career pivot to software development/AI, flexible learning schedule
+- **Pain Points:** Time constraints, need for portfolio projects, employer recognition
+
+---
+
+## 4. Campaign Funnel Design
+
+### 4.1 Funnel Stages
+
+```
+Landing (/beasiswa)
+    ↓ 100%
+Registration (/register)
+    ↓ 60% (drop-off: email verification, Supabase config issues)
+Onboarding (/onboarding)
+    ↓ 80% (drop-off: incomplete profile)
+Payment (/payment/beasiswa)
+    ↓ 50% (drop-off: payment abandonment, insufficient funds)
+Post-Payment Onboarding (/onboarding?step=complete)
+    ↓ 90%
+Dashboard (learning platform)
+```
+
+### 4.2 Landing Page (`/beasiswa`)
+
+**Components:**
+- Hero section: "Beasiswa VOKASI — Belajar AI & Software Engineering"
+- Tiered pricing visualization (dynamic seat counter)
+- Social proof: placeholder testimonials (real ones post-campaign)
+- FAQ section addressing common questions
+- CTA: "Daftar Sekarang" → `/register`
+
+**Content Strategy:**
+- Emphasize scholarship pricing (starts at $1)
+- Highlight 2-course bundle value
+- Certificate promise
+- 30-day access guarantee
+
+### 4.3 Registration Flow
+
+**Endpoints:**
+- `POST /api/v1/auth/register` — Backend fallback when Supabase not configured
+- Supabase OAuth (Google, GitHub) — Primary auth method
+- Fallback: Email/password registration with backend sync
+
+**Data Collected:**
+- Email, full name, role (student/instructor — instructor disabled in UI)
+- Institution (optional)
+- Phone number (optional)
+
+**Validation:**
+- Email uniqueness check
+- Password strength (min 8 chars)
+- Role enforcement (student only for beta)
+
+### 4.4 Onboarding Phase 1: Profile Setup
+
+**Endpoint:** `GET/POST /api/v1/onboarding/profile`
+
+**Fields:**
+- Full name (pre-filled from registration)
+- Institution/School
+- Field of study/Interest
+- Learning goals (dropdown: Web Dev, AI/ML, Data Science, Other)
+- Experience level (Beginner, Intermediate, Advanced)
+
+**Tracking:** `user.onboarding_phase` set to `profile_complete`
+
+### 4.5 Payment Flow
+
+**Endpoint:** `POST /api/v1/cohorts/{slug}/initiate`
+
+**Process:**
+1. User selects 2 courses from available catalog
+2. System calculates tiered price based on current seat count
+3. Midtrans Snap token generated
+4. User redirected to Midtrans payment page
+5. Webhook `POST /api/v1/cohorts/{slug}/confirm` handles payment confirmation
+6. Enrollment rows created (2 courses)
+7. `user.funnel_status` set to `paid`
+8. Email confirmation sent
+
+**Pricing Tiers:**
+| Seats | Price (USD) | Price (IDR @ 16,000) |
+|-------|-------------|---------------------|
+| 1–100 | $1 | IDR 16,000 |
+| 101–200 | $2 | IDR 32,000 |
+| 201–300 | $3 | IDR 48,000 |
+| 301–400 | $4 | IDR 64,000 |
+| 401–500 | $5 | IDR 80,000 |
+| 501–600 | $6 | IDR 96,000 |
+| 601–700 | $7 | IDR 112,000 |
+| 701–800 | $8 | IDR 128,000 |
+| 801–900 | $9 | IDR 144,000 |
+| 901–1000 | $10 | IDR 160,000 |
+
+**Payment Methods:** Midtrans Snap (GoPay, OVO, Bank Transfer, Credit Card)
+
+### 4.6 Post-Payment Onboarding
+
+**Endpoint:** `POST /api/v1/onboarding/postpay-complete`
+
+**Actions:**
+- Mark onboarding phase as complete
+- Send welcome email with course access links
+- Create default learning schedule (optional)
+- Redirect to dashboard
+
+---
+
+## 5. Technical Implementation
+
+### 5.1 Architecture Overview
+
+```
+Frontend (Next.js)
+├── /beasiswa — Landing page
+├── /register — Registration
+├── /onboarding — Profile setup
+└── /payment/beasiswa — Midtrans checkout
+
+Backend (FastAPI)
+├── /api/v1/auth/register — Fallback registration
+├── /api/v1/auth/login — JWT auth
+├── /api/v1/onboarding/profile — Profile CRUD
+├── /api/v1/onboarding/postpay-complete — Post-payment setup
+├── /api/v1/cohorts/{slug}/initiate — Payment initiation
+├── /api/v1/cohorts/{slug}/confirm — Midtrans webhook
+└── /api/v1/cohorts/public-config — Midtrans client key
+
+Infrastructure
+├── PostgreSQL (user data, enrollments, payments)
+├── Midtrans (payment processing)
+├── Supabase (optional OAuth, email verification)
+└── Email Service (SendGrid/Postmark via admin dashboard)
+```
+
+### 5.2 Database Schema Changes
+
+> ✅ All migrations consolidated into `backend/services/funnel_migrations.py` — runs at startup, idempotent on both SQLite and PostgreSQL.
+
+**User Model Extensions (implemented in `sql_models.py`):**
+```sql
+ALTER TABLE users ADD COLUMN name VARCHAR;
+ALTER TABLE users ADD COLUMN onboarding_completed BOOLEAN DEFAULT 0;
+ALTER TABLE users ADD COLUMN onboarding_prepay_completed BOOLEAN DEFAULT 0;
+ALTER TABLE users ADD COLUMN onboarding_postpay_completed BOOLEAN DEFAULT 0;
+ALTER TABLE users ADD COLUMN registration_status VARCHAR DEFAULT 'registered';
+ALTER TABLE users ADD COLUMN funnel_status VARCHAR DEFAULT 'registered';
+ALTER TABLE users ADD COLUMN onboarding_phase VARCHAR DEFAULT 'none';
+ALTER TABLE users ADD COLUMN bio TEXT;
+ALTER TABLE users ADD COLUMN linkedin_url VARCHAR;
+ALTER TABLE users ADD COLUMN github_url VARCHAR;
+ALTER TABLE users ADD COLUMN learning_goals JSON;
+ALTER TABLE users ADD COLUMN career_pathway_id VARCHAR;
+ALTER TABLE users ADD COLUMN institution_id INTEGER;
+ALTER TABLE users ADD COLUMN instructor_type VARCHAR;
+```
+
+**Enrollment Model Extensions:**
+```sql
+ALTER TABLE enrollments ADD COLUMN cohort_id INTEGER;
+ALTER TABLE enrollments ADD COLUMN payment_status VARCHAR;
+ALTER TABLE enrollments ADD COLUMN payment_reference VARCHAR;
+ALTER TABLE enrollments ADD COLUMN amount_usd FLOAT;
+ALTER TABLE enrollments ADD COLUMN payment_attempt_status VARCHAR DEFAULT 'initiated';
+ALTER TABLE enrollments ADD COLUMN payment_expires_at DATETIME;
+ALTER TABLE enrollments ADD COLUMN payment_confirmed_at DATETIME;
+```
+
+**New Tables (created via `Base.metadata.create_all`):**
+- `beta_cohorts` — slug, name, seat_cap, seats_sold, pricing_tiers (JSON), fixed_course_ids, is_active
+- `payment_events` — order_id, cohort_slug, user_id, event_type, provider, payload
+- `email_delivery_logs` — template_key, to_email, status, attempts, error_message
+- `capstone_submissions` — full beta capstone with AI pre-grade + instructor review fields
+- `alumni_profiles` — post-graduation public profile
+
+### 5.3 Security & Production Readiness
+
+**Critical Fixes Implemented (2026-04-24):**
+
+| Fix | Description | Status |
+|-----|-------------|--------|
+| JWT Auth | Replaced predictable `devtoken` with signed JWT (HS256, 24h expiry) | ✅ Complete |
+| Rate Limiting | 30/min for auth, 10/min for payment, 60/min for health | ✅ Complete |
+| Payment Race Condition | Added `with_for_update()` row locking on enrollment check | ✅ Complete |
+| DB Connection Pool | Configured pool_size=20, max_overflow=30 (50 total) | ✅ Complete |
+| SQLite Guard | Aborts if SQLite detected in production (ENV=production) | ✅ Complete |
+
+**Security Checklist:**
+- [ ] JWT_SECRET_KEY set in production
+- [ ] DATABASE_URL set to PostgreSQL (not SQLite)
+- [x] Midtrans keys stored in encrypted admin secrets (via `_read_admin_secret` in `routers/cohorts.py`)
+- [x] Rate limiting active on all public endpoints (SlowAPI: 30/min auth, 10/min payment)
+- [ ] Email provider configured (SendGrid/Postmark) — set `EMAIL_PROVIDER` + `SMTP_*` env vars
+- [ ] HTTPS enforced on production domain (Caddy handles — verify cert auto-renewal)
+
+---
+
+## 6. Operational Requirements
+
+### 6.1 Admin Dashboard Features
+
+**Cohort Management:**
+- Create/edit beta cohorts
+- View seat sales in real-time
+- Manually adjust seat count (for reconciliation)
+- Toggle cohort active/inactive
+
+**Payment Reconciliation:**
+- View all payment events
+- Manual webhook retry for stuck payments
+- Refund processing (via Midtrans dashboard)
+
+**Email Management:**
+- Configure SMTP provider (SendGrid/Postmark)
+- Test email delivery
+- View email delivery logs
+- Resend failed lifecycle emails
+
+**Midtrans Configuration:**
+- Set merchant ID, client key, server key
+- Toggle sandbox/production environment
+- View transaction status
+
+### 6.2 Monitoring & Alerting
+
+**Metrics to Track:**
+- Registration rate (per hour)
+- Payment initiation rate
+- Payment success rate
+- Webhook failure count
+- Email delivery success rate
+- Onboarding completion rate
+- Support ticket volume
+
+**Alert Thresholds:**
+- Webhook failures > 5 in 1 hour → Alert
+- Payment success rate < 90% → Alert
+- Email delivery failure > 10% → Alert
+- DB connection pool exhaustion → Alert
+
+### 6.3 Support Workflow
+
+**Common Issues & Resolution:**
+
+| Issue | Symptoms | Resolution |
+|-------|----------|------------|
+| Payment stuck in pending | User paid but no enrollment | Manual webhook trigger from admin dashboard |
+| Email not received | User reports no confirmation | Check email logs, resend from admin |
+| Registration fails | Supabase not configured | Fallback to backend registration |
+| Course access denied | Paid but can't access | Check enrollment status, manual activation if needed |
+
+**Support Channels:**
+- Email: support@vokasi.id
+- WhatsApp: (optional, post-beta)
+- FAQ page on landing site
+
+---
+
+## 7. Marketing Strategy
+
+### 7.1 Channels
+
+| Channel | Budget | Expected Reach | Conversion |
+|---------|--------|----------------|------------|
+| Instagram/TikTok | $500 | 50,000 impressions | 2% |
+- LinkedIn | $200 | 10,000 professionals | 3% |
+- University partnerships | $0 | 5 SMK direct outreach | 10% |
+- WhatsApp groups | $0 | 20 community groups | 5% |
+- Organic SEO | $0 | Long-term | 1% |
+
+### 7.2 Messaging
+
+**Primary Hook:** "Belajar AI & Software Engineering mulai dari Rp 16.000"
+
+**Key Value Props:**
+- Affordable pricing (tiered scholarship)
+- 2 courses in 1 bundle
+- Certificate of completion
+- AI-powered learning experience
+- 30-day money-back guarantee
+
+**Social Proof:**
+- "X students already enrolled" (dynamic counter)
+- Testimonials from pilot users (post-campaign)
+- Institution logos (partnerships)
+
+---
+
+## 8. Timeline & Milestones
+
+| Phase | Duration | Deliverables | Owner | Status |
+|-------|----------|--------------|-------|--------|
+| Phase 0: Technical Prep | 2 days | Critical fixes, DB migrations, Midtrans config | Engineering | ✅ Done |
+| Phase 1: Landing Page | 3 days | BeasiswaLanding component, copy, SEO | Design + Engineering | 🔄 In Progress |
+| Phase 2: Funnel Integration | 2 days | Registration → onboarding → payment flow | Engineering | 🔄 In Progress |
+| Phase 3: Email Setup | 1 day | SMTP config, templates, testing | Engineering | ⏳ Pending |
+| Phase 4: Smoke Testing | 1 day | End-to-end funnel test, payment test | QA | ⏳ Pending |
+| Phase 5: Launch | Day 1 | Campaign live, monitoring active | Marketing | ⏳ Pending |
+| Phase 6: Campaign Run | 4 weeks | Ongoing support, adjustments | Team | ⏳ Pending |
+| Phase 7: Post-Campaign Analysis | 1 week | Metrics report, learnings, roadmap | Product | ⏳ Pending |
+
+**Total Timeline:** ~6 weeks from technical prep to post-campaign analysis
+
+---
+
+## 9. Success Criteria
+
+### 9.1 Must-Have (Blockers if not met)
+- [ ] 1,000 enrollments achieved
+- [ ] Payment success rate > 90%
+- [ ] No critical security incidents
+- [ ] Support ticket volume < 50 total
+
+### 9.2 Should-Have (Success indicators)
+- [ ] Onboarding completion rate > 70%
+- [ ] Course engagement > 50% of enrolled users
+- [ ] NPS score > 40
+- [ ] Referral rate > 10%
+
+### 9.3 Nice-to-Have (Stretch goals)
+- [ ] Viral social media moment
+- [ ] Institution partnership signed
+- [ ] Upsell to paid tier (future pricing)
+- [ ] User-generated content (testimonials, reviews)
+
+---
+
+## 10. Risks & Mitigations
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| Midtrans downtime | Low | High | Fallback messaging, manual payment processing |
+| Payment fraud | Medium | Medium | Rate limiting, IP monitoring, manual review |
+| Email deliverability issues | Medium | High | Multiple providers (SendGrid + Postmark fallback), DKIM/SPF setup |
+| Supabase OAuth issues | Medium | Medium | Backend fallback registration clearly documented |
+| Server overload at launch | Low | High | Connection pool configured, auto-scaling enabled |
+| Low conversion rate | High | High | A/B test landing copy, adjust pricing tiers |
+
+---
+
+## 11. Post-Campaign Analysis
+
+### 11.1 Data Collection
+
+**Funnel Metrics:**
+- Landing page visitors
+- Registration completion rate
+- Onboarding drop-off points
+- Payment initiation rate
+- Payment abandonment rate
+- Post-payment onboarding completion
+
+**User Feedback:**
+- Exit survey for non-converters
+- NPS survey for enrolled users
+- Support ticket themes
+- Qualitative interviews (10 users)
+
+**Technical Metrics:**
+- API response times
+- Webhook latency
+- Email delivery rates
+- DB query performance
+- Error rates by endpoint
+
+### 11.2 Deliverables
+
+- Campaign performance report (metrics, trends)
+- User feedback summary
+- Technical incident log
+- Recommendations for full platform launch
+- Updated pricing strategy based on conversion data
+- Marketing channel effectiveness analysis
+
+---
+
+## 12. Related Documents
+
+- **Main Platform PRD:** `vokasi2.prd`
+- **Technical Implementation Plan:** `/Users/putra/.windsurf/plans/critical-beta-launch-fixes-325527.md`
+- **Smoke Test Script:** `scripts/smoke_beta_funnel.py`
+- **Midtrans Documentation:** https://snap-docs.midtrans.com/
+
+---
+
+## 13. Appendix
+
+### 13.1 Environment Variables Required
+
+```bash
+# Database
+DATABASE_URL=postgresql://...
+ENV=production  # triggers SQLite guard — REQUIRED in prod
+
+# Auth
+JWT_SECRET_KEY=...  # generate: python -c "import secrets; print(secrets.token_urlsafe(32))"
+SUPABASE_URL=...    # optional OAuth
+SUPABASE_KEY=...
+SUPABASE_JWT_SECRET=...
+CLASSROOM_AUTH_MODE=strict
+
+# Payment
+MIDTRANS_MERCHANT_ID=...
+MIDTRANS_CLIENT_KEY=...
+MIDTRANS_SERVER_KEY=...
+MIDTRANS_ENV=sandbox|production
+IDR_RATE=16000
+
+# Email
+EMAIL_PROVIDER=sendgrid|postmark|noop
+SMTP_HOST=smtp.sendgrid.net
+SMTP_PORT=587
+SMTP_USERNAME=apikey
+SMTP_PASSWORD=...
+EMAIL_FROM=noreply@vokasi.id
+
+# Feature Flags
+FF_HYBRID_ONBOARDING=true
+FF_EMAIL_EVENTS=true
+
+# AI
+OPENAI_API_KEY=...
+GEMINI_API_KEY=...
+```
+
+### 13.2 API Endpoints Summary
+
+| Method | Endpoint | Auth | Purpose |
+|--------|----------|------|---------|
+| POST | /api/v1/auth/register | None | Backend fallback registration |
+| POST | /api/v1/auth/login | None | JWT login |
+| GET | /api/v1/onboarding/profile | JWT | Get user onboarding profile |
+| POST | /api/v1/onboarding/profile | JWT | Update onboarding profile |
+| POST | /api/v1/onboarding/postpay-complete | JWT | Mark post-payment onboarding complete |
+| GET | /api/v1/cohorts | None | List active cohorts |
+| GET | /api/v1/cohorts/{slug} | None | Get cohort details + pricing |
+| POST | /api/v1/cohorts/{slug}/initiate | JWT | Initiate Midtrans payment |
+| POST | /api/v1/cohorts/{slug}/confirm | None (Midtrans signature) | Payment webhook |
+| GET | /api/v1/cohorts/public-config | None | Get Midtrans client key + env |
+| POST | /api/v1/admin/cohorts | Admin JWT | Create/edit cohort |
+| POST | /api/v1/admin/email/test | Admin JWT | Test email delivery |
+| POST | /api/v1/admin/payment/reconcile | Admin JWT | Reconcile stuck payments |
+

@@ -411,7 +411,7 @@ export function SmartCourseWizard({ onCourseCreated, onCancel }: SmartCourseWiza
                 image: courseThumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800',
                 category: 'Technology',
                 instructor: user?.name || 'Instructor',
-                org: 'TSEA',
+                org: 'VOKASI',
                 instructor_id: user?.id  // Link to logged-in instructor
             };
 

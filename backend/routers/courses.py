@@ -51,6 +51,9 @@ class UpdateCourseRequest(BaseModel):
     image: Optional[str] = None
     category: Optional[str] = None
     approval_status: Optional[str] = None
+    org: Optional[str] = None
+    rating: Optional[float] = None
+    students_count: Optional[str] = None
 
 class ContentBlock(BaseModel):
     id: str
@@ -153,15 +156,56 @@ async def create_agenda(request: AgendaRequest):
     return {"success": True, "agenda": agenda}
 
 
-@router.get("/", response_model=List[schemas.Course])
-def get_courses(category: Optional[str] = None, db: Session = Depends(get_db)):
+def _course_to_dict(course: models.Course) -> dict:
+    """Convert SQLAlchemy Course to serializable dict."""
+    return {
+        "id": course.id,
+        "title": course.title,
+        "instructor": course.instructor,
+        "org": course.org,
+        "rating": course.rating,
+        "students_count": course.students_count,
+        "image": course.image,
+        "tag": course.tag,
+        "level": course.level,
+        "category": course.category,
+        "description": course.description,
+        "duration": course.duration,
+        "approval_status": course.approval_status,
+        "instructor_id": course.instructor_id,
+        "institution_id": course.institution_id,
+    }
+
+
+@router.get("/")
+def get_courses(
+    category: Optional[str] = None,
+    q: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+    db: Session = Depends(get_db),
+):
     """
-    Get all courses with optional category filter
+    List courses with optional category filter, full-text search, and pagination.
+    Returns: { items, total, page, page_size, pages }
     """
     query = db.query(models.Course)
     if category:
         query = query.filter(models.Course.category == category)
-    return query.all()
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            models.Course.title.ilike(like) | models.Course.description.ilike(like)
+        )
+    total = query.count()
+    items = query.offset((page - 1) * page_size).limit(page_size).all()
+    return {
+        "items": [_course_to_dict(c) for c in items],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "pages": max(1, (total + page_size - 1) // page_size),
+    }
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -225,10 +269,65 @@ def save_modules_bulk(
 @router.post("/{course_id}/syllabus")
 def save_syllabus(course_id: int, syllabus: Dict[str, Any], db: Session = Depends(get_db)):
     """
-    Save/Update Syllabus (Mock implementation as Syllabus table might be complex)
-    For now, we just acknowledge receipt. To implement fully, we'd need a Syllabus model.
+    Save/Update Syllabus for a course. Upserts: updates existing or creates new.
     """
-    return {"message": "Syllabus saved (mock)", "course_id": course_id}
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    existing = db.query(models.Syllabus).filter(models.Syllabus.course_id == course_id).first()
+    if existing:
+        existing.title = syllabus.get("title", existing.title)
+        existing.overview = syllabus.get("overview", existing.overview)
+        existing.learning_outcomes = syllabus.get("learning_outcomes", existing.learning_outcomes)
+        existing.assessment_strategy = syllabus.get("assessment_strategy", existing.assessment_strategy)
+        existing.resources = syllabus.get("resources", existing.resources)
+        existing.hexahelix_sectors = syllabus.get("hexahelix_sectors", existing.hexahelix_sectors)
+        existing.duration_weeks = syllabus.get("duration_weeks", existing.duration_weeks)
+        existing.status = syllabus.get("status", existing.status)
+        existing.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(existing)
+        syl_id = existing.id
+    else:
+        new_syl = models.Syllabus(
+            course_id=course_id,
+            title=syllabus.get("title", course.title),
+            overview=syllabus.get("overview"),
+            learning_outcomes=syllabus.get("learning_outcomes"),
+            assessment_strategy=syllabus.get("assessment_strategy"),
+            resources=syllabus.get("resources"),
+            hexahelix_sectors=syllabus.get("hexahelix_sectors"),
+            duration_weeks=syllabus.get("duration_weeks", 4),
+            status=syllabus.get("status", "draft"),
+        )
+        db.add(new_syl)
+        db.commit()
+        db.refresh(new_syl)
+        syl_id = new_syl.id
+
+    return {"message": "Syllabus saved", "course_id": course_id, "syllabus_id": syl_id}
+
+
+@router.get("/{course_id}/syllabus")
+def get_syllabus(course_id: int, db: Session = Depends(get_db)):
+    """Retrieve the syllabus for a course."""
+    syl = db.query(models.Syllabus).filter(models.Syllabus.course_id == course_id).first()
+    if not syl:
+        raise HTTPException(status_code=404, detail="Syllabus not found")
+    return {
+        "id": syl.id,
+        "course_id": syl.course_id,
+        "title": syl.title,
+        "overview": syl.overview,
+        "learning_outcomes": syl.learning_outcomes,
+        "assessment_strategy": syl.assessment_strategy,
+        "resources": syl.resources,
+        "hexahelix_sectors": syl.hexahelix_sectors,
+        "duration_weeks": syl.duration_weeks,
+        "status": syl.status,
+        "version": syl.version,
+    }
 
 @router.put("/{course_id}")
 def update_course(course_id: int, course_update: UpdateCourseRequest, db: Session = Depends(get_db)):
@@ -249,18 +348,12 @@ def update_course(course_id: int, course_update: UpdateCourseRequest, db: Sessio
 
 # --- GET Accessors (Moved from main.py) ---
 
-@router.get("/{course_id}")
+@router.get("/{course_id}", response_model=schemas.Course)
 def get_course_details(course_id: int, db: Session = Depends(get_db)):
     course = db.query(models.Course).filter(models.Course.id == course_id).first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
-    return {
-        "id": course.id,
-        "title": course.title,
-        "description": course.description,
-        "instructor": course.instructor,
-        "approval_status": course.approval_status
-    }
+    return course
 
 @router.get("/{course_id}/modules")
 def get_course_modules(course_id: int, db: Session = Depends(get_db)):
@@ -278,3 +371,57 @@ def get_course_modules(course_id: int, db: Session = Depends(get_db)):
         }
         for m in modules
     ]
+
+
+@router.get("/{course_id}/progress")
+def get_course_progress(course_id: int, user_id: int, db: Session = Depends(get_db)):
+    """Return completed module IDs and overall percentage for a user in a course."""
+    modules = db.query(models.CourseModule).filter(
+        models.CourseModule.course_id == course_id
+    ).all()
+    total = len(modules)
+    if total == 0:
+        return {"completed_module_ids": [], "percentage": 0, "total_modules": 0}
+
+    completed_rows = db.query(models.LessonProgress).filter(
+        models.LessonProgress.user_id == user_id,
+        models.LessonProgress.course_id == course_id,
+        models.LessonProgress.completed == True
+    ).all()
+    completed_ids = [r.module_id for r in completed_rows]
+    percentage = int(len(completed_ids) / total * 100)
+    return {
+        "completed_module_ids": completed_ids,
+        "percentage": percentage,
+        "total_modules": total
+    }
+
+
+@router.post("/{course_id}/modules/{module_id}/complete")
+def mark_module_complete(course_id: int, module_id: int, user_id: int, db: Session = Depends(get_db)):
+    """Mark a module as completed for a user. Idempotent."""
+    from datetime import datetime as dt
+    existing = db.query(models.LessonProgress).filter(
+        models.LessonProgress.user_id == user_id,
+        models.LessonProgress.course_id == course_id,
+        models.LessonProgress.module_id == module_id
+    ).first()
+
+    if existing:
+        if not existing.completed:
+            existing.completed = True
+            existing.completed_at = dt.utcnow()
+            existing.updated_at = dt.utcnow()
+            db.commit()
+        return {"status": "ok", "completed": True, "module_id": module_id}
+
+    row = models.LessonProgress(
+        user_id=user_id,
+        course_id=course_id,
+        module_id=module_id,
+        completed=True,
+        completed_at=dt.utcnow()
+    )
+    db.add(row)
+    db.commit()
+    return {"status": "created", "completed": True, "module_id": module_id}

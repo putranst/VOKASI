@@ -202,8 +202,8 @@ export default function InstitutionDashboardPage() {
                                 <NotificationPopover />
                             </div>
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-white font-bold text-xs">
-                                    UID
+                                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs">
+                                    PA
                                 </div>
                                 <span className="text-sm font-medium text-gray-700 hidden md:block">Partner Admin</span>
                             </div>

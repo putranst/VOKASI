@@ -20,6 +20,13 @@ class AuthService:
                 "password_hash": self._hash_password("instructor123"),
                 "role": "instructor",
             },
+            "poetra@gmail.com": {
+                "id": "u_admin",
+                "name": "Poetra (Admin)",
+                "email": "poetra@gmail.com",
+                "password_hash": self._hash_password("test"),
+                "role": "admin",
+            },
         }
 
     @staticmethod

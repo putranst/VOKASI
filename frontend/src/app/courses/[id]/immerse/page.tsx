@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import IRISStepper from '@/components/ui/IRISStepper';
 import { useAuth } from '@/lib/AuthContext';
+import { useEnrollmentGuard } from '@/hooks/useEnrollmentGuard';
+import { useIrisProject } from '@/hooks/useIrisProject';
 import { EnhancedSocraticTutor } from '@/components/EnhancedSocraticTutor';
 import { Eye, Users, Building2, Target, FileText, Sparkles, Send, CheckCircle, HelpCircle, Brain } from 'lucide-react';
 
@@ -11,9 +13,12 @@ export default function ImmersePage() {
     const params = useParams();
     const courseId = Number(params.id);
     const { user } = useAuth();
+    const { checking } = useEnrollmentGuard(courseId);
+    const { project, loading: projectLoading, error: projectError } = useIrisProject(courseId);
 
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         problem_context: '',
         stakeholder_map: '',
@@ -35,22 +40,33 @@ export default function ImmersePage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setError(null);
 
+        if (!project) { setError('Project not initialised. Please refresh.'); setLoading(false); return; }
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/projects/${courseId}/immersion`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/iris/immersion?project_id=${project.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    ...formData,
+                    observation_notes: formData.problem_context,
+                    problem_context: formData.problem_context,
+                    stakeholder_interviews: formData.stakeholder_map ? [formData.stakeholder_map] : [],
+                    target_sfia_level: 3,
+                    empathy_notes: formData.empathy_notes,
+                    institutional_anchor: formData.institutional_anchor,
+                    sfia_targets: formData.sfia_targets,
                     user_id: user?.id
                 })
             });
 
             if (response.ok) {
                 setSubmitted(true);
+            } else {
+                const data = await response.json().catch(() => ({}));
+                setError(data.detail || `Server error (${response.status}). Please try again.`);
             }
-        } catch (error) {
-            console.error('Failed to submit immersion:', error);
+        } catch (err) {
+            setError('Network error — please check your connection and try again.');
         } finally {
             setLoading(false);
         }
@@ -64,6 +80,14 @@ export default function ImmersePage() {
                 : [...prev.sfia_targets, code]
         }));
     };
+
+    if (checking || projectLoading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
 
     if (submitted) {
         return (
@@ -119,6 +143,11 @@ export default function ImmersePage() {
                                 </p>
                             </div>
 
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-2">
+                                    <p className="text-sm font-bold text-red-700">⚠ {error}</p>
+                                </div>
+                            )}
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 {/* Problem Context */}
                                 <div>
@@ -244,12 +273,12 @@ export default function ImmersePage() {
                         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white">
                             <h3 className="font-bold mb-2">NUSA Framework</h3>
                             <p className="text-sm text-blue-100 mb-4">
-                                National Upskilling Sprint for AI — Ekspedisi AI Nusantara 2026
+                                National Upskilling Structure for Applied AI learning
                             </p>
                             <div className="text-xs text-blue-200 space-y-1">
                                 <div>🎯 Target: SFIA Level 3 (Proficient)</div>
-                                <div>📍 38 Provinces</div>
-                                <div>👥 100,000+ Practitioners</div>
+                                <div>📍 Regional implementation ready</div>
+                                <div>👥 Practice-oriented learner pathway</div>
                             </div>
                         </div>
                     </div>

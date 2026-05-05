@@ -11,13 +11,13 @@ class ORMBase(BaseModel):
 class Course(ORMBase):
     id: int
     title: str
-    instructor: str
-    org: str
-    rating: float
-    students_count: str
-    image: str
+    instructor: Optional[str] = None
+    org: Optional[str] = None
+    rating: Optional[float] = 0.0
+    students_count: Optional[str] = "0"
+    image: Optional[str] = ""
     tag: Optional[str] = None
-    level: str
+    level: Optional[str] = "Beginner"
     category: Optional[str] = None
     description: Optional[str] = None
     duration: Optional[str] = None

@@ -5,12 +5,13 @@ import {
     Users, BookOpen, Award, TrendingUp, Activity,
     Shield, Database, Globe, Settings, AlertCircle,
     CheckCircle, Clock, DollarSign, GraduationCap, Flame, Zap, Trophy,
-    BarChart3, FileText, Upload, Download, X, LogOut
+    BarChart3, FileText, Upload, Download, X, LogOut, UserPlus, KeyRound, Trash2, Palette
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { RoleRouteGuard } from '@/components/RoleRouteGuard';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { supabase } from '@/lib/supabase';
+import IntegrationsTab from './IntegrationsTab';
 
 interface PlatformStats {
     totalUsers: number;
@@ -35,7 +36,7 @@ interface User {
     id: number;
     name: string;
     email: string;
-    role: 'student' | 'instructor' | 'admin' | 'institution';
+    role: 'student' | 'instructor' | 'admin' | 'institution_admin';
     status: 'active' | 'suspended' | 'pending';
     joinedDate: string;
     lastActive: string;
@@ -103,8 +104,240 @@ interface GamificationStats {
     }>;
 }
 
+// ── BR-003: White-label Branding Tab ──────────────────────────────────────────
+
+const API_BASE_BRANDING = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+
+const PRESET_COLORS = [
+    { label: 'VOKASI Emerald', primary: '#064e3b', accent: '#10b981' },
+    { label: 'Ocean Blue', primary: '#1e3a5f', accent: '#3b82f6' },
+    { label: 'Sunset Orange', primary: '#7c2d12', accent: '#f97316' },
+    { label: 'Royal Purple', primary: '#3b0764', accent: '#a855f7' },
+    { label: 'Slate Gray', primary: '#0f172a', accent: '#64748b' },
+];
+
+function BrandingTab() {
+    const [institutionId, setInstitutionId] = useState(1);
+    const [primaryColor, setPrimaryColor] = useState('#064e3b');
+    const [accentColor, setAccentColor] = useState('#10b981');
+    const [faviconUrl, setFaviconUrl] = useState('');
+    const [logoUrl, setLogoUrl] = useState('');
+    const [platformName, setPlatformName] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const fetchTheme = async () => {
+            setLoading(true);
+            try {
+                const res = await fetch(`${API_BASE_BRANDING}/api/v1/institution/theme?institution_id=${institutionId}`);
+                if (res.ok) {
+                    const t = await res.json();
+                    if (t.primary_color) setPrimaryColor(t.primary_color);
+                    if (t.accent_color) setAccentColor(t.accent_color);
+                    if (t.favicon_url) setFaviconUrl(t.favicon_url);
+                    if (t.custom_logo_url) setLogoUrl(t.custom_logo_url);
+                    if (t.platform_name) setPlatformName(t.platform_name);
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchTheme();
+    }, [institutionId]);
+
+    const applyPreview = (primary: string, accent: string) => {
+        document.documentElement.style.setProperty('--brand-primary', primary);
+        document.documentElement.style.setProperty('--brand-accent', accent);
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        setError('');
+        try {
+            const token = localStorage.getItem('token') || '';
+            const res = await fetch(`${API_BASE_BRANDING}/api/v1/institution/theme`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    institution_id: institutionId,
+                    primary_color: primaryColor,
+                    accent_color: accentColor,
+                    favicon_url: faviconUrl || null,
+                    custom_logo_url: logoUrl || null,
+                    platform_name: platformName || null,
+                }),
+            });
+            if (!res.ok) throw new Error(`Save failed (${res.status})`);
+            applyPreview(primaryColor, accentColor);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 3000);
+        } catch (e) {
+            setError((e as Error).message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-20 text-gray-400">
+                <Activity className="w-5 h-5 animate-spin mr-2" /> Loading theme…
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-8 max-w-2xl">
+            <div>
+                <h2 className="text-xl font-bold text-gray-900">White-label Branding</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                    Customise colors, logo, favicon, and platform name for your institution. Changes apply instantly across all pages.
+                </p>
+            </div>
+
+            {/* Color presets */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Palette className="w-4 h-4 text-violet-500" /> Color Theme
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                    {PRESET_COLORS.map((p) => (
+                        <button
+                            key={p.label}
+                            onClick={() => { setPrimaryColor(p.primary); setAccentColor(p.accent); applyPreview(p.primary, p.accent); }}
+                            className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-medium hover:border-violet-300 transition-colors"
+                        >
+                            <span className="flex gap-1">
+                                <span className="h-3 w-3 rounded-full" style={{ background: p.primary }} />
+                                <span className="h-3 w-3 rounded-full" style={{ background: p.accent }} />
+                            </span>
+                            {p.label}
+                        </button>
+                    ))}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Primary Color</label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="color"
+                                value={primaryColor}
+                                onChange={(e) => { setPrimaryColor(e.target.value); applyPreview(e.target.value, accentColor); }}
+                                className="h-9 w-9 cursor-pointer rounded-lg border border-gray-200 p-0.5"
+                            />
+                            <input
+                                type="text"
+                                value={primaryColor}
+                                onChange={(e) => { setPrimaryColor(e.target.value); applyPreview(e.target.value, accentColor); }}
+                                className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm font-mono"
+                                placeholder="#064e3b"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Accent Color</label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="color"
+                                value={accentColor}
+                                onChange={(e) => { setAccentColor(e.target.value); applyPreview(primaryColor, e.target.value); }}
+                                className="h-9 w-9 cursor-pointer rounded-lg border border-gray-200 p-0.5"
+                            />
+                            <input
+                                type="text"
+                                value={accentColor}
+                                onChange={(e) => { setAccentColor(e.target.value); applyPreview(primaryColor, e.target.value); }}
+                                className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm font-mono"
+                                placeholder="#10b981"
+                            />
+                        </div>
+                    </div>
+                </div>
+                {/* Live swatch preview */}
+                <div className="flex gap-3 pt-1">
+                    <div className="h-10 flex-1 rounded-xl flex items-center justify-center text-xs font-bold text-white" style={{ background: primaryColor }}>
+                        Primary
+                    </div>
+                    <div className="h-10 flex-1 rounded-xl flex items-center justify-center text-xs font-bold text-white" style={{ background: accentColor }}>
+                        Accent
+                    </div>
+                </div>
+            </div>
+
+            {/* Logo & favicon */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+                <h3 className="text-sm font-semibold text-gray-700">Logo & Favicon</h3>
+                <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Custom Logo URL</label>
+                    <input
+                        type="url"
+                        value={logoUrl}
+                        onChange={(e) => setLogoUrl(e.target.value)}
+                        placeholder="https://your-institution.com/logo.png"
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                    />
+                    {logoUrl && (
+                        <img src={logoUrl} alt="logo preview" className="mt-2 h-10 rounded object-contain border border-gray-100" />
+                    )}
+                </div>
+                <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Favicon URL</label>
+                    <input
+                        type="url"
+                        value={faviconUrl}
+                        onChange={(e) => setFaviconUrl(e.target.value)}
+                        placeholder="https://your-institution.com/favicon.ico"
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                    />
+                </div>
+            </div>
+
+            {/* Platform name */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+                <h3 className="text-sm font-semibold text-gray-700">Platform Name Override</h3>
+                <input
+                    type="text"
+                    value={platformName}
+                    onChange={(e) => setPlatformName(e.target.value)}
+                    placeholder="Leave blank to use VOKASI"
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                />
+                <p className="text-xs text-gray-400">Replaces "VOKASI" in the browser tab title and nav logo text.</p>
+            </div>
+
+            {error && (
+                <p className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">{error}</p>
+            )}
+
+            <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            >
+                {saving ? <Activity className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                {saved ? 'Saved!' : saving ? 'Saving…' : 'Save Branding'}
+            </button>
+        </div>
+    );
+}
+
 export default function AdminDashboard() {
     const router = useRouter();
+    const backendBase = (process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
+    const apiUrl = (path: string) => `${backendBase}${path}`;
+    const getAuthHeaders = (): Record<string, string> => {
+        const token = typeof window !== 'undefined' ? (localStorage.getItem('token') ?? '') : '';
+        return {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        };
+    };
     const [stats, setStats] = useState<PlatformStats>({
         totalUsers: 0,
         totalCourses: 0,
@@ -116,7 +349,7 @@ export default function AdminDashboard() {
         systemHealth: 'healthy'
     });
 
-    const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'courses' | 'credentials' | 'system'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'courses' | 'credentials' | 'integrations' | 'system' | 'branding'>('overview');
     const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
     const [loading, setLoading] = useState(true);
     const [gamificationStats, setGamificationStats] = useState<GamificationStats | null>(null);
@@ -159,9 +392,9 @@ export default function AdminDashboard() {
                 const [name, email, role] = line.split(',').map(s => s.trim());
                 if (name && email) {
                     try {
-                        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/import-user`, {
+                        await fetch(apiUrl('/api/v1/admin/import-user'), {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: getAuthHeaders(),
                             body: JSON.stringify({ name, email, role: role || 'student' })
                         });
                         imported++;
@@ -172,7 +405,7 @@ export default function AdminDashboard() {
             setIsImportModalOpen(false);
             setImportFile(null);
             // Refresh users data
-            const usersResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/users`);
+            const usersResponse = await fetch(apiUrl('/api/v1/admin/users'), { headers: getAuthHeaders() });
             if (usersResponse.ok) setUsers(await usersResponse.json());
         };
         reader.readAsText(importFile);
@@ -192,17 +425,17 @@ export default function AdminDashboard() {
         if (reportType === 'users' || reportType === 'full') {
             csvContent += '=== USERS REPORT ===\n';
             csvContent += generateCSV(users, ['id', 'name', 'email', 'role', 'status', 'joinedDate']) + '\n\n';
-            filename = `tsea-x-users-report-${now}.csv`;
+            filename = `vokasi-users-report-${now}.csv`;
         }
         if (reportType === 'courses' || reportType === 'full') {
             csvContent += '=== COURSES REPORT ===\n';
             csvContent += generateCSV(adminCourses, ['id', 'title', 'instructor', 'institution', 'category', 'status', 'enrollments']) + '\n\n';
-            filename = reportType === 'full' ? `tsea-x-full-report-${now}.csv` : `tsea-x-courses-report-${now}.csv`;
+            filename = reportType === 'full' ? `vokasi-full-report-${now}.csv` : `vokasi-courses-report-${now}.csv`;
         }
         if (reportType === 'credentials' || reportType === 'full') {
             csvContent += '=== CREDENTIALS REPORT ===\n';
             csvContent += generateCSV(adminCredentials, ['id', 'user', 'title', 'type', 'status', 'issuedDate']) + '\n\n';
-            filename = reportType === 'full' ? `tsea-x-full-report-${now}.csv` : `tsea-x-credentials-report-${now}.csv`;
+            filename = reportType === 'full' ? `vokasi-full-report-${now}.csv` : `vokasi-credentials-report-${now}.csv`;
         }
 
         const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -218,11 +451,11 @@ export default function AdminDashboard() {
     // User Actions
     const handleSuspendUser = async (userId: number) => {
         try {
-            const { error } = await supabase
-                .from('users')
-                .update({ status: 'suspended' })
-                .eq('id', userId);
-            if (!error) {
+            const response = await fetch(apiUrl(`/api/v1/admin/users/${userId}/suspend`), {
+                method: 'POST',
+                headers: getAuthHeaders(),
+            });
+            if (response.ok) {
                 setUsers(users.map(user =>
                     user.id === userId ? { ...user, status: 'suspended' as const } : user
                 ));
@@ -234,11 +467,11 @@ export default function AdminDashboard() {
 
     const handleActivateUser = async (userId: number) => {
         try {
-            const { error } = await supabase
-                .from('users')
-                .update({ status: 'active' })
-                .eq('id', userId);
-            if (!error) {
+            const response = await fetch(apiUrl(`/api/v1/admin/users/${userId}/activate`), {
+                method: 'POST',
+                headers: getAuthHeaders(),
+            });
+            if (response.ok) {
                 setUsers(users.map(user =>
                     user.id === userId ? { ...user, status: 'active' as const } : user
                 ));
@@ -255,9 +488,85 @@ export default function AdminDashboard() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'tsea-x-users.csv';
+        a.download = 'vokasi-users.csv';
         a.click();
         window.URL.revokeObjectURL(url);
+    };
+
+    const handleInviteUser = async () => {
+        const name = window.prompt('Enter full name for invited user:');
+        if (!name) return;
+        const email = window.prompt('Enter email for invited user:');
+        if (!email) return;
+        const role = window.prompt('Enter role (admin, instructor, student, institution_admin):', 'admin') || 'admin';
+
+        try {
+            const response = await fetch(apiUrl('/api/v1/admin/users/invite'), {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ name, email, role })
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data.detail || data.message || 'Failed to invite user');
+            }
+
+            if (data.user) {
+                setUsers(prev => [data.user, ...prev]);
+            }
+
+            alert(`User invited successfully. Temporary password: ${data.temporary_password || '(not provided)'}`);
+        } catch (err: any) {
+            alert(err?.message || 'Failed to invite user');
+        }
+    };
+
+    const handleResetUserPassword = async (userId: number, email: string) => {
+        const newPasswordInput = window.prompt('Enter new password (min 8 chars) or leave blank to auto-generate:', '');
+        if (newPasswordInput === null) return;
+
+        const payload = newPasswordInput.trim()
+            ? { new_password: newPasswordInput.trim() }
+            : {};
+
+        try {
+            const response = await fetch(apiUrl(`/api/v1/admin/users/${userId}/reset-password`), {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data.detail || data.message || 'Failed to reset password');
+            }
+
+            alert(`Password reset for ${email}. New temporary password: ${data.temporary_password || '(not provided)'}`);
+        } catch (err: any) {
+            alert(err?.message || 'Failed to reset password');
+        }
+    };
+
+    const handleDeleteUser = async (userId: number, email: string) => {
+        const confirmed = window.confirm(`Delete user ${email}? This action cannot be undone.`);
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(apiUrl(`/api/v1/admin/users/${userId}`), {
+                method: 'DELETE',
+                headers: getAuthHeaders(),
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data.detail || data.message || 'Failed to delete user');
+            }
+
+            setUsers(prev => prev.filter(user => user.id !== userId));
+        } catch (err: any) {
+            alert(err?.message || 'Failed to delete user');
+        }
     };
 
     const openEditUserModal = (user: User) => {
@@ -267,16 +576,19 @@ export default function AdminDashboard() {
 
     const handleSaveUser = async (updatedUser: User) => {
         try {
-            const { error } = await supabase
-                .from('users')
-                .update({
-                    full_name: updatedUser.name,
+            const response = await fetch(apiUrl(`/api/v1/admin/users/${updatedUser.id}`), {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    name: updatedUser.name,
                     email: updatedUser.email,
-                    role: updatedUser.role
+                    role: updatedUser.role,
+                    status: updatedUser.status,
                 })
-                .eq('id', updatedUser.id);
-            if (!error) {
-                setUsers(users.map(user => user.id === updatedUser.id ? updatedUser : user));
+            });
+            if (response.ok) {
+                const saved = await response.json();
+                setUsers(users.map(user => user.id === updatedUser.id ? saved : user));
             }
         } catch (err) {
             console.error('Failed to save user:', err);
@@ -379,7 +691,7 @@ export default function AdminDashboard() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `tsea-x-system-logs-${new Date().toISOString().split('T')[0]}.txt`;
+        a.download = `vokasi-system-logs-${new Date().toISOString().split('T')[0]}.txt`;
         a.click();
         window.URL.revokeObjectURL(url);
     };
@@ -390,42 +702,44 @@ export default function AdminDashboard() {
 
     const fetchDashboardData = async () => {
         try {
+            const headers = getAuthHeaders();
+
             // Fetch platform stats from backend API
-            const statsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/stats`);
+            const statsResponse = await fetch(apiUrl('/api/v1/admin/stats'), { headers });
             if (statsResponse.ok) {
                 const data = await statsResponse.json();
                 setStats(data);
             }
 
-            const activityResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/recent-activity`);
+            const activityResponse = await fetch(apiUrl('/api/v1/admin/recent-activity'), { headers });
             if (activityResponse.ok) {
                 const data = await activityResponse.json();
                 setRecentActivity(data);
             }
 
             // Fetch users from backend API
-            const usersResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/users`);
+            const usersResponse = await fetch(apiUrl('/api/v1/admin/users'), { headers });
             if (usersResponse.ok) {
                 const usersData = await usersResponse.json();
                 setUsers(usersData);
             }
 
             // Fetch courses from backend API
-            const coursesResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/courses`);
+            const coursesResponse = await fetch(apiUrl('/api/v1/admin/courses'), { headers });
             if (coursesResponse.ok) {
                 const coursesData = await coursesResponse.json();
                 setAdminCourses(coursesData);
             }
 
             // Fetch credentials from backend API
-            const credentialsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/credentials`);
+            const credentialsResponse = await fetch(apiUrl('/api/v1/admin/credentials'), { headers });
             if (credentialsResponse.ok) {
                 const credentialsData = await credentialsResponse.json();
                 setAdminCredentials(credentialsData);
             }
 
             // Fetch gamification stats
-            const gamificationResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/v1/admin/gamification-stats`);
+            const gamificationResponse = await fetch(apiUrl('/api/v1/admin/gamification-stats'), { headers });
             if (gamificationResponse.ok) {
                 const gamificationData = await gamificationResponse.json();
                 setGamificationStats(gamificationData);
@@ -494,7 +808,7 @@ export default function AdminDashboard() {
                                     <Shield className="w-6 h-6 text-white" />
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-bold text-gray-900">TSEA-X Admin Control Center</h1>
+                                    <h1 className="text-2xl font-bold text-gray-900">VOKASI Admin Control Center</h1>
                                     <p className="text-sm text-gray-600">Platform Management Dashboard</p>
                                 </div>
                             </div>
@@ -530,7 +844,9 @@ export default function AdminDashboard() {
                                 { id: 'users', label: 'Users', icon: Users },
                                 { id: 'courses', label: 'Courses', icon: BookOpen },
                                 { id: 'credentials', label: 'Credentials', icon: Award },
-                                { id: 'system', label: 'System', icon: Database }
+                                { id: 'integrations', label: 'Integrations', icon: Globe },
+                                { id: 'system', label: 'System', icon: Database },
+                                { id: 'branding', label: 'Branding', icon: Palette }
                             ].map(tab => (
                                 <button
                                     key={tab.id}
@@ -627,87 +943,6 @@ export default function AdminDashboard() {
                                         <p className="text-sm text-gray-600 mt-1">This month</p>
                                     </div>
                                 </div>
-
-                                {/* Gamification Overview */}
-                                {gamificationStats && (
-                                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 shadow-sm border border-amber-100">
-                                        <div className="flex items-center justify-between mb-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl">
-                                                    <Flame className="w-6 h-6 text-white" />
-                                                </div>
-                                                <h3 className="font-bold text-gray-900 text-lg">Gamification Overview</h3>
-                                            </div>
-                                            <span className="text-sm text-amber-600 font-medium">
-                                                {gamificationStats.total_badges_earned} badges earned
-                                            </span>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                                            <div className="bg-white/80 rounded-xl p-4 text-center">
-                                                <div className="flex justify-center mb-2">
-                                                    <Zap className="w-6 h-6 text-amber-500" />
-                                                </div>
-                                                <p className="text-2xl font-bold text-gray-900">{gamificationStats.total_xp_distributed.toLocaleString()}</p>
-                                                <p className="text-xs text-gray-600">Total XP</p>
-                                            </div>
-                                            <div className="bg-white/80 rounded-xl p-4 text-center">
-                                                <div className="flex justify-center mb-2">
-                                                    <Flame className="w-6 h-6 text-orange-500" />
-                                                </div>
-                                                <p className="text-2xl font-bold text-gray-900">{gamificationStats.active_streakers}</p>
-                                                <p className="text-xs text-gray-600">Active Streakers</p>
-                                            </div>
-                                            <div className="bg-white/80 rounded-xl p-4 text-center">
-                                                <div className="flex justify-center mb-2">
-                                                    <TrendingUp className="w-6 h-6 text-green-500" />
-                                                </div>
-                                                <p className="text-2xl font-bold text-gray-900">{gamificationStats.average_streak}</p>
-                                                <p className="text-xs text-gray-600">Avg Streak</p>
-                                            </div>
-                                            <div className="bg-white/80 rounded-xl p-4 text-center">
-                                                <div className="flex justify-center mb-2">
-                                                    <Trophy className="w-6 h-6 text-yellow-500" />
-                                                </div>
-                                                <p className="text-2xl font-bold text-gray-900">{gamificationStats.seven_day_achievers}</p>
-                                                <p className="text-xs text-gray-600">7-Day Achievers</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Top Learners Leaderboard */}
-                                        <div className="bg-white/80 rounded-xl p-4">
-                                            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                                <Trophy className="w-4 h-4 text-yellow-500" />
-                                                Top Learners
-                                            </h4>
-                                            <div className="space-y-2">
-                                                {gamificationStats.top_learners.map((learner, index) => (
-                                                    <div key={learner.user_id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-amber-50 transition-colors">
-                                                        <div className="flex items-center gap-3">
-                                                            <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${index === 0 ? 'bg-yellow-400 text-yellow-900' :
-                                                                index === 1 ? 'bg-gray-300 text-gray-700' :
-                                                                    index === 2 ? 'bg-amber-600 text-white' :
-                                                                        'bg-gray-100 text-gray-600'
-                                                                }`}>
-                                                                {index + 1}
-                                                            </span>
-                                                            <span className="font-medium text-gray-900">{learner.name}</span>
-                                                            <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Lvl {learner.level}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-4">
-                                                            <span className="text-sm text-orange-600 font-medium flex items-center gap-1">
-                                                                <Flame className="w-3 h-3" /> {learner.streak} day{learner.streak !== 1 ? 's' : ''}
-                                                            </span>
-                                                            <span className="text-sm font-bold text-amber-600">
-                                                                {learner.xp.toLocaleString()} XP
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
 
                                 {/* Recent Activity */}
                                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
@@ -808,6 +1043,13 @@ export default function AdminDashboard() {
                                             <Upload className="w-4 h-4" />
                                             Export
                                         </button>
+                                        <button
+                                            onClick={handleInviteUser}
+                                            className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                                        >
+                                            <UserPlus className="w-4 h-4" />
+                                            Invite User
+                                        </button>
                                     </div>
                                 </div>
 
@@ -844,10 +1086,11 @@ export default function AdminDashboard() {
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
-                                                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                                                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                                                user.role === 'admin' ? 'bg-purple-100 text-purple-700' :
                                                                 user.role === 'instructor' ? 'bg-blue-100 text-blue-700' :
-                                                                    user.role === 'institution' ? 'bg-orange-100 text-orange-700' :
-                                                                        'bg-green-100 text-green-700'
+                                                                user.role === 'institution_admin' ? 'bg-orange-100 text-orange-700' :
+                                                                    'bg-green-100 text-green-700'
                                                                 }`}>
                                                                 {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                                                             </span>
@@ -892,6 +1135,20 @@ export default function AdminDashboard() {
                                                                     Suspend
                                                                 </button>
                                                             )}
+                                                            <button
+                                                                onClick={() => handleResetUserPassword(user.id, user.email)}
+                                                                className="text-amber-600 hover:text-amber-800 ml-3"
+                                                                title="Reset password"
+                                                            >
+                                                                <KeyRound className="w-4 h-4 inline" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteUser(user.id, user.email)}
+                                                                className="text-red-700 hover:text-red-900 ml-3"
+                                                                title="Delete user"
+                                                            >
+                                                                <Trash2 className="w-4 h-4 inline" />
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -1193,6 +1450,14 @@ export default function AdminDashboard() {
                             </div>
                         )
                         }
+
+                        {activeTab === 'integrations' && (
+                            <IntegrationsTab backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL || ''} />
+                        )}
+
+                        {activeTab === 'branding' && (
+                            <BrandingTab />
+                        )}
 
                         {
                             activeTab === 'system' && (

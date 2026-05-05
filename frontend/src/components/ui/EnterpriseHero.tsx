@@ -17,7 +17,7 @@ export const EnterpriseHero = () => {
             target: "THE PLATFORM",
             icon: Globe,
             title: "Where Industry, Academia, and Government Converge.",
-            description: "TSEA-X is the world's first Hexahelix learning ecosystem. Co-created by Tsinghua University & United in Diversity to bridge the gap between education and real-world impact.",
+            description: "VOKASI is Indonesia's sovereign AI-native vocational education platform — uniting SMK, politeknik, BLK, industry, and government in one adaptive learning ecosystem.",
             primaryCta: { text: "Explore Our Vision", href: "/hexahelix" },
             secondaryCta: { text: "View Partners", href: "/partners" },
             visualType: "platform",
@@ -254,7 +254,7 @@ export const EnterpriseHero = () => {
                                             </div>
                                             <div>
                                                 <div className="font-bold">Next-Gen Curriculum</div>
-                                                <div className="text-xs opacity-90">Powered by TSEA-X AI</div>
+                                                <div className="text-xs opacity-90">Powered by VOKASI AI</div>
                                             </div>
                                         </div>
                                     </div>

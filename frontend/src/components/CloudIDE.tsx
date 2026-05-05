@@ -16,7 +16,7 @@ type Language = 'python' | 'javascript' | 'java';
 const LANGUAGE_TEMPLATES: Record<Language, string> = {
     python: `# Python code here
 def main():
-    print("Hello from TSEA-X Cloud IDE!")
+    print("Hello from VOKASI Cloud IDE!")
     
     # Example: Calculate factorial
     n = 5
@@ -30,7 +30,7 @@ if __name__ == "__main__":
 `,
     javascript: `// JavaScript code here
 function main() {
-    console.log("Hello from TSEA-X Cloud IDE!");
+    console.log("Hello from VOKASI Cloud IDE!");
     
     // Example: Calculate factorial
     const n = 5;
@@ -45,7 +45,7 @@ main();
 `,
     java: `public class Main {
     public static void main(String[] args) {
-        System.out.println("Hello from TSEA-X Cloud IDE!");
+        System.out.println("Hello from VOKASI Cloud IDE!");
         
         // Example: Calculate factorial
         int n = 5;

@@ -60,7 +60,7 @@ const DIFFERENCE_DATA = [
     {
         icon: <WifiOff size={24} />,
         title: "Offline-First Design",
-        description: "Low bandwidth? No problem. T6 caches curriculum locally and syncs your project work when connectivity returns.",
+        description: "Low bandwidth? No problem. VOKASI caches curriculum locally and syncs your project work when connectivity returns.",
         color: "from-rose-500 to-pink-600"
     }
 ];
@@ -77,7 +77,7 @@ export const T6Difference = () => {
                     Built for the Real Economy
                 </h2>
                 <p className="text-gray-600 text-lg max-w-2xl">
-                    T6 isn't just a learning management system. It's an integrated development environment engineered for the unique challenges of the Indonesian archipelago.
+                    VOKASI isn't just a learning management system. It's an integrated development environment engineered for the unique challenges of the Indonesian archipelago.
                 </p>
             </div>
 

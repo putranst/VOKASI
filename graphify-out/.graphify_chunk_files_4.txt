@@ -1,0 +1,6 @@
+/Users/putra/Documents/PROJECTS/VOKASI/docs/MIT_OCW_CURRICULUM_EXAMPLE.md
+/Users/putra/Documents/PROJECTS/VOKASI/frontend/build_log_2.txt
+/Users/putra/Documents/PROJECTS/VOKASI/frontend/ekspedisi.html
+/Users/putra/Documents/PROJECTS/VOKASI/frontend/README.md
+/Users/putra/Documents/PROJECTS/VOKASI/frontend/build_log.txt
+/Users/putra/Documents/PROJECTS/VOKASI/frontend/src/app/admin/page_backup.txt

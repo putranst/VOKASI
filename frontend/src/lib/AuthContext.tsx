@@ -5,6 +5,20 @@ import { useRouter } from 'next/navigation';
 import { supabase } from './supabase';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
+// ── AM-002: Auth token helper (Edge middleware reads this for session evidence)
+// Note: For production, backend should set HttpOnly cookies. This is a client-side
+// fallback for demo mode. Role is NOT stored in cookies - authorization is server-side.
+function setAuthToken(token: string): void {
+    if (typeof document === 'undefined') return;
+    const maxAge = 60 * 60 * 24 * 7; // 7 days
+    document.cookie = `auth_token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+}
+
+function clearAuthToken(): void {
+    if (typeof document === 'undefined') return;
+    document.cookie = 'auth_token=; path=/; max-age=0';
+}
+
 interface User {
     id: number;
     supabase_id?: string;
@@ -19,7 +33,7 @@ interface AuthContextType {
     session: Session | null;
     loading: boolean;
     login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-    loginWithProvider: (provider: 'google' | 'github') => Promise<void>;
+    loginWithProvider: (provider: 'google' | 'github', roleHint?: string) => Promise<void>;
     register: (email: string, password: string, name: string, role: string) => Promise<{ success: boolean; error?: string }>;
     resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
     updatePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
@@ -35,33 +49,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
-    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+    const explicitBackendUrl =
+        process.env.NEXT_PUBLIC_BACKEND_URL ||
+        process.env.NEXT_PUBLIC_API_URL ||
+        '';
+    const BACKEND_URL = explicitBackendUrl.replace(/\/+$/, '');
+
+    const buildApiUrls = (path: string): string[] => {
+        const urls = BACKEND_URL
+            ? [`${BACKEND_URL}${path}`, path]
+            : [path];
+        return Array.from(new Set(urls));
+    };
 
     // Sync user to backend database
     const syncUserToBackend = async (supabaseUser: SupabaseUser, name?: string, role?: string): Promise<User | null> => {
         try {
-            const response = await fetch(`${BACKEND_URL}/api/v1/auth/sync-user`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    supabase_id: supabaseUser.id,
-                    email: supabaseUser.email,
-                    full_name: name || supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
-                    role: role || supabaseUser.user_metadata?.role || 'student'
-                })
-            });
+            const payload = {
+                supabase_id: supabaseUser.id,
+                email: supabaseUser.email,
+                full_name: name || supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
+                role: role || supabaseUser.user_metadata?.role || 'student'
+            };
 
-            if (response.ok) {
-                const userData = await response.json();
-                return {
-                    id: userData.id,
-                    supabase_id: supabaseUser.id,
-                    email: userData.email,
-                    name: userData.full_name,
-                    role: userData.role,
-                    institution_id: userData.institution_id
-                };
+            for (const url of buildApiUrls('/api/v1/auth/sync-user')) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        const userData = await response.json();
+                        return {
+                            id: userData.id,
+                            supabase_id: supabaseUser.id,
+                            email: userData.email,
+                            name: userData.full_name,
+                            role: userData.role,
+                            institution_id: userData.institution_id
+                        };
+                    }
+                } catch {
+                    continue;
+                }
             }
+
             console.error('Failed to sync user to backend');
             return null;
         } catch (error) {
@@ -79,16 +113,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                 if (currentSession?.user) {
                     setSession(currentSession);
-                    const syncedUser = await syncUserToBackend(currentSession.user);
+                    const pendingRole = localStorage.getItem('pending_oauth_role') || undefined;
+                    const syncedUser = await syncUserToBackend(currentSession.user, undefined, pendingRole);
                     if (syncedUser) {
                         setUser(syncedUser);
                         localStorage.setItem('user', JSON.stringify(syncedUser));
+                        // Role is not stored in cookies - authorization is server-side
                     }
+                    localStorage.removeItem('pending_oauth_role');
                 } else {
                     // Check localStorage for persisted user (fallback for demo mode)
                     const storedUser = localStorage.getItem('user');
                     if (storedUser) {
-                        setUser(JSON.parse(storedUser));
+                        const user = JSON.parse(storedUser);
+                        setUser(user);
+                        // Restore auth token if exists
+                        const existingToken = localStorage.getItem('token');
+                        if (existingToken) {
+                            setAuthToken(existingToken);
+                        }
+                        // Generate fallback devtoken if none exists (for existing sessions)
+                        if (!localStorage.getItem('token') && user.id && user.role) {
+                            const fallbackToken = `devtoken:${user.id}:${user.role}`;
+                            localStorage.setItem('token', fallbackToken);
+                            setAuthToken(fallbackToken);
+                        }
                     }
                 }
             } catch (error) {
@@ -106,14 +155,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setSession(newSession);
 
             if (event === 'SIGNED_IN' && newSession?.user) {
-                const syncedUser = await syncUserToBackend(newSession.user);
+                const pendingRole = localStorage.getItem('pending_oauth_role') || undefined;
+                const syncedUser = await syncUserToBackend(newSession.user, undefined, pendingRole);
                 if (syncedUser) {
                     setUser(syncedUser);
                     localStorage.setItem('user', JSON.stringify(syncedUser));
+                    // Role is not stored in cookies - authorization is server-side
                 }
+                localStorage.removeItem('pending_oauth_role');
             } else if (event === 'SIGNED_OUT') {
                 setUser(null);
                 localStorage.removeItem('user');
+                clearAuthToken();
             } else if (event === 'PASSWORD_RECOVERY') {
                 // Redirect to password reset page
                 router.push('/reset-password');
@@ -163,31 +216,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Fallback to backend demo login
             console.log('Using backend authentication...');
             try {
-                const response = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
+                let backendAuthError = '';
 
-                if (response.ok) {
-                    const userData = await response.json();
-                    const user: User = {
-                        id: userData.id,
-                        email: userData.email,
-                        name: userData.name,
-                        role: userData.role,
-                        institution_id: userData.institution_id
-                    };
-                    setUser(user);
-                    localStorage.setItem('user', JSON.stringify(user));
-                    return { success: true };
+                for (const url of buildApiUrls('/api/v1/auth/login')) {
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password })
+                        });
+
+                        if (response.ok) {
+                            const userData = await response.json();
+                            const user: User = {
+                                id: userData.id,
+                                email: userData.email,
+                                name: userData.name,
+                                role: userData.role,
+                                institution_id: userData.institution_id
+                            };
+                            setUser(user);
+                            localStorage.setItem('user', JSON.stringify(user));
+                            // Store backend access token for admin API calls
+                            if (userData.access_token) {
+                                localStorage.setItem('token', userData.access_token);
+                                setAuthToken(userData.access_token);
+                            }
+                            return { success: true };
+                        }
+
+                        const errorData = await response.json().catch(() => ({}));
+                        backendAuthError = errorData.detail || errorData.message || backendAuthError;
+                    } catch {
+                        continue;
+                    }
                 }
 
-                // If backend also fails, show appropriate error
-                const errorData = await response.json().catch(() => ({}));
                 return {
                     success: false,
-                    error: errorData.detail || supabaseError?.message || 'Invalid email or password'
+                    error: backendAuthError || supabaseError?.message || 'Invalid email or password'
                 };
             } catch (backendError: any) {
                 console.error('Backend login error:', backendError);
@@ -202,10 +269,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const loginWithProvider = async (provider: 'google' | 'github'): Promise<void> => {
+    const loginWithProvider = async (provider: 'google' | 'github', roleHint?: string): Promise<void> => {
+        // Check if Supabase is properly configured (not placeholder)
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+        const supabaseConfigured = supabaseUrl &&
+            supabaseUrl.includes('supabase.co') &&
+            !supabaseUrl.includes('placeholder') &&
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+            !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('placeholder');
+
+        if (!supabaseConfigured) {
+            throw new Error('SSO not configured. Please use email/password registration or set up Supabase credentials in .env.local');
+        }
+
         const redirectTo = typeof window !== 'undefined'
             ? `${window.location.origin}/login`
             : 'http://localhost:3000/login';
+
+        if (roleHint) {
+            localStorage.setItem('pending_oauth_role', roleHint);
+        }
 
         const { error } = await supabase.auth.signInWithOAuth({
             provider,
@@ -226,33 +309,85 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: string,
         role: string
     ): Promise<{ success: boolean; error?: string }> => {
-        try {
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        full_name: name,
-                        role: role
+        // Check if Supabase is properly configured (not placeholder)
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+        const supabaseConfigured = supabaseUrl &&
+            supabaseUrl.includes('supabase.co') &&
+            !supabaseUrl.includes('placeholder') &&
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+            !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('placeholder');
+
+        if (supabaseConfigured) {
+            // Use Supabase Auth
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            full_name: name,
+                            role: role
+                        }
                     }
+                });
+
+                if (error) {
+                    return { success: false, error: error.message };
                 }
-            });
 
-            if (error) {
-                return { success: false, error: error.message };
-            }
-
-            if (data.user) {
-                // Sync to backend
-                const syncedUser = await syncUserToBackend(data.user, name, role);
-                if (syncedUser) {
-                    setUser(syncedUser);
-                    localStorage.setItem('user', JSON.stringify(syncedUser));
+                if (data.user) {
+                    const syncedUser = await syncUserToBackend(data.user, name, role);
+                    if (syncedUser) {
+                        setUser(syncedUser);
+                        localStorage.setItem('user', JSON.stringify(syncedUser));
+                    }
+                    return { success: true };
                 }
-                return { success: true };
-            }
 
-            return { success: false, error: 'Registration failed' };
+                return { success: false, error: 'Registration failed' };
+            } catch (error: any) {
+                return { success: false, error: error.message || 'An error occurred' };
+            }
+        }
+
+        // Fallback: Backend-only registration (demo mode)
+        console.log('Supabase not configured, using backend registration...');
+        try {
+            for (const url of buildApiUrls('/api/v1/auth/register')) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password, name, role })
+                    });
+
+                    if (response.ok) {
+                        const userData = await response.json();
+                        const user: User = {
+                            id: userData.id,
+                            email: userData.email,
+                            name: userData.name,
+                            role: userData.role,
+                            institution_id: userData.institution_id
+                        };
+                        setUser(user);
+                        localStorage.setItem('user', JSON.stringify(user));
+                        if (userData.access_token) {
+                            localStorage.setItem('token', userData.access_token);
+                            setAuthToken(userData.access_token);
+                        }
+                        return { success: true };
+                    }
+
+                    const errorData = await response.json().catch(() => ({}));
+                    if (errorData.detail || errorData.message) {
+                        return { success: false, error: errorData.detail || errorData.message };
+                    }
+                } catch {
+                    continue;
+                }
+            }
+            return { success: false, error: 'Registration failed. Please try again.' };
         } catch (error: any) {
             return { success: false, error: error.message || 'An error occurred' };
         }
@@ -299,6 +434,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         setSession(null);
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        clearAuthToken();
         router.push('/login');
     };
 

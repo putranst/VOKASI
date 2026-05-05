@@ -11,12 +11,12 @@ const faqCategories = [
         name: 'General',
         faqs: [
             {
-                question: 'What is T6?',
-                answer: 'T6 is an AI-powered education platform that uses the IRIS Cycle (Immersion, Reflection, Iteration, Scale) framework to provide project-based learning experiences. We combine world-class curriculum with an AI tutor and cloud-based development tools to help learners transform their careers.'
+                question: 'What is VOKASI?',
+                answer: 'VOKASI is an AI-powered education platform that uses the IRIS Cycle (Immersion, Reflection, Iteration, Scale) framework to provide project-based learning experiences. We combine world-class curriculum with an AI tutor and cloud-based development tools to help learners transform their careers.'
             },
             {
-                question: 'Who is T6 for?',
-                answer: 'T6 is designed for career changers, professionals looking to upskill, and anyone who wants to learn practical tech skills through hands-on projects. Our learners come from diverse backgrounds including marketing, teaching, HR, and more.'
+                question: 'Who is VOKASI for?',
+                answer: 'VOKASI is designed for career changers, professionals looking to upskill, and anyone who wants to learn practical tech skills through hands-on projects. Our learners come from diverse backgrounds including marketing, teaching, HR, and more.'
             },
             {
                 question: 'How long do programs take to complete?',
@@ -53,8 +53,8 @@ const faqCategories = [
         name: 'Credentials & Certificates',
         faqs: [
             {
-                question: 'What are T6 credentials?',
-                answer: 'T6 credentials are blockchain-verified certificates that prove your skills and project completions. Each credential is permanently recorded on the blockchain, making it impossible to forge and easy for employers to verify.'
+                question: 'What are VOKASI credentials?',
+                answer: 'VOKASI credentials are blockchain-verified certificates that prove your skills and project completions. Each credential is permanently recorded on the blockchain, making it impossible to forge and easy for employers to verify.'
             },
             {
                 question: 'How do I earn a credential?',
@@ -62,11 +62,11 @@ const faqCategories = [
             },
             {
                 question: 'How can employers verify my credentials?',
-                answer: 'Employers can verify any T6 credential using our public verification page at /verify-credential. They simply enter the credential ID and can instantly confirm its authenticity and view the associated skills.'
+                answer: 'Employers can verify any VOKASI credential using our public verification page at /verify-credential. They simply enter the credential ID and can instantly confirm its authenticity and view the associated skills.'
             },
             {
                 question: 'Do credentials expire?',
-                answer: 'No, T6 credentials never expire. They serve as a permanent record of your achievements and the skills you demonstrated at the time of completion.'
+                answer: 'No, VOKASI credentials never expire. They serve as a permanent record of your achievements and the skills you demonstrated at the time of completion.'
             }
         ]
     },
@@ -75,7 +75,7 @@ const faqCategories = [
         faqs: [
             {
                 question: 'What browsers are supported?',
-                answer: 'T6 works best on modern browsers including Chrome, Firefox, Safari, and Edge. We recommend using the latest version of your preferred browser for the best experience with our Cloud IDE.'
+                answer: 'VOKASI works best on modern browsers including Chrome, Firefox, Safari, and Edge. We recommend using the latest version of your preferred browser for the best experience with our Cloud IDE.'
             },
             {
                 question: 'My code isn\'t running. What should I do?',
@@ -117,7 +117,7 @@ export default function FAQPage() {
                     </div>
                     <h1 className="text-5xl font-black mb-6">How Can We Help?</h1>
                     <p className="text-xl text-orange-100 max-w-2xl mx-auto mb-8">
-                        Find answers to common questions about T6, our courses, and credentials
+                        Find answers to common questions about VOKASI, our courses, and credentials
                     </p>
 
                     {/* Search */}

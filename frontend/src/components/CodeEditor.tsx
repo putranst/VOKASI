@@ -17,7 +17,7 @@ interface CodeEditorProps {
 }
 
 export default function CodeEditor({
-    initialCode = '# Write your code here\nprint("Hello, TSEA-X!")',
+    initialCode = '# Write your code here\nprint("Hello, VOKASI!")',
     language = 'python',
     theme = 'vs-dark',
     readOnly = false,

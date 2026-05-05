@@ -11,8 +11,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Fallback to placeholder values for build time or if env vars are missing
 // The client will not work without valid credentials, but the build will succeed.
-const url = supabaseUrl || 'https://placeholder.supabase.co';
-const key = supabaseAnonKey || 'placeholder-key';
+let url = supabaseUrl || 'https://placeholder.supabase.co';
+let key = supabaseAnonKey || 'placeholder-key';
+
+try {
+    new URL(url);
+} catch {
+    console.warn('Supabase URL is invalid. Falling back to placeholder.');
+    url = 'https://placeholder.supabase.co';
+    key = 'placeholder-key';
+}
 
 // Create a single supabase client for interacting with your database
 export const supabase = createClient(url, key);
