@@ -1,26 +1,73 @@
-# VOKASI2 — Docker Compose
-# PRD v2.3 §8: PostgreSQL 15 + pgvector, Redis, Next.js API
+version: "3.9"
 
 services:
+  # --- Primary Web App ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vokasi2-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://backend:3001
+      - NEXT_PUBLIC_APP_URL=${APP_URL:-http://localhost:3000}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - vokasi2
+
+  # --- API Server ---
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vokasi2-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - FRONTEND_URL=${APP_URL:-http://localhost:3000}
+      - PORT=3001
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - vokasi2
+
+  # --- PostgreSQL 15 + pgvector ---
   db:
     image: pgvector/pgvector:pg16
     container_name: vokasi2-db
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: vokasi2
-      POSTGRES_USER: vokasi
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-vokasi2_dev_password}
     ports:
       - "5432:5432"
+    environment:
+      - POSTGRES_DB=vokasi2
+      - POSTGRES_USER=${DB_USER:-vokasi}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
-      - vokasi2_db:/var/lib/postgresql/data
-      - ./backend/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - vokasi2_db_data:/var/lib/postgresql/data
+      - ./backend/sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vokasi -d vokasi2"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-vokasi} -d vokasi2"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - vokasi2
 
+  # --- Redis (sessions, cache, queues) ---
   redis:
     image: redis:7-alpine
     container_name: vokasi2-redis
@@ -28,46 +75,80 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - vokasi2_redis:/data
+      - vokasi2_redis_data:/data
     command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
+    networks:
+      - vokasi2
 
-  # Optional: CodeSandbox worker for cloud sandboxes
-  sandbox-worker:
-    build:
-      context: ./backend/sandbox
-      dockerfile: Dockerfile
-    container_name: vokasi2-sandbox-worker
+  # --- Nginx Reverse Proxy + SSL ---
+  nginx:
+    image: nginx:alpine
+    container_name: vokasi2-nginx
     restart: unless-stopped
     ports:
-      - "8080:8080"
-    environment:
-      REDIS_URL: redis://redis:6379
-      SANDBOX_TIMEOUT: 7200
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro  # mount certs here
     depends_on:
-      redis:
-        condition: service_healthy
+      - frontend
+      - backend
+    networks:
+      - vokasi2
 
-  # Optional: SocraticChat streaming endpoint
-  socratic-worker:
+  # --- Sandbox Containers (per student session) ---
+  sandbox-runner:
     build:
-      context: ./backend/socratic
+      context: ./sandbox
       dockerfile: Dockerfile
-    container_name: vokasi2-socratic-worker
-    restart: unless-stopped
-    ports:
-      - "8081:8081"
+    container_name: vokasi2-sandbox-runner
+    restart: "no"
+    ports: []
     environment:
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-      REDIS_URL: redis://redis:6379
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+    volumes:
+      - vokasi2_sandbox_data:/sandbox/data
     depends_on:
-      redis:
+      - redis
+    networks:
+      - vokasi2
+    # Resource limits enforced at runtime by the sandbox runner service
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2G
+        reservations:
+          cpus: "0.25"
+          memory: 512M
+
+  # --- Cron / Background Jobs ---
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vokasi2-worker
+    restart: unless-stopped
+    command: node dist/worker.js
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    depends_on:
+      db:
         condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - vokasi2
 
 volumes:
-  vokasi2_db:
-  vokasi2_redis:
+  vokasi2_db_data:
+  vokasi2_redis_data:
+  vokasi2_sandbox_data:
+
+networks:
+  vokasi2:
+    driver: bridge
