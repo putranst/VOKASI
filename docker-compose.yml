@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  # --- Primary Web App ---
+  # --- Next.js App (frontend + API routes) ---
   frontend:
     build:
       context: ./frontend
@@ -12,31 +12,33 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://backend:3001
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - JWT_SECRET=${JWT_SECRET:-vokasi2-dev-secret}
       - NEXT_PUBLIC_APP_URL=${APP_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_API_URL=${APP_URL:-http://localhost:3000}
     depends_on:
-      backend:
+      db:
         condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - vokasi2
 
-  # --- API Server ---
-  backend:
+  # --- Cron / Background Jobs ---
+  worker:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: vokasi2-backend
+    container_name: vokasi2-worker
     restart: unless-stopped
-    ports:
-      - "3001:3001"
+    command: ["node", "worker.js", "award-badges"]
     environment:
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - JWT_SECRET=${JWT_SECRET}
-      - FRONTEND_URL=${APP_URL:-http://localhost:3000}
-      - PORT=3001
     depends_on:
       db:
         condition: service_healthy
@@ -55,7 +57,7 @@ services:
     environment:
       - POSTGRES_DB=vokasi2
       - POSTGRES_USER=${DB_USER:-vokasi}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-vokasi2secret}
     volumes:
       - vokasi2_db_data:/var/lib/postgresql/data
       - ./backend/sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
@@ -90,21 +92,19 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro  # mount certs here
+      - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - frontend
-      - backend
     networks:
       - vokasi2
 
   # --- Sandbox Containers (per student session) ---
   sandbox-runner:
     build:
-      context: ./sandbox
+      context: ./backend/sandbox
       dockerfile: Dockerfile
     container_name: vokasi2-sandbox-runner
     restart: "no"
-    ports: []
     environment:
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
     volumes:
@@ -113,7 +113,6 @@ services:
       - redis
     networks:
       - vokasi2
-    # Resource limits enforced at runtime by the sandbox runner service
     deploy:
       resources:
         limits:
@@ -122,27 +121,6 @@ services:
         reservations:
           cpus: "0.25"
           memory: 512M
-
-  # --- Cron / Background Jobs ---
-  worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: vokasi2-worker
-    restart: unless-stopped
-    command: node dist/worker.js
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    networks:
-      - vokasi2
 
 volumes:
   vokasi2_db_data:

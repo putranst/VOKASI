@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turun Gunung — Carousel Preview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0a0a0a; color: #fff; }
+  .carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 20px; padding: 40px 24px; }
+  .slide { flex: 0 0 375px; height: 667px; scroll-snap-align: start; border-radius: 20px; overflow: hidden; position: relative; display: flex; flex-direction: column; justify-content: flex-end; }
+  .slide-inner { padding: 32px 28px; position: relative; z-index: 2; }
+  .slide-bg { position: absolute; inset: 0; z-index: 1; }
+  .slide-overlay { position: absolute; inset: 0; z-index: 1; }
+  .slide-num { position: absolute; top: 16px; right: 20px; font-size: 11px; color: rgba(255,255,255,0.35); z-index: 3; font-weight: 600; letter-spacing: 1px; }
+  .slide-brand { position: absolute; top: 16px; left: 20px; font-size: 11px; color: rgba(255,255,255,0.35); z-index: 3; font-weight: 600; letter-spacing: 1px; }
+  h1 { font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 12px; letter-spacing: -0.5px; }
+  h2 { font-size: 22px; font-weight: 700; line-height: 1.3; margin-bottom: 12px; }
+  p { font-size: 14px; line-height: 1.65; color: rgba(255,255,255,0.85); }
+  .accent { color: #C7B0FE; }
+  .teal { color: #2DD4BF; }
+  .red { color: #FB7185; }
+  .gold { color: #FCD34D; }
+  .divider { width: 40px; height: 3px; border-radius: 2px; margin: 14px 0; }
+  .tag { display: inline-block; padding: 4px 10px; border-radius: 16px; font-size: 11px; font-weight: 600; margin: 3px 3px 3px 0; }
+  .check { color: #2DD4BF; margin-right: 6px; }
+  .big-num { font-size: 64px; font-weight: 900; line-height: 1; letter-spacing: -2px; }
+  .photo-placeholder { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #C7B0FE, #2DD4BF); margin-bottom: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  .pdf-mockup { width: 180px; height: 240px; background: #fff; border-radius: 8px; padding: 20px; color: #18181B; box-shadow: 0 20px 60px rgba(0,0,0,0.5); transform: rotate(-3deg); margin: 0 auto 20px; }
+  .pdf-mockup h3 { font-size: 14px; font-weight: 800; line-height: 1.3; margin-bottom: 8px; }
+  .pdf-mockup p { font-size: 10px; color: #666; line-height: 1.4; }
+  .pdf-badge { position: absolute; top: -8px; right: -8px; background: #FB7185; color: #fff; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 12px; }
+  .cta-btn { display: inline-block; padding: 12px 28px; border-radius: 28px; font-weight: 700; font-size: 14px; text-decoration: none; margin-top: 16px; }
+</style>
+</head>
+<body>
+<div class="carousel">
+
+<!-- SLIDE 1: HOOK -->
+<div class="slide">
+  <div class="slide-bg" style="background: linear-gradient(180deg, #0f0f0f 0%, #1a1033 100%);"></div>
+  <div class="slide-overlay" style="background: radial-gradient(ellipse at 50% 30%, rgba(199,176,254,0.08) 0%, transparent 70%);"></div>
+  <div class="slide-brand">PUTRA</div>
+  <div class="slide-num">1/10</div>
+  <div class="slide-inner">
+    <p style="font-size:12px; color:rgba(255,255,255,0.4); margin-bottom:12px; text-transform:uppercase; letter-spacing:2px;">Selama 20 tahun...</p>
+    <h1>Saya diam di balik layar.</h1>
+    <div class="divider" style="background:#C7B0FE;"></div>
+    <p>Sekali saya buka mulut,<br><strong style="color:#fff; font-size:16px;">banyak yang tidak suka.</strong></p>
+  </div>
+</div>
+
+<!-- SLIDE 2: REVEAL -->
+<div class="slide">
+  <div class="slide-bg" style="background: #18181B;"></div>
+  <div class="slide-overlay" style="background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.7) 100%);"></div>
+  <div class="slide-num">2/10</div>
+  <div class="slide-inner">
+    <div class="photo-placeholder">👤</div>
+    <h2>Saya turun gunung.</h2>
+    <div class="divider" style="background:#2DD4BF;"></div>
+    <p>25 tahun di industri teknologi.<br>10+ tahun memimpin di Asia Tenggara.<br>Dari startup sampai enterprise.<br>Dari coding sampai boardroom.</p>
+    <p style="margin-top:12px; color:#C7B0FE; font-weight:600;">Sekarang waktunya bicara.</p>
+  </div>
+</div>
+
+<!-- SLIDE 3: PROVOCATION -->
+<div class="slide">
+  <div class="slide-bg" style="background: linear-gradient(135deg, #1a0a0a 0%, #18181B 100%);"></div>
+  <div class="slide-overlay" style="background: radial-gradient(ellipse at 30% 60%, rgba(251,113,133,0.1) 0%, transparent 60%);"></div>
+  <div class="slide-num">3/10</div>
+  <div class="slide-inner">
+    <h1 style="font-size:26px;">AI itu bukan<br><span class="red">untuk orang kaya.</span></h1>
+    <div class="divider" style="background:#FB7185;"></div>
+    <p>Setiap hari saya lihat startup di Jakarta, UMKM di Surabaya, guru di Makassar — mereka semua butuh AI.</p>
+    <p style="margin-top:8px;"><strong style="color:#fff;">Tapi mereka tidak bisa bayar $20/bulan.</strong></p>
+    <p style="margin-top:8px; color:rgba(255,255,255,0.5);">Dan perusahaan besar AI tidak peduli.</p>
+  </div>
+</div>
+
+<!-- SLIDE 4: SHOCK NUMBER -->
+<div class="slide">
+  <div class="slide-bg" style="background: #0f0f0f;"></div>
+  <div class="slide-overlay" style="background: radial-gradient(ellipse at 50% 50%, rgba(251,113,133,0.15) 0%, transparent 60%);"></div>
+  <div class="slide-num">4/10</div>
+  <div class="slide-inner" style="text-align:center;">
+    <p style="font-size:12px; color:rgba(255,255,255,0.4); margin-bottom:8px;">50 JUTA SISWA × CHATGPT =</p>
+    <div class="big-num red">$125K</div>
+    <p style="font-size:20px; font-weight:800; color:#FB7185; margin:4px 0 16px;">PER HARI</p>
+    <div class="divider" style="background:#FB7185; margin:0 auto 16px;"></div>
+    <p>Siapa yang bayar?</p>
+    <p style="margin-top:4px; color:rgba(255,255,255,0.5);">Pemerintah? Sekolah? Orang tua?</p>
+    <p style="margin-top:8px; color:#fff; font-weight:700;">Jawabnya: tidak ada.</p>
+  </div>
+</div>
+
+<!-- SLIDE 5: THE INSIGHT -->
+<div class="slide">
+  <div class="slide-bg" style="background: linear-gradient(135deg, #0a1a1a 0%, #18181B 100%);"></div>
+  <div class="slide-overlay" style="background: radial-gradient(ellipse at 50% 40%, rgba(45,212,191,0.1) 0%, transparent 60%);"></div>
+  <div class="slide-num">5/10</div>
+  <div class="slide-inner">
+    <h1>Tapi ada<br><span class="teal">jalan lain.</span></h1>
+    <div class="divider" style="background:#2DD4BF;"></div>
+    <p style="font-size:16px; font-weight:700; color:#2DD4BF; margin-bottom:8px;">Small Language Model.</p>
+    <p>Model AI yang kecil — 1-9 miliar parameter.</p>
+    <p style="margin-top:8px;">Bisa jalan di <strong style="color:#fff;">laptop</strong>. Di <strong style="color:#fff;">HP</strong>. Di <strong style="color:#fff;">server sekolah</strong>.</p>
+    <p style="margin-top:8px;">Tidak perlu internet. Tidak perlu langganan.</p>
+    <p style="margin-top:8px; color:#2DD4BF; font-weight:600;">Data tidak keluar dari gedung.</p>
+  </div>
+</div>
+
+<!-- SLIDE 6: PROOF -->
+<div class="slide">
+  <div class="slide-bg" style="background: #18181B;"></div>
+  <div class="slide-num">6/10</div>
+  <div class="slide-inner">
+    <h2>Ini bukan teori.</h2>
+    <div class="divider" style="background:#C7B0FE;"></div>
+    <p style="margin-bottom:10px;"><span class="check">✓</span>Warung di Yogyakarta — stok otomatis via WhatsApp</p>
+    <p style="margin-bottom:10px;"><span class="check">✓</span>Pabrik garmen di HCMC — kontrol kualitas AI lokal</p>
+    <p style="margin-bottom:10px;"><span class="check">✓</span>Logistik di Manila — dokumen bea cukai otomatis</p>
+    <p style="margin-bottom:10px;"><span class="check">✓</span>Sekolah di Bandung — tutor AI tanpa internet</p>
+    <p style="margin-top:16px; color:#C7B0FE; font-weight:700;">Semua jalan lokal. Semua terjangkau.</p>
+  </div>
+</div>
+
+<!-- SLIDE 7: VISION -->
+<div class="slide">
+  <div class="slide-bg" style="background: linear-gradient(135deg, #1a1033 0%, #0a1a1a 100%);"></div>
+  <div class="slide-overlay" style="background: radial-gradient(ellipse at 50% 50%, rgba(199,176,254,0.08) 0%, transparent 60%);"></div>
+  <div class="slide-num">7/10</div>
+  <div class="slide-inner">
+    <h2>Bayangkan ekosistem ini:</h2>
+    <div class="divider" style="background:#C7B0FE;"></div>
+    <p style="margin-bottom:12px;">Developer Indonesia fine-tune model AI untuk dokumen hukum.</p>
+    <p style="margin-bottom:12px;">Pengacara, notaris, legal tech pakai model itu.</p>
+    <p style="margin-bottom:12px; color:#fff; font-weight:600;">Pekerjaan tercipta. Nilai ekonomi tetap lokal.</p>
+    <p style="margin-top:16px; color:#C7B0FE; font-weight:700;">Itu bukan mimpi.<br>Itu bisa dibangun sekarang.</p>
+  </div>
+</div>
+
+<!-- SLIDE 8: WHAT NEEDS TO HAPPEN -->
+<div class="slide">
+  <div class="slide-bg" style="background: #18181B;"></div>
+  <div class="slide-num">8/10</div>
+  <div class="slide-inner">
+    <h2>3 hal yang harus terjadi:</h2>
+    <div class="divider" style="background:#FCD34D;"></div>
+    <div style="margin-bottom:16px;">
+      <p style="font-size:13px; color:#FCD34D; font-weight:700; margin-bottom:4px;">1. FINE-TUNING BAHASA LOKAL</p>
+      <p style="font-size:12px; color:rgba(255,255,255,0.5);">Bahasa Indonesia, Vietnam, Thailand, Tagalog — level profesional</p>
+    </div>
+    <div style="margin-bottom:16px;">
+      <p style="font-size:13px; color:#FCD34D; font-weight:700; margin-bottom:4px;">2. INFRASTRUKTUR GPU LOKAL</p>
+      <p style="font-size:12px; color:rgba(255,255,255,0.5);">Cluster bersama, compute pemerintah — bukan di Virginia</p>
+    </div>
+    <div>
+      <p style="font-size:13px; color:#FCD34D; font-weight:700; margin-bottom:4px;">3. EDUKASI</p>
+      <p style="font-size:12px; color:rgba(255,255,255,0.5);">Kebanyakan pemimpin bisnis pikir AI = ChatGPT</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9: LEAD MAGNET -->
+<div class="slide">
+  <div class="slide-bg" style="background: linear-gradient(180deg, #18181B 0%, #1a1033 100%);"></div>
+  <div class="slide-overlay" style="background: radial-gradient(ellipse at 50% 60%, rgba(199,176,254,0.12) 0%, transparent 60%);"></div>
+  <div class="slide-num">9/10</div>
+  <div class="slide-inner" style="align-items:center; text-align:center;">
+    <div style="position:relative; display:inline-block;">
+      <div class="pdf-mockup">
+        <div class="pdf-badge">GRATIS</div>
+        <h3>10 Langkah UMKM Mulai Pakai AI Tanpa Langganan Mahal</h3>
+        <p>Panduan praktis untuk bisnis yang ingin pakai AI tanpa $20/bulan</p>
+        <div style="margin-top:12px; padding-top:8px; border-top:1px solid #eee;">
+          <p style="font-size:9px; color:#999;">Putra | putra.io</p>
+        </div>
+      </div>
+    </div>
+    <h2 style="margin-top:16px;">Panduan gratis untuk Anda.</h2>
+    <p>Komentar <strong style="color:#FCD34D; font-size:16px;">"MAU"</strong> di bawah,<br>saya kirimkan.</p>
+  </div>
+</div>
+
+<!-- SLIDE 10: CTA -->
+<div class="slide">
+  <div class="slide-bg" style="background: linear-gradient(135deg, #18181B 0%, #1a1033 50%, #0a1a1a 100%);"></div>
+  <div class="slide-overlay" style="background: radial-gradient(ellipse at 50% 70%, rgba(199,176,254,0.1) 0%, transparent 50%);"></div>
+  <div class="slide-num">10/10</div>
+  <div class="slide-inner" style="text-align:center;">
+    <div class="photo-placeholder" style="margin:0 auto 16px;">👤</div>
+    <h2 style="font-size:20px;">AI untuk semua.<br><span class="accent">Bukan hanya yang bisa bayar.</span></h2>
+    <div class="divider" style="background:#C7B0FE; margin:14px auto;"></div>
+    <p style="font-size:13px;">Follow untuk konten tentang:</p>
+    <p style="font-size:13px; color:#2DD4BF; margin-top:8px;">→ AI terjangkau untuk UMKM<br>→ Teknologi yang berpihak pada rakyat<br>→ Masa depan AI di Asia Tenggara</p>
+    <p style="margin-top:20px; font-size:12px; color:rgba(255,255,255,0.4);">Putra | 25 tahun di industri teknologi<br>putra.io</p>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,21 +1,79 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuthStore } from "@/store";
 
-const MOCK_STUDENT = [
-  { id:"r1", mentorName:"Dr. Rina Marlina", course:"AI Fundamentals — Batch 3", message:"I want to master prompt engineering for job interviews at fintech companies.", goals:"Learn few-shot, chain-of-thought, and evaluation metrics in 4 weeks.", status:"accepted", respondedAt:"2024-11-20", avatar:"RM" },
-  { id:"r2", mentorName:"Sarah Putri", course:"AI Fundamentals — Batch 3", message:"I'm struggling with the ethical reasoning challenges.", goals:"Develop a framework for evaluating AI deployment decisions.", status:"pending", respondedAt:null, avatar:"SP" },
-];
+interface MentorRequest {
+  id: string;
+  mentorName?: string;
+  studentName?: string;
+  course: string;
+  message: string;
+  goals: string;
+  status: string;
+  respondedAt: string | null;
+  avatar: string;
+  // API snake_case fields
+  mentor_name?: string;
+  student_name?: string;
+  course_title?: string;
+  responded_at?: string | null;
+}
 
-const MOCK_MENTOR = [
-  { id:"r3", studentName:"Andi Wijaya", course:"AI Fundamentals — Batch 3", message:"I want to improve my data analysis skills for my capstone project.", goals:"Master Pandas, visualization, and statistical reasoning in 6 weeks.", status:"pending", respondedAt:null, avatar:"AW" },
-  { id:"r4", studentName:"Dewi Lestari", course:"Prompt Engineering Mastery", message:"Can you help me understand how to evaluate LLM outputs systematically?", goals:"Build an evaluation checklist for my research project.", status:"accepted", respondedAt:"2024-11-19", avatar:"DL" },
-];
+function normalizeRequest(raw: MentorRequest): MentorRequest {
+  return {
+    id: raw.id,
+    mentorName: raw.mentorName ?? raw.mentor_name,
+    studentName: raw.studentName ?? raw.student_name,
+    course: raw.course ?? raw.course_title ?? "",
+    message: raw.message ?? "",
+    goals: raw.goals ?? "",
+    status: raw.status ?? "pending",
+    respondedAt: raw.respondedAt ?? raw.responded_at ?? null,
+    avatar: raw.avatar ?? (raw.mentorName ?? raw.mentor_name ?? raw.studentName ?? raw.student_name ?? "?").split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase(),
+  };
+}
 
-const ST_COLORS = { accepted:"bg-emerald-900/50 text-emerald-300", rejected:"bg-red-900/50 text-red-300", pending:"bg-amber-900/50 text-amber-300" };
+const ST_COLORS = { accepted: "bg-emerald-900/50 text-emerald-300", rejected: "bg-red-900/50 text-red-300", pending: "bg-amber-900/50 text-amber-300" };
 
 export default function RequestsPage() {
+  const { token } = useAuthStore();
+  const [studentRequests, setStudentRequests] = useState<MentorRequest[]>([]);
+  const [mentorRequests, setMentorRequests] = useState<MentorRequest[]>([]);
+  const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"student" | "mentor">("student");
-  const requests = view === "student" ? MOCK_STUDENT : MOCK_MENTOR;
+
+  useEffect(() => {
+    if (!token) return;
+    Promise.all([
+      fetch("/api/mentor-requests?view=student", {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json()),
+      fetch("/api/mentor-requests?view=mentor", {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json()),
+    ])
+      .then(([studentData, mentorData]) => {
+        setStudentRequests(Array.isArray(studentData) ? studentData.map(normalizeRequest) : []);
+        setMentorRequests(Array.isArray(mentorData) ? mentorData.map(normalizeRequest) : []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load mentor requests:", err);
+        setStudentRequests([]);
+        setMentorRequests([]);
+        setLoading(false);
+      });
+  }, [token]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400" />
+      </div>
+    );
+  }
+
+  const requests = view === "student" ? studentRequests : mentorRequests;
 
   return (
     <div className="space-y-6">
@@ -26,11 +84,11 @@ export default function RequestsPage() {
 
       <div className="flex gap-2">
         <button onClick={() => setView("student")}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${view==="student" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-slate-800 text-slate-400 border border-transparent"}`}>
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${view === "student" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-slate-800 text-slate-400 border border-transparent"}`}>
           My Requests
         </button>
         <button onClick={() => setView("mentor")}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${view==="mentor" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-slate-800 text-slate-400 border border-transparent"}`}>
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${view === "mentor" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-slate-800 text-slate-400 border border-transparent"}`}>
           Incoming Requests
         </button>
       </div>
@@ -40,9 +98,9 @@ export default function RequestsPage() {
           <div key={r.id} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-emerald-500/20 transition-all">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-800/30">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${view==="student"?"bg-emerald-500/20 text-emerald-400":"bg-purple-500/20 text-purple-400"}`}>{r.avatar}</div>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${view === "student" ? "bg-emerald-500/20 text-emerald-400" : "bg-purple-500/20 text-purple-400"}`}>{r.avatar}</div>
                 <div>
-                  <div className="font-medium text-white">{view==="student" ? `Mentor: ${r.mentorName}` : `Student: ${r.studentName}`}</div>
+                  <div className="font-medium text-white">{view === "student" ? `Mentor: ${r.mentorName}` : `Student: ${r.studentName}`}</div>
                   <div className="text-slate-500 text-xs">{r.course}</div>
                 </div>
               </div>
@@ -50,7 +108,7 @@ export default function RequestsPage() {
             </div>
             <div className="p-5 space-y-3">
               <div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">{view==="student"?"Your message":"Student's message"}</div>
+                <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">{view === "student" ? "Your message" : "Student's message"}</div>
                 <p className="text-slate-300 text-sm">{r.message}</p>
               </div>
               <div>

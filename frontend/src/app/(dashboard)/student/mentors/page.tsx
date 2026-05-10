@@ -1,32 +1,41 @@
 "use client";
-import { useState } from "react";
 
-const MOCK_MENTORS = [
-  { id:"m1", name:"Dr. Rina Marlina", role:"mentor", expertise:["Prompt Engineering","AI Automation"], bio:"Former AI researcher at Google, now mentoring vocational students in Indonesia.", rating:4.9, students:23, availability:"high", similarity:0.91, avatar:"RM", waitTime:"< 1 day" },
-  { id:"m2", name:"Ahmad Fauzi", role:"mentor", expertise:["Model Evaluation","Data Analysis"], bio:"ML engineer at a Jakarta fintech. Passionate about fair AI and model benchmarking.", rating:4.7, students:15, availability:"medium", similarity:0.87, avatar:"AF", waitTime:"2-3 days" },
-  { id:"m3", name:"Sarah Putri", role:"instructor", expertise:["AI Automation","Critical Thinking","Prompt Engineering"], bio:"AI educator with 8 years experience. Specializes in CrewAI and agentic workflows.", rating:4.8, students:89, availability:"high", similarity:0.84, avatar:"SP", waitTime:"< 1 day" },
-  { id:"m4", name:"Budi Santoso", role:"mentor", expertise:["Critical Thinking","AI Ethics"], bio:"Ethics consultant for AI startups. Helps students think through real-world AI implications.", rating:4.6, students:11, availability:"low", similarity:0.79, avatar:"BS", waitTime:"1 week" },
-  { id:"m5", name:"Maya Lestari", role:"mentor", expertise:["Data Analysis","Model Evaluation"], bio:"Data scientist at Gojek. Focuses on making AI accessible for non-technical students.", rating:4.8, students:31, availability:"high", similarity:0.76, avatar:"ML", waitTime:"< 1 day" },
-];
+import { useState, useEffect } from "react";
+import { useAuthStore } from "@/store";
 
-const AVAIL_COLORS = { high:"bg-emerald-900/50 text-emerald-300", medium:"bg-amber-900/50 text-amber-300", low:"bg-red-900/50 text-red-300" };
-const AVATAR_COLORS = ["bg-blue-500/20 text-blue-400","bg-purple-500/20 text-purple-400","bg-emerald-500/20 text-emerald-400","bg-amber-500/20 text-amber-400"];
+interface MentorData {
+  id: string;
+  name: string;
+  role: string;
+  expertise: string[];
+  bio: string;
+  rating: number;
+  students: number;
+  availability: string;
+  similarity: number;
+  avatar?: string;
+  waitTime?: string;
+}
 
-function MentorCard({ mentor, onRequest }: { mentor: typeof MOCK_MENTORS[0]; onRequest: () => void }) {
+const AVAIL_COLORS: Record<string, string> = { high: "bg-emerald-900/50 text-emerald-300", medium: "bg-amber-900/50 text-amber-300", low: "bg-red-900/50 text-red-300" };
+const AVATAR_COLORS = ["bg-blue-500/20 text-blue-400", "bg-purple-500/20 text-purple-400", "bg-emerald-500/20 text-emerald-400", "bg-amber-500/20 text-amber-400"];
+
+function MentorCard({ mentor, onRequest }: { mentor: MentorData; onRequest: () => void }) {
   const [expanded, setExpanded] = useState(false);
-  const colorIdx = parseInt(mentor.id.slice(-1)) % 4;
+  const colorIdx = parseInt(mentor.id.replace(/\D/g, "") || "0") % 4;
+  const initials = mentor.avatar ?? mentor.name.split(" ").map(n => n[0]).join("").slice(0, 2);
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-emerald-500/30 transition-all">
       <div className="p-5">
         <div className="flex items-start gap-4">
           <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0 ${AVATAR_COLORS[colorIdx]}`}>
-            {mentor.avatar}
+            {initials}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold text-white">{mentor.name}</h3>
-              <span className={`px-2 py-0.5 rounded-full text-xs ${AVAIL_COLORS[mentor.availability as keyof typeof AVAIL_COLORS]}`}>
+              <span className={`px-2 py-0.5 rounded-full text-xs ${AVAIL_COLORS[mentor.availability] ?? "bg-slate-700 text-slate-400"}`}>
                 {mentor.availability === "high" ? "◎ Available" : mentor.availability === "medium" ? "◐ Limited" : "◌ Busy"}
               </span>
             </div>
@@ -46,7 +55,7 @@ function MentorCard({ mentor, onRequest }: { mentor: typeof MOCK_MENTORS[0]; onR
 
         <p className="text-slate-400 text-sm mt-3 line-clamp-2">{mentor.bio}</p>
 
-        {expanded && (
+        {expanded && mentor.waitTime && (
           <div className="mt-3 pt-3 border-t border-slate-800">
             <div className="text-xs text-slate-500">Expected response time: <span className="text-slate-300">{mentor.waitTime}</span></div>
           </div>
@@ -68,16 +77,81 @@ function MentorCard({ mentor, onRequest }: { mentor: typeof MOCK_MENTORS[0]; onR
 }
 
 export default function MentorsPage() {
+  const token = useAuthStore((s) => s.token);
+  const userId = useAuthStore((s) => s.user?.id);
+  const [mentors, setMentors] = useState<MentorData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [showRequest, setShowRequest] = useState<typeof MOCK_MENTORS[0] | null>(null);
+  const [showRequest, setShowRequest] = useState<MentorData | null>(null);
   const [message, setMessage] = useState("");
   const [goals, setGoals] = useState("");
   const [submitted, setSubmitted] = useState(false);
+
+  const fetchMentors = () => {
+    if (!token) return;
+    setLoading(true);
+    setError(null);
+    const params = userId ? `?student_id=${userId}` : "";
+    fetch(`/api/mentors/match${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(`Request failed (${r.status})`);
+        return r.json();
+      })
+      .then((data) => {
+        setMentors(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load mentors:", err);
+        setError(err.message || "Failed to load mentors");
+        setMentors([]);
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchMentors();
+  }, [token, userId]);
 
   const handleRequest = () => {
     setSubmitted(true);
     setTimeout(() => { setShowRequest(null); setSubmitted(false); setMessage(""); setGoals(""); }, 2000);
   };
+
+  const filteredMentors = selected
+    ? mentors.filter(m => m.expertise.some(e => e === selected) || m.availability === (selected === "Available Now" ? "high" : m.availability))
+    : mentors;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Find a Mentor</h1>
+          <p className="text-slate-400 text-sm mt-1">pgvector-powered matching — mentors who complement your competency gaps</p>
+        </div>
+        <div className="bg-slate-900 border border-red-500/30 rounded-xl p-12 text-center">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h3 className="text-white font-semibold mb-2">Failed to load mentors</h3>
+          <p className="text-slate-400 text-sm">{error}</p>
+          <button onClick={fetchMentors}
+            className="mt-4 px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-sm font-medium rounded-lg transition-colors border border-emerald-500/30">
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -115,10 +189,18 @@ export default function MentorsPage() {
 
       {/* Mentor Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {MOCK_MENTORS.map(mentor => (
+        {filteredMentors.map(mentor => (
           <MentorCard key={mentor.id} mentor={mentor} onRequest={() => setShowRequest(mentor)} />
         ))}
       </div>
+
+      {filteredMentors.length === 0 && (
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center">
+          <div className="text-4xl mb-4">🧑‍🏫</div>
+          <h3 className="text-white font-semibold mb-2">No mentors found</h3>
+          <p className="text-slate-400 text-sm">Try adjusting your filters or check back later</p>
+        </div>
+      )}
 
       {/* Request Modal */}
       {showRequest && (

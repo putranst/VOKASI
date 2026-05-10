@@ -53,6 +53,12 @@ export const useAuthStore = create<AuthState>()(
           if (!res.ok) throw new Error("Login failed");
           const data = await res.json();
           set({ user: data.user, token: data.token, isLoading: false });
+          // Also store token and role for layout auth check
+          if (typeof window !== "undefined") {
+            localStorage.setItem("vokasi_token", data.token);
+            localStorage.setItem("vokasi_role", data.user.role);
+          }
+          return data.user;
         } catch (err) {
           set({ isLoading: false });
           throw err;
@@ -70,13 +76,24 @@ export const useAuthStore = create<AuthState>()(
           if (!res.ok) throw new Error("Registration failed");
           const result = await res.json();
           set({ user: result.user, token: result.token, isLoading: false });
+          // Also store token and role for layout auth check
+          if (typeof window !== "undefined") {
+            localStorage.setItem("vokasi_token", result.token);
+            localStorage.setItem("vokasi_role", result.user.role);
+          }
         } catch (err) {
           set({ isLoading: false });
           throw err;
         }
       },
 
-      logout: () => set({ user: null, token: null }),
+      logout: () => {
+        set({ user: null, token: null });
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("vokasi_token");
+          localStorage.removeItem("vokasi_role");
+        }
+      },
 
       setUser: (user) => set({ user }),
     }),

@@ -39,6 +39,113 @@ export async function chat(options: ChatOptions): Promise<Response> {
 /** Alias for openrouterChat — used by API routes for generic chat */
 export const openrouterChat = chat;
 
+
+// Types for Puck block generation
+export interface PuckBlock {
+  type: string;
+  props: Record<string, unknown>;
+}
+
+export interface GenerateBlocksOptions {
+  content: string;
+  title?: string;
+  domain?: string;
+  targetAudience?: string;
+  courseGoals?: string;
+  mode?: "fast" | "heavy";
+  model?: string;
+  max_tokens?: number;
+  onProgress?: (stage: string, message: string, percent: number) => void;
+  onBlock?: (index: number, block: PuckBlock) => void;
+}
+
+const BLOCK_GENERATION_SYSTEM = `You are an expert vocational curriculum designer. You generate course content as Puck editor blocks.
+
+Available block types and their required props:
+- ModuleHeader: { title: string, subtitle: string, learningObjectives: string (newline-separated), estimatedMinutes: number }
+- RichContent: { html: string } — rich HTML lesson content with headings, paragraphs, lists, examples
+- VideoBlock: { videoUrl: string, caption: string, transcriptUrl?: string }
+- QuizBuilder: { quizTitle: string, questions: [{ question: string, options: string (newline-separated), correctIndex: number }], passingScore: number }
+- CodeSandbox: { language: "python"|"javascript"|"typescript"|"java"|"sql", starterCode: string, instructions: string, testCases?: string }
+- Assignment: { title: string, description: string, dueLabel: string, submissionType: "file"|"text"|"url"|"github", maxScore: number }
+- ReflectionJournal: { prompt: string, minWords: number, tags: string }
+- DiscussionSeed: { topic: string, seedPost: string, requiredReplies: number, gradingNotes: string }
+- PeerReviewRubric: { rubricTitle: string, instructions: string, criteria: [{ criterion: string, maxPoints: number, description: string }] }
+- SocraticChat: { seedQuestion: string, persona: string, maxTurns: number }
+
+Rules:
+- Return ONLY a valid JSON array of blocks. No markdown, no explanation.
+- Each block: { "type": "BlockName", "props": { ... } }
+- Start with ModuleHeader for each module
+- Mix block types for variety (don't use only RichContent)
+- Include at least 1 QuizBuilder per module
+- Make content practical and vocational (real-world applications)
+- RichContent html should be substantial (200+ words per block)`;
+
+/** Fast mode: single AI call to generate all Puck blocks */
+export async function generateFast(options: GenerateBlocksOptions): Promise<PuckBlock[]> {
+  const {
+    content,
+    title = "Untitled Course",
+    domain,
+    targetAudience,
+    courseGoals,
+    model = process.env.DEFAULT_MODEL ?? "anthropic/claude-3.5-sonnet",
+    max_tokens = 8000,
+  } = options;
+
+  const userPrompt = `Generate a complete course structure as Puck blocks.
+
+Course Title: ${title}
+${domain ? `Domain: ${domain}` : ""}
+${targetAudience ? `Target Audience: ${targetAudience}` : ""}
+${courseGoals ? `Course Goals:\n${courseGoals}` : ""}
+
+Source Content:
+${content.slice(0, 12000)}
+
+Generate 4-6 modules. Each module should have:
+1. ModuleHeader
+2. 2-3 RichContent blocks with substantial lesson content
+3. 1 VideoBlock (use placeholder YouTube URL if needed)
+4. 1 QuizBuilder with 3-5 questions
+5. 1 additional block (Assignment, ReflectionJournal, CodeSandbox, or DiscussionSeed)
+
+Return as a JSON array of blocks.`;
+
+  const response = await chat({
+    model,
+    messages: [
+      { role: "system", content: BLOCK_GENERATION_SYSTEM },
+      { role: "user", content: userPrompt },
+    ],
+    temperature: 0.7,
+    max_tokens,
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenRouter API error: ${response.status}`);
+  }
+
+  const data = (await response.json()) as {
+    choices?: { message?: { content?: string } }[];
+  };
+  const text = data.choices?.[0]?.message?.content ?? "[]";
+
+  // Parse JSON array from response
+  try {
+    return JSON.parse(text);
+  } catch {
+    // Try to extract JSON array from markdown code block
+    const match = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (match) return JSON.parse(match[1]);
+    // Try to find array in the text
+    const arrayMatch = text.match(/\[[\s\S]*\]/);
+    if (arrayMatch) return JSON.parse(arrayMatch[0]);
+    throw new Error("Failed to parse AI block generation response");
+  }
+}
+
 // Structured evaluation: rubric-based AI feedback for challenge submissions
 export async function evaluateSubmission(
   challengeTitle: string,

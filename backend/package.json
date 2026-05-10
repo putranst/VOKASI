@@ -1,0 +1,10 @@
+{
+  "name": "vokasi2-worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VOKASI2 background worker",
+  "main": "worker.js",
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}

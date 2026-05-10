@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       u.full_name as instructor_name, i.name as institution_name,
       (SELECT COUNT(*) FROM modules m WHERE m.course_id = c.id) as module_count,
       (SELECT COUNT(*) FROM lesson_completions lc JOIN modules m ON m.id = lc.module_id WHERE m.course_id = c.id AND lc.user_id = e.user_id) as completed_modules
-      FROM course_enrollments e
+      FROM enrollments e
       JOIN courses c ON c.id = e.course_id
       JOIN users u ON u.id = c.instructor_id
       JOIN institutions i ON i.id = c.institution_id
@@ -60,13 +60,13 @@ export async function POST(req: NextRequest) {
 
     // Check if already enrolled
     const existing = await pool.query(
-      "SELECT id FROM course_enrollments WHERE user_id = $1 AND course_id = $2",
+      "SELECT id FROM enrollments WHERE user_id = $1 AND course_id = $2",
       [userId, courseId]
     );
     if (existing.rows.length) return NextResponse.json({ error: "Already enrolled" }, { status: 409 });
 
     const result = await pool.query(
-      `INSERT INTO course_enrollments (user_id, course_id, status, enrolled_at)
+      `INSERT INTO enrollments (user_id, course_id, status, enrolled_at)
        VALUES ($1, $2, 'enrolled', NOW()) RETURNING *`,
       [userId, courseId]
     );

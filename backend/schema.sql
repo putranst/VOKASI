@@ -20,6 +20,12 @@ CREATE TYPE sandbox_status AS ENUM ('active', 'paused', 'terminated');
 CREATE TYPE course_status AS ENUM ('draft', 'published', 'archived');
 CREATE TYPE institution_plan AS ENUM ('free', 'student_pro', 'institution', 'enterprise');
 CREATE TYPE tutor_mode AS ENUM ('guide', 'devils_advocate', 'peer');
+CREATE TYPE simulation_type AS ENUM ('client_brief', 'crisis_scenario', 'ethics_board', 'team_simulation');
+CREATE TYPE simulation_status AS ENUM ('active', 'completed', 'abandoned');
+CREATE TYPE circle_status AS ENUM ('forming', 'active', 'completed');
+CREATE TYPE notif_status AS ENUM ('unread', 'read');
+CREATE TYPE mentor_request_status AS ENUM ('pending', 'accepted', 'rejected');
+CREATE TYPE badge_category AS ENUM ('challenge', 'reflection', 'collaboration', 'streak', 'competency');
 
 -- ─── Institutions ──────────────────────────────────────────────
 CREATE TABLE institutions (
@@ -239,6 +245,181 @@ CREATE TABLE admin_audit_log (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- ─── Simulation Personas ───────────────────────────────────────
+-- AI-generated personas for workplace simulation engine (§4.5)
+CREATE TABLE simulation_personas (
+  id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  simulation_type     simulation_type NOT NULL,
+  name                TEXT NOT NULL,
+  role                TEXT NOT NULL,
+  company             TEXT NOT NULL,
+  background          TEXT,
+  communication_style TEXT,
+  constraints_json    JSONB DEFAULT '{}',
+  domain_tags         TEXT[] DEFAULT '{}',
+  difficulty_level    INTEGER NOT NULL DEFAULT 1,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX simulation_personas_type_idx ON simulation_personas(simulation_type);
+
+-- ─── Simulation Sessions ────────────────────────────────────────
+-- Active workplace simulation sessions with turn history (§4.5)
+CREATE TABLE simulation_sessions (
+  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id           UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  simulation_type   simulation_type NOT NULL,
+  persona_id        UUID REFERENCES simulation_personas(id),
+  title             TEXT NOT NULL,
+  scenario_context  JSONB DEFAULT '{}',
+  turns             JSONB DEFAULT '[]',
+    -- [{turn, student, evaluation:{clarity,reasoning,empathy,appropriateness}, persona}]
+  current_turn       INTEGER NOT NULL DEFAULT 0,
+  max_turns         INTEGER NOT NULL DEFAULT 6,
+  difficulty_level  INTEGER NOT NULL DEFAULT 1,
+  competency_delta  JSONB DEFAULT '{}',
+    -- accumulated competency deltas from turns
+  status            simulation_status NOT NULL DEFAULT 'active',
+  ai_evaluation     JSONB,
+    -- {overall_score, strengths[], improvements[], badge_awarded}
+  started_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at      TIMESTAMPTZ,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX simulation_sessions_user_idx ON simulation_sessions(user_id);
+CREATE INDEX simulation_sessions_status_idx ON simulation_sessions(status);
+
+-- ─── Simulation Evaluations ──────────────────────────────────────
+-- Per-turn evaluation records for simulation sessions (§4.5)
+CREATE TABLE simulation_evaluations (
+  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  session_id        UUID NOT NULL REFERENCES simulation_sessions(id) ON DELETE CASCADE,
+  turn_number       INTEGER NOT NULL,
+  student_response  TEXT NOT NULL,
+  ai_evaluation     JSONB NOT NULL DEFAULT '{}',
+    -- {clarity_score, reasoning_depth_score, empathy_score, appropriateness_score, competency_delta, next_persona_action}
+  persona_reply     TEXT NOT NULL,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX simulation_evaluations_session_idx ON simulation_evaluations(session_id);
+
+-- ─── Socratic Circles ───────────────────────────────────────────
+-- Peer learning circles (§4.8)
+CREATE TABLE socratic_circles (
+  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name              TEXT NOT NULL,
+  topic             TEXT NOT NULL,
+  domain_tags       TEXT[] DEFAULT '{}',
+  status            circle_status NOT NULL DEFAULT 'forming',
+  max_participants  INTEGER NOT NULL DEFAULT 4,
+  week_number       INTEGER,
+  year              INTEGER,
+  scheduled_at      TIMESTAMPTZ,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- circle_participants extras: preparation + AI evaluation fields
+ALTER TABLE circle_participants ADD COLUMN IF NOT EXISTS preparation_topic TEXT;
+ALTER TABLE circle_participants ADD COLUMN IF NOT EXISTS preparation_notes TEXT;
+ALTER TABLE circle_participants ADD COLUMN IF NOT EXISTS attendance_status TEXT DEFAULT 'pending';
+  -- 'pending' | 'present' | 'absent'
+ALTER TABLE circle_participants ADD COLUMN IF NOT EXISTS is_anonymous BOOLEAN DEFAULT TRUE;
+ALTER TABLE circle_participants ADD COLUMN IF NOT EXISTS ai_explanation_score INTEGER;
+ALTER TABLE circle_participants ADD COLUMN IF NOT EXISTS ai_questioning_score INTEGER;
+
+CREATE TABLE circle_participants (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  circle_id   UUID NOT NULL REFERENCES socratic_circles(id) ON DELETE CASCADE,
+  user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role        TEXT NOT NULL,  -- 'explainer' | 'questioner' | 'observer'
+  explanation TEXT,  -- prepared 5-min explanation
+  ai_evaluation JSONB,
+    -- {clarity_score, reasoning_depth, question_quality, overall}
+  joined_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(circle_id, user_id)
+);
+
+CREATE INDEX circle_participants_user_idx ON circle_participants(user_id);
+
+-- ─── Badges & User Badges ────────────────────────────────────────
+-- Gamification badges (§4.7)
+CREATE TABLE badges (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name        TEXT NOT NULL,
+  description TEXT NOT NULL,
+  icon_url    TEXT,
+  category    badge_category NOT NULL,
+  criteria    JSONB NOT NULL DEFAULT '{}',
+    -- e.g. {"type":"streak", "value":7} or {"type":"challenges_completed","value":10}
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE user_badges (
+  id        UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  badge_id  UUID NOT NULL REFERENCES badges(id) ON DELETE CASCADE,
+  awarded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  context    JSONB DEFAULT '{}',
+  UNIQUE(user_id, badge_id)
+);
+
+CREATE INDEX user_badges_user_idx ON user_badges(user_id);
+
+-- ─── Streaks ────────────────────────────────────────────────────
+CREATE TABLE streaks (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id         UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  current_streak  INTEGER NOT NULL DEFAULT 0,
+  longest_streak  INTEGER NOT NULL DEFAULT 0,
+  last_activity   DATE NOT NULL DEFAULT CURRENT_DATE,
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ─── Mentor Requests ───────────────────────────────────────────
+CREATE TABLE mentor_requests (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  student_id  UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  mentor_id   UUID REFERENCES users(id) ON DELETE SET NULL,
+  project_title TEXT NOT NULL,
+  project_description TEXT,
+  status      mentor_request_status NOT NULL DEFAULT 'pending',
+  feedback    TEXT,
+  feedback_type TEXT,  -- 'voice_note' | 'text' | 'rubric'
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  resolved_at TIMESTAMPTZ
+);
+
+CREATE INDEX mentor_requests_student_idx ON mentor_requests(student_id);
+CREATE INDEX mentor_requests_mentor_idx ON mentor_requests(mentor_id);
+
+-- ─── Notifications ─────────────────────────────────────────────
+CREATE TABLE notifications (
+  id        UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type      TEXT NOT NULL,
+  title     TEXT NOT NULL,
+  message   TEXT NOT NULL,
+  data      JSONB DEFAULT '{}',
+  status    notif_status NOT NULL DEFAULT 'unread',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX notifications_user_idx ON notifications(user_id);
+CREATE INDEX notifications_status_idx ON notifications(status);
+
+-- ─── Webhooks ───────────────────────────────────────────────────
+CREATE TABLE webhooks (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  url         TEXT NOT NULL,
+  events      TEXT[] NOT NULL DEFAULT '{}',
+    -- ['submission.evaluated','badge.earned','mentor.request.accepted']
+  secret      TEXT NOT NULL,
+  is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ─── Trigger: updated_at auto-update ────────────────────────────
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
@@ -252,40 +433,19 @@ CREATE TRIGGER trg_users_updated_at          BEFORE UPDATE ON users             
 CREATE TRIGGER trg_institutions_updated_at   BEFORE UPDATE ON institutions      FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_challenges_updated_at    BEFORE UPDATE ON challenges        FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_submissions_updated_at    BEFORE UPDATE ON submissions       FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-CREATE TRIGGER trg_courses_updated_at        BEFORE UPDATE ON courses          FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_courses_updated_at        BEFORE UPDATE ON courses            FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_portfolios_updated_at     BEFORE UPDATE ON portfolios        FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_streaks_updated_at       BEFORE UPDATE ON streaks            FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
--- ─── RLS Policies (Row-Level Security) ────────────────────────
-ALTER TABLE users             ENABLE ROW LEVEL POLICY;
-ALTER TABLE submissions       ENABLE ROW LEVEL POLICY;
-ALTER TABLE portfolios        ENABLE ROW LEVEL POLICY;
-ALTER TABLE sandbox_sessions  ENABLE ROW LEVEL POLICY;
-ALTER TABLE tutor_sessions    ENABLE ROW LEVEL POLICY;
-ALTER TABLE courses           ENABLE ROW LEVEL POLICY;
-ALTER TABLE enrollments       ENABLE ROW LEVEL POLICY;
-
--- Users: users can read their own row; admins can read all
-CREATE POLICY users_select ON users FOR SELECT USING (
-  auth.uid() = id OR EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
-);
-
--- Submissions: users can CRUD their own; instructors can read their challenge submissions
-CREATE POLICY submissions_all ON submissions FOR ALL USING (
-  auth.uid() = user_id OR
-  EXISTS (SELECT 1 FROM challenges c WHERE c.id = challenge_id AND c.created_by = auth.uid())
-);
-
--- Portfolios: users own their portfolio; admins can read all
-CREATE POLICY portfolios_all ON portfolios FOR ALL USING (
-  auth.uid() = user_id OR
-  EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
-);
-
--- Courses: published courses are public; instructors own their courses
-CREATE POLICY courses_select ON courses FOR SELECT USING (
-  status = 'published' OR auth.uid() = instructor_id OR
-  EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
-);
+-- NOTE: RLS is DISABLED for this schema.
+-- This app uses application-level authorization via JWT Bearer tokens
+-- checked in each API route handler (auth_tokens table lookup).
+-- For a multi-tenant SaaS with untrusted users, re-enable RLS with
+-- a proper auth.uid() helper (Supabase auth.system, or custom security.definer function).
+-- To re-enable: replace app-level auth checks with RLS policies below.
+--
+-- Example RLS policy (for when auth.uid() helper exists):
+--   CREATE POLICY users_select ON users FOR SELECT USING (auth.uid() = id);
 
 -- ─── Seed Data ──────────────────────────────────────────────────
 -- Admin user (password: admin123 — change in production!)
@@ -297,6 +457,37 @@ INSERT INTO users (id, email, password_hash, full_name, role, institution_id) VA
    crypt('admin123', gen_salt('bf')),
    'VOKASI Admin', 'admin',
    '00000000-0000-0000-0000-000000000001');
+
+-- Gamification badges (PRD §4.7)
+INSERT INTO badges (name, description, category, criteria) VALUES
+  ('First Steps', 'Submit your first challenge', 'challenge', '{"type":"challenges_completed","value":1}'),
+  ('Challenge Seeker', 'Complete 5 challenges', 'challenge', '{"type":"challenges_completed","value":5}'),
+  ('Challenge Master', 'Complete 25 challenges', 'challenge', '{"type":"challenges_completed","value":25}'),
+  ('Deep Thinker', 'Write 10 reflections with depth score >= 7', 'reflection', '{"type":"reflections_deep","value":10}'),
+  ('Consistent Reflector', 'Write 20 reflections', 'reflection', '{"type":"reflections_total","value":20}'),
+  ('Resilience Streak', 'Reflect on 5 failed challenge attempts', 'streak', '{"type":"failure_reflections","value":5}'),
+  ('Weekly Warrior', 'Maintain a 7-day activity streak', 'streak', '{"type":"streak","value":7}'),
+  ('Monthly Mentor', 'Maintain a 30-day activity streak', 'streak', '{"type":"streak","value":30}'),
+  ('Helping Hand', 'Complete 5 peer reviews', 'collaboration', '{"type":"peer_reviews_given","value":5}'),
+  ('Circle Leader', 'Participate in 3 Socratic Circles', 'collaboration', '{"type":"circles_joined","value":3}'),
+  ('Ethics Champion', 'Complete an AI Ethics challenge', 'competency', '{"type":"domain_completed","value":"ai_ethics"}'),
+  ('Prompt Pro', 'Complete a Prompt Engineering challenge', 'competency', '{"type":"domain_completed","value":"prompt_engineering"}'),
+  ('Model Evaluator', 'Complete a Model Evaluation challenge', 'competency', '{"type":"domain_completed","value":"model_evaluation"}');
+
+-- Auto-create streak row for new users
+CREATE OR REPLACE FUNCTION create_streak_on_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO streaks (user_id, current_streak, longest_streak, last_activity)
+  VALUES (NEW.id, 0, 0, CURRENT_DATE);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER trg_create_streak
+  AFTER INSERT ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION create_streak_on_user();
 
 -- Weekly challenges (PRD §4)
 INSERT INTO challenges (title, description, rubric, difficulty, domain_tags, is_weekly, rubric_raw_content) VALUES
@@ -358,6 +549,34 @@ CREATE TRIGGER trg_create_portfolio
   AFTER INSERT ON users
   FOR EACH ROW
   EXECUTE FUNCTION create_portfolio_on_user();
+
+-- ─── Failure Resumes ───────────────────────────────────────────
+CREATE TABLE failure_resumes (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID NOT NULL REFERENCES users(id),
+  challenge_id    UUID REFERENCES challenges(id),
+  failure_type    TEXT NOT NULL,
+  root_cause      TEXT,
+  corrective_action TEXT,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  metadata        JSONB DEFAULT '{}'
+);
+
+-- ─── Competencies ─────────────────────────────────────────────
+CREATE TABLE competencies (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID NOT NULL REFERENCES users(id),
+  domain          TEXT NOT NULL,
+  sub_domain      TEXT,
+  competency_name TEXT NOT NULL,
+  mastery_level   NUMERIC(5,2) DEFAULT 0,
+  vector_dim      INTEGER[],
+  last_practiced  TIMESTAMPTZ DEFAULT NOW(),
+  decay_factor    NUMERIC(3,2) DEFAULT 1.0,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, competency_name)
+);
 
 -- Grant usage to app role
 -- Note: In production, create a specific app user with minimal permissions

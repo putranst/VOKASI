@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
       const badgeRes = await pool.query(`SELECT id FROM badges WHERE name = 'Peer Mentor'`);
       if (badgeRes.rows.length) {
         await pool.query(
-          `INSERT INTO user_badges (user_id, badge_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+          `INSERT INTO user_badges (user_id, badge_id) VALUES ($1, $2) ON CONFLICT (user_id, badge_id) DO NOTHING`,
           [userId, badgeRes.rows[0].id]
         );
       }

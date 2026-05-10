@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status");
 
     let query = `SELECT c.*, u.full_name as instructor_name,
-      (SELECT COUNT(*) FROM course_enrollments ce WHERE ce.course_id = c.id) as enrolled_count,
+      (SELECT COUNT(*) FROM enrollments ce WHERE ce.course_id = c.id) as enrolled_count,
       (SELECT COUNT(*) FROM modules m WHERE m.course_id = c.id) as module_count
       FROM courses c JOIN users u ON u.id = c.instructor_id WHERE 1=1`;
     const params: unknown[] = [];

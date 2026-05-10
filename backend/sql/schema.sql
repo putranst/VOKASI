@@ -73,6 +73,26 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN null;
 END $$;
 
+DO $$ BEGIN
+  CREATE TYPE simulation_type AS ENUM ('client_brief', 'crisis_scenario', 'ethics_board', 'team_simulation');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE simulation_status AS ENUM ('active', 'completed', 'abandoned');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE circle_status AS ENUM ('forming', 'active', 'completed', 'cancelled');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE circle_role AS ENUM ('explainer', 'questioner', 'observer');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
 -- ============================================================
 -- INSTITUTIONS
 -- ============================================================
@@ -390,7 +410,34 @@ CREATE INDEX idx_peer_reviews_submission ON peer_reviews(submission_id);
 CREATE INDEX idx_peer_reviews_reviewer ON peer_reviews(reviewer_id);
 
 -- ============================================================
--- SANDOX SESSIONS
+-- SANDBOX TEMPLATES
+-- ============================================================
+DO $$ BEGIN
+  CREATE TABLE sandbox_templates (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    template_code TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    language TEXT NOT NULL,
+    category TEXT DEFAULT 'exercise',
+    difficulty TEXT DEFAULT 'beginner',
+    instructions TEXT,
+    starter_files JSONB DEFAULT '[]'::jsonb,
+    test_cases JSONB DEFAULT '[]'::jsonb,
+    tags TEXT[] DEFAULT '{}',
+    usage_count INT DEFAULT 0,
+    estimated_minutes INT DEFAULT 30,
+    created_at TIMESTAMPTZ DEFAULT now()
+  );
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+CREATE INDEX idx_sandbox_templates_language ON sandbox_templates(language);
+CREATE INDEX idx_sandbox_templates_category ON sandbox_templates(category);
+CREATE INDEX idx_sandbox_templates_difficulty ON sandbox_templates(difficulty);
+
+-- ============================================================
+-- SANDBOX SESSIONS
 -- ============================================================
 CREATE TABLE sandbox_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -409,6 +456,137 @@ CREATE TABLE sandbox_sessions (
 
 CREATE INDEX idx_sandbox_sessions_user ON sandbox_sessions(user_id);
 CREATE INDEX idx_sandbox_sessions_status ON sandbox_sessions(status);
+
+-- ============================================================
+-- WORKPLACE SIMULATION ENGINE (PRD v2.3 §4.5)
+-- AI-generated client/stakeholder personas with realistic, messy requirements
+-- Dynamic difficulty adapts to student competency level
+-- ============================================================
+
+CREATE TABLE simulation_personas (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  simulation_type simulation_type NOT NULL,
+  name TEXT NOT NULL,          -- e.g. "Pak Hendra Wijaya"
+  role TEXT NOT NULL,          -- e.g. "CTO"
+  company TEXT NOT NULL,        -- e.g. "PT Fintech Sejahtera"
+  background TEXT NOT NULL,     -- persona backstory for AI grounding
+  communication_style TEXT NOT NULL, -- e.g. "Terburu-buru, suka interromuk"
+  constraints_json JSONB DEFAULT '{}',
+  -- {budget: "terbatas", timeline: "semalam", technical_depth: "minimal"}
+  domain_tags TEXT[] DEFAULT '{}',
+  difficulty_level INTEGER DEFAULT 1, -- 1=easy, 2=medium, 3=hard
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE simulation_sessions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id),
+  simulation_type simulation_type NOT NULL,
+  persona_id UUID NOT NULL REFERENCES simulation_personas(id),
+  title TEXT NOT NULL,
+  scenario_context JSONB NOT NULL DEFAULT '{}',
+  -- {industry, location, company_size, problem_statement, constraints}
+  turns JSONB DEFAULT '[]',      -- [{turn_num, persona_message, student_response, evaluation}]
+  current_turn INTEGER DEFAULT 0,
+  max_turns INTEGER DEFAULT 8,
+  difficulty_level INTEGER DEFAULT 1,
+  competency_delta JSONB DEFAULT '{}',
+  status simulation_status NOT NULL DEFAULT 'active',
+  final_evaluation JSONB,        -- {overall_score, strengths, improvements, badge_awarded}
+  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at TIMESTAMPTZ
+);
+
+CREATE INDEX idx_sim_sessions_user ON simulation_sessions(user_id);
+CREATE INDEX idx_sim_sessions_type ON simulation_sessions(simulation_type);
+CREATE INDEX idx_sim_sessions_status ON simulation_sessions(status);
+
+CREATE TABLE simulation_evaluations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  session_id UUID NOT NULL REFERENCES simulation_sessions(id) ON DELETE CASCADE,
+  turn_number INTEGER NOT NULL,
+  student_response TEXT NOT NULL,
+  ai_evaluation JSONB NOT NULL DEFAULT '{}',
+  -- {clarity_score, reasoning_depth, empathy_score, next_persona_action, competency_impact}
+  persona_reply TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_sim_evals_session ON simulation_evaluations(session_id);
+
+-- ============================================================
+-- PEER SOCRATIC CIRCLES (PRD v2.3 §4.8)
+-- Auto-match 3-4 students by complementary skill gaps
+-- 5-min explanation rounds with AI evaluation
+-- Anonymous by default, optional reveal
+-- ============================================================
+
+CREATE TABLE socratic_circles (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  week_number INTEGER NOT NULL,
+  year INTEGER NOT NULL,
+  status circle_status NOT NULL DEFAULT 'forming',
+  topic TEXT NOT NULL,              -- concept/topic for this circle
+  topic_domain TEXT[],              -- domain tags for matching
+  max_participants INTEGER DEFAULT 4,
+  scheduled_at TIMESTAMPTZ,        -- when the circle session is scheduled
+  completed_at TIMESTAMPTZ,
+  ai_evaluation JSONB DEFAULT '{}', -- aggregated AI evaluation scores
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(week_number, year, topic)
+);
+
+CREATE TABLE circle_participants (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  circle_id UUID NOT NULL REFERENCES socratic_circles(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id),
+  role circle_role NOT NULL DEFAULT 'explainer',  -- assigned role in session
+  preparation_topic TEXT,        -- what this student will explain
+  preparation_notes TEXT,        -- student's prepared explanation
+  turn_order INTEGER,           -- order in which they present
+  attendance_status TEXT DEFAULT 'pending', -- pending, present, absent
+  ai_explanation_score DECIMAL(5,2),  -- AI score for explanation clarity
+  ai_questioning_score DECIMAL(5,2),    -- AI score for peer questioning quality
+  is_anonymous BOOLEAN DEFAULT true,    -- anonymous by default
+  joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(circle_id, user_id)
+);
+
+CREATE TABLE circle_rounds (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  circle_id UUID NOT NULL REFERENCES socratic_circles(id) ON DELETE CASCADE,
+  participant_id UUID NOT NULL REFERENCES circle_participants(id) ON DELETE CASCADE,
+  round_type circle_role NOT NULL, -- explainer, questioner, observer
+  explanation_text TEXT,            -- what explainer said
+  questions_json JSONB DEFAULT '[]', -- [{asker_id, question, quality_score}]
+  ai_feedback JSONB DEFAULT '{}',  -- {clarity, depth, engagement} scores
+  duration_seconds INTEGER,        -- how long this turn took
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_circles_status ON socratic_circles(status);
+CREATE INDEX idx_circles_schedule ON socratic_circles(year, week_number);
+CREATE INDEX idx_circle_participants_circle ON circle_participants(circle_id);
+CREATE INDEX idx_circle_participants_user ON circle_participants(user_id);
+CREATE INDEX idx_circle_rounds_circle ON circle_rounds(circle_id);
+
+-- ============================================================
+-- FAILURE RESUME (PRD v2.3 §4.7)
+-- Document failures in portfolio — failure is a feature
+-- Phoenix Rising badge: document 5 failures with lessons learned
+-- ============================================================
+
+CREATE TABLE portfolio_failure_entries (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id),
+  failure_title TEXT NOT NULL,
+  failure_description TEXT,
+  lessons_learned TEXT,
+  recovery_steps TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_failure_entries_user ON portfolio_failure_entries(user_id);
 
 -- ============================================================
 -- WEBHOOKS
@@ -442,6 +620,28 @@ CREATE TABLE webhook_deliveries (
 CREATE INDEX idx_webhook_deliveries_webhook ON webhook_deliveries(webhook_id);
 CREATE INDEX idx_webhook_deliveries_status ON webhook_deliveries(status);
 
+
+-- ============================================================
+-- NOTIFICATIONS (§4.10)
+-- ============================================================
+DO $$ BEGIN
+  CREATE TABLE notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type TEXT NOT NULL,  -- submission_evaluated | badge_earned | mentor_request_accepted | peer_review_received | certificate_ready | streak_reminder | enrollment_confirmed | challenge_deadline | reflection_prompt | system_announcement
+    title TEXT NOT NULL DEFAULT '',
+    body TEXT NOT NULL DEFAULT '',
+    link TEXT,
+    metadata JSONB DEFAULT '{}',
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id, is_read) WHERE is_read = false;
+
 -- ============================================================
 -- AUDIT LOG
 -- ============================================================
@@ -461,6 +661,94 @@ CREATE TABLE audit_logs (
 CREATE INDEX idx_audit_logs_actor ON audit_logs(actor_id);
 CREATE INDEX idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
 CREATE INDEX idx_audit_logs_created ON audit_logs(created_at DESC);
+
+
+-- ============================================================
+-- STREAKS (Gamification §4.7)
+-- ============================================================
+DO $$ BEGIN
+  CREATE TABLE streaks (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+    current_streak INTEGER NOT NULL DEFAULT 0,
+    longest_streak INTEGER NOT NULL DEFAULT 0,
+    last_activity DATE NOT NULL DEFAULT CURRENT_DATE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_streaks_user ON streaks(user_id);
+
+-- ============================================================
+-- TUTOR SESSIONS (SocraticChat §4.2)
+-- ============================================================
+DO $$ BEGIN
+  CREATE TABLE tutor_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    mode TEXT NOT NULL DEFAULT 'guide',  -- guide | socratic | lecture
+    context JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_tutor_sessions_user ON tutor_sessions(user_id);
+
+-- ============================================================
+-- TUTOR MESSAGES (SocraticChat §4.2)
+-- ============================================================
+DO $$ BEGIN
+  CREATE TABLE tutor_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    session_id UUID NOT NULL REFERENCES tutor_sessions(id) ON DELETE CASCADE,
+    role TEXT NOT NULL,  -- user | assistant
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_tutor_messages_session ON tutor_messages(session_id);
+
+-- ============================================================
+-- MODULES (Course structure)
+-- ============================================================
+DO $$ BEGIN
+  CREATE TABLE modules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    order_index INTEGER NOT NULL DEFAULT 0,
+    content JSONB DEFAULT '[]',  -- Puck editor content blocks
+    settings JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_modules_course ON modules(course_id);
+
+-- ============================================================
+-- LESSON COMPLETIONS
+-- ============================================================
+DO $$ BEGIN
+  CREATE TABLE lesson_completions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    module_id UUID NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
+    completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id, module_id)
+  );
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_lesson_completions_user ON lesson_completions(user_id);
+CREATE INDEX IF NOT EXISTS idx_lesson_completions_module ON lesson_completions(module_id);
 
 -- ============================================================
 -- ANALYTICS MATERIALIZED VIEW
@@ -512,7 +800,7 @@ BEGIN
     IF badge_id IS NOT NULL THEN
       INSERT INTO user_badges (user_id, badge_id, awarded_at)
       VALUES (NEW.user_id, badge_id, NOW())
-      ON CONFLICT DO NOTHING;
+      ON CONFLICT (user_id, badge_id) DO NOTHING;
     END IF;
   END IF;
   RETURN NEW;
@@ -563,7 +851,15 @@ INSERT INTO badges (name, icon, description, criteria, category, domain) VALUES
   ('Resilience Streak', '◈', '7-day reflection streak — consistency builds mastery', '7 consecutive days with a reflection entry', 'meta', NULL),
   ('Socratic Master', '◎', '50+ Socratic Chat sessions — dialogue sharpens thinking', 'Complete 50 Socratic Chat sessions', 'meta', NULL),
   ('Peer Mentor', '◆', 'Gave back — 10+ quality peer reviews for fellow students', 'Write 10 peer reviews with helpful ratings', 'meta', NULL),
-  ('Growth Mindset', '◇', 'Improved any competency by 20+ points in one month', 'Any competency_delta > 20 points', 'meta', NULL);
+  ('Growth Mindset', '◇', 'Improved any competency by 20+ points in one month', 'Any competency_delta > 20 points', 'meta', NULL),
+  ('Crisis Manager', '⚡', 'Navigated a full AI crisis scenario from failure to recovery', 'Complete 1 crisis scenario simulation', 'meta', NULL),
+  ('Ethics Champion', '⚖', 'Successfully defended an AI deployment decision to a regulatory panel', 'Complete 1 ethics board simulation', 'meta', NULL),
+  ('Client Whisperer', '💬', 'Turned vague client requirements into clear, actionable AI solutions', 'Complete 1 client brief simulation', 'meta', NULL),
+  ('Circle Companion', '🔄', 'Regular participant in Socratic peer learning circles', 'Complete 3 Socratic Circle sessions', 'meta', NULL),
+  ('Team Player', '🤝', 'Completed a full team simulation — collaboration and coordination under pressure', 'Complete 1 team simulation', 'meta', NULL),
+  ('Phoenix Rising', '🔥', 'Documented 5 failures with lessons learned — rises from every setback', '5 Failure Resume entries with lessons learned', 'meta', NULL),
+  ('Activity Streak', '💪', '7-day activity streak — consistency builds mastery', '7 consecutive days of activity', 'meta', NULL),
+  ('Consistency Champion', '🏆', '30-day activity streak — dedication personified', '30 consecutive days of activity', 'meta', NULL);
 
 -- ============================================================
 -- SEED DATA: Sample Challenges (PRD §8.1)
@@ -614,32 +910,8 @@ INSERT INTO courses (title, slug, description, track, difficulty, status, settin
    '{"enrollment_open": true, "max_students": 200, "certificate_eligible": true}');
 
 -- ============================================================
--- ROW LEVEL SECURITY (RLS) — for multi-tenancy
--- ============================================================
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE enrollments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE reflections ENABLE ROW LEVEL SECURITY;
-ALTER TABLE portfolios ENABLE ROW LEVEL SECURITY;
-ALTER TABLE certificates ENABLE ROW LEVEL SECURITY;
-ALTER TABLE mentor_requests ENABLE ROW LEVEL SECURITY;
 
 -- Institution-level data isolation
-CREATE POLICY institution_isolation_users ON users
-  USING (institution_id = current_setting('app.current_institution_id', true)::uuid
-         OR current_setting('app.current_institution_id', true) IS NULL
-         OR role IN ('admin', 'instructor'));
-
-CREATE POLICY institution_isolation_enrollments ON enrollments
-  USING (
-    EXISTS (
-      SELECT 1 FROM users u
-      WHERE u.id = enrollments.user_id
-        AND (u.institution_id = current_setting('app.current_institution_id', true)::uuid
-             OR current_setting('app.current_institution_id', true) IS NULL)
-    )
-  );
-
 -- ============================================================
 -- FINAL: updated_at defaults
 -- ============================================================
@@ -651,3 +923,231 @@ ALTER TABLE courses ALTER COLUMN created_at SET DEFAULT NOW();
 ALTER TABLE courses ALTER COLUMN updated_at SET DEFAULT NOW();
 ALTER TABLE challenges ALTER COLUMN created_at SET DEFAULT NOW();
 ALTER TABLE challenges ALTER COLUMN updated_at SET DEFAULT NOW();
+
+
+-- =====================================================
+-- SEED DATA: modules (idempotent)
+-- =====================================================
+DO $$ BEGIN
+  INSERT INTO modules (course_id, title, description, order_index, content)
+  SELECT c.id, 'Introduction to CDIO', 'Learn the fundamentals of Conceive-Design-Implement-Operate framework', 1, '[]'::jsonb
+  FROM courses c WHERE c.title = 'Full-Stack Web Development with AI' LIMIT 1
+  ON CONFLICT DO NOTHING;
+EXCEPTION WHEN others THEN null; END $$;
+
+DO $$ BEGIN
+  INSERT INTO modules (course_id, title, description, order_index, content)
+  SELECT c.id, 'Setting Up Your Development Environment', 'Install and configure tools needed for modern web development', 2, '[]'::jsonb
+  FROM courses c WHERE c.title = 'Full-Stack Web Development with AI' LIMIT 1
+  ON CONFLICT DO NOTHING;
+EXCEPTION WHEN others THEN null; END $$;
+
+DO $$ BEGIN
+  INSERT INTO modules (course_id, title, description, order_index, content)
+  SELECT c.id, 'AI-Powered Code Generation', 'Using AI tools to accelerate development workflow', 3, '[]'::jsonb
+  FROM courses c WHERE c.title = 'Full-Stack Web Development with AI' LIMIT 1
+  ON CONFLICT DO NOTHING;
+EXCEPTION WHEN others THEN null; END $$;
+
+DO $$ BEGIN
+  INSERT INTO modules (course_id, title, description, order_index, content)
+  SELECT c.id, 'Building REST APIs with Node.js', 'Create robust APIs using Node.js and Express', 4, '[]'::jsonb
+  FROM courses c WHERE c.title = 'Full-Stack Web Development with AI' LIMIT 1
+  ON CONFLICT DO NOTHING;
+EXCEPTION WHEN others THEN null; END $$;
+
+DO $$ BEGIN
+  INSERT INTO modules (course_id, title, description, order_index, content)
+  SELECT c.id, 'Database Design with PostgreSQL', 'Learn relational database design and optimization', 5, '[]'::jsonb
+  FROM courses c WHERE c.title = 'Full-Stack Web Development with AI' LIMIT 1
+  ON CONFLICT DO NOTHING;
+EXCEPTION WHEN others THEN null; END $$;
+
+-- =====================================================
+-- SEED DATA: simulation_personas (idempotent)
+-- =====================================================
+DO $$ BEGIN
+  INSERT INTO simulation_personas (simulation_type, name, role, company, background, communication_style, constraints_json)
+  VALUES (
+    'client_brief',
+    'Pak Hendra Wijaya',
+    'CTO',
+    'PT Fintech Sejahtera',
+    'Experienced technology leader with 15+ years in fintech. Values clean code and scalable architecture. Impatient with vague requirements.',
+    'Terburu-buru, suka interupsi, menuntut detail teknis yang spesifik',
+    '{"budget": "terbatas", "timeline": "ketat", "priority": "skalabilitas"}'::jsonb
+  )
+  ON CONFLICT DO NOTHING;
+EXCEPTION WHEN others THEN null; END $$;
+
+DO $$ BEGIN
+  INSERT INTO simulation_personas (simulation_type, name, role, company, background, communication_style, constraints_json)
+  VALUES (
+    'crisis_scenario',
+    'Ibu Sari Kusuma',
+    'Operations Director',
+    'PT Logistics Nusantara',
+    'Crisis management expert who has handled multiple operational disasters. Calm under pressure but expects immediate action and clear communication.',
+    'Tenang tapi tegas, komunikasi singkat dan jelas, expect action plan dalam 5 menit',
+    '{"severity": "high", "time_pressure": "extreme", "stakeholders": "media, customers, board"}'::jsonb
+  )
+  ON CONFLICT DO NOTHING;
+EXCEPTION WHEN others THEN null; END $$;
+
+DO $$ BEGIN
+  INSERT INTO simulation_personas (simulation_type, name, role, company, background, communication_style, constraints_json)
+  VALUES (
+    'ethics_board',
+    'Dr. Budi Santoso',
+    'Ethics Committee Chair',
+    'Universitas Teknologi Indonesia',
+    'Academic with 20+ years researching AI ethics. Very thorough, asks probing questions about every decision. Values transparency and fairness.',
+    'Sangat detail, banyak tanya "mengapa", butuh penjelasan etis untuk setiap keputusan',
+    '{"focus": "fairness", "concern": "bias in AI", "requirement": "documented rationale"}'::jsonb
+  )
+  ON CONFLICT DO NOTHING;
+EXCEPTION WHEN others THEN null; END $$;
+
+DO $$ BEGIN
+  INSERT INTO simulation_personas (simulation_type, name, role, company, background, communication_style, constraints_json)
+  VALUES (
+    'team_simulation',
+    'Andi Pratama',
+    'Junior Developer',
+    'PT Digital Solutions',
+    'Fresh graduate eager to learn but lacks experience. Often makes mistakes with version control and testing. Needs patient guidance.',
+    'Antusias tapi sering bingung, banyak tanya "gimana caranya?", need step-by-step guidance',
+    '{"skill_level": "junior", "needs_mentoring": true, "common_errors": ["git conflicts", "missing tests"]}'::jsonb
+  )
+  ON CONFLICT DO NOTHING;
+EXCEPTION WHEN others THEN null; END $$;
+
+DO $$ BEGIN
+  INSERT INTO simulation_personas (simulation_type, name, role, company, background, communication_style, constraints_json)
+  VALUES (
+    'client_brief',
+    'Ms. Chen Wei Ling',
+    'Product Manager',
+    'Singapore E-Commerce Pte Ltd',
+    'Results-driven PM with background in data analytics. Speaks a mix of English and Mandarin. Focuses on metrics and user engagement.',
+    'Direct, data-driven, frequent use of "ROI", "KPI", "user metrics". Speaks with slight Singlish accent.',
+    '{"language": "english_with_mandarin", "focus": "metrics", "pressure": "high_growth_expectations"}'::jsonb
+  )
+  ON CONFLICT DO NOTHING;
+EXCEPTION WHEN others THEN null; END $$;
+
+-- ============================================================================
+-- DOCUMENT PROCESSING (Phase 2: MAIC-UI feature adoption)
+-- ============================================================================
+
+DO $$ BEGIN
+  CREATE TYPE document_status AS ENUM ('uploaded', 'processing', 'completed', 'failed');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TABLE documents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    title TEXT,
+    filename TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    file_type TEXT NOT NULL CHECK (file_type IN ('pdf', 'docx', 'pptx')),
+    file_size BIGINT,
+    status document_status DEFAULT 'uploaded',
+    processing_result JSONB,
+    error_message TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+  );
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id);
+CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
+
+-- ============================================================================
+-- COURSE TEMPLATES (Phase 3: MAIC-UI template system adoption)
+-- ============================================================================
+
+DO $$ BEGIN
+  CREATE TABLE course_templates (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    template_code TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    category TEXT NOT NULL,
+    keywords TEXT[] DEFAULT '{}',
+    grade_levels TEXT[] DEFAULT '{}',
+    domain_tags TEXT[] DEFAULT '{}',
+    block_structure JSONB NOT NULL,
+    preview_html TEXT,
+    usage_count INTEGER DEFAULT 0,
+    average_rating FLOAT DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMPTZ DEFAULT now()
+  );
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TABLE template_usage (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    template_id UUID NOT NULL REFERENCES course_templates(id),
+    course_id UUID REFERENCES courses(id),
+    user_id UUID NOT NULL REFERENCES users(id),
+    customization_score FLOAT,
+    used_at TIMESTAMPTZ DEFAULT now()
+  );
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_course_templates_category ON course_templates(category);
+CREATE INDEX IF NOT EXISTS idx_course_templates_active ON course_templates(is_active);
+CREATE INDEX IF NOT EXISTS idx_template_usage_user ON template_usage(user_id);
+
+-- ============================================================
+-- LESSONS (Slide/Quiz/Sandbox/Simulation types)
+-- ============================================================
+DO $$ BEGIN
+  CREATE TABLE lessons (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    module_id UUID NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    lesson_type TEXT NOT NULL DEFAULT 'slide' CHECK (lesson_type IN ('slide', 'quiz', 'sandbox', 'simulation', 'video', 'interactive')),
+    order_index INTEGER NOT NULL DEFAULT 0,
+    content JSONB DEFAULT '{}',  -- Type-specific content (slides, questions, sandbox config, etc.)
+    settings JSONB DEFAULT '{}',  -- {time_limit, passing_score, show_answers, etc.}
+    estimated_minutes INTEGER DEFAULT 10,
+    is_published BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+EXCEPTION WHEN duplicate_table THEN null;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_lessons_module ON lessons(module_id);
+CREATE INDEX IF NOT EXISTS idx_lessons_type ON lessons(lesson_type);
+CREATE INDEX IF NOT EXISTS idx_lessons_order ON lessons(module_id, order_index);
+
+-- Lesson attempts tracking
+DO $$ BEGIN
+  CREATE TABLE lesson_attempts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    lesson_id UUID NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    score FLOAT,
+    time_spent_seconds INTEGER,
+    answers JSONB DEFAULT '{}',  -- User's answers for quiz types
+    completed BOOLEAN DEFAULT false,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMPTZ
+  );
+EXCEPTION WHEN duplicate_table THEN null;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_lesson_attempts_user ON lesson_attempts(user_id);
+CREATE INDEX IF NOT EXISTS idx_lesson_attempts_lesson ON lesson_attempts(lesson_id);
+

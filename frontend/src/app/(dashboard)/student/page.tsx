@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import { useAuthStore, useAnalyticsStore } from "@/store";
@@ -26,21 +27,7 @@ import {
 } from "recharts";
 import type { CompetencyHeatmap } from "@/types";
 
-// Default empty heatmap for unauthenticated/demo state
-const EMPTY_HEATMAP: CompetencyHeatmap = {
-  promptEngineering: 0,
-  modelEvaluation: 0,
-  dataEthics: 0,
-  automation: 0,
-  criticalThinking: 0,
-  collaboration: 0,
-  communication: 0,
-  toolFluency: 0,
-  debugging: 0,
-  domainApplication: 0,
-  continuousLearning: 0,
-  teachingOthers: 0,
-};
+
 
 // Map competency keys to Indonesian labels
 const COMPETENCY_LABELS: Record<keyof CompetencyHeatmap, string> = {
@@ -83,55 +70,13 @@ function heatmapToChartData(heatmap: CompetencyHeatmap) {
 }
 
 // Mock data for demo purposes (when API is not yet built)
-const MOCK_DASHBOARD_DATA = {
-  competencyHeatmap: {
-    promptEngineering: 72,
-    modelEvaluation: 45,
-    dataEthics: 68,
-    automation: 38,
-    criticalThinking: 81,
-    collaboration: 55,
-    communication: 62,
-    toolFluency: 49,
-    debugging: 33,
-    domainApplication: 57,
-    continuousLearning: 74,
-    teachingOthers: 28,
-  } as CompetencyHeatmap,
-  competencyVelocity: 0.47,
-  reflectionDepthScore: 7.2,
-  challengeStreak: 12,
-  weeklyChallenge: {
-    title: "Evaluasilah Bias Demografis dalam Model Screening Pinjaman",
-    domain: "model_evaluation",
-    difficulty: "intermediate",
-    daysLeft: 3,
-  },
-  recentSubmissions: [
-    { id: "1", challengeTitle: "Red-team Prompt: Medical Chatbot", score: 85, date: "2026-05-04" },
-    { id: "2", challengeTitle: "Audit AI Governance Policy", score: 72, date: "2026-05-01" },
-  ],
-};
 
 export default function StudentDashboard() {
   const { user } = useAuthStore();
   const { studentData, fetchStudentAnalytics, isLoading } = useAnalyticsStore();
-  const [heatmap, setHeatmap] = useState<CompetencyHeatmap>(EMPTY_HEATMAP);
-  const [mockData] = useState(MOCK_DASHBOARD_DATA);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchStudentAnalytics(user.id).catch(() => {
-        // Fall back to mock data when API is not yet available
-        setHeatmap(mockData.competencyHeatmap);
-      });
-    } else {
-      // Use mock data for demo
-      setHeatmap(mockData.competencyHeatmap);
-    }
-  }, [user?.id]);
 
-  const chartData = heatmapToChartData(heatmap);
+  const chartData = heatmapToChartData(studentData?.competencyHeatmap || {});
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -156,14 +101,14 @@ export default function StudentDashboard() {
                   Tantangan Minggu Ini
                 </Badge>
                 <Badge variant="outline" className="text-xs border-[#f59e0b] text-[#f59e0b]">
-                  {mockData.weeklyChallenge.difficulty}
+                  {studentData?.weeklyChallenge.difficulty}
                 </Badge>
               </div>
               <h3 className="font-semibold text-[#1f2937] text-lg">
-                {mockData.weeklyChallenge.title}
+                {studentData?.weeklyChallenge.title}
               </h3>
               <p className="text-sm text-[#64748b] mt-1">
-                {mockData.weeklyChallenge.daysLeft} hari tersisa • Domain:{" "}
+                {studentData?.weeklyChallenge.daysLeft} hari tersisa • Domain:{" "}
                 {COMPETENCY_LABELS.promptEngineering}
               </p>
             </div>
@@ -182,7 +127,7 @@ export default function StudentDashboard() {
           {
             icon: TrendingUp,
             label: "Velocity Kompetensi",
-            value: `+${mockData.competencyVelocity}/bulan`,
+            value: `+${studentData?.competencyVelocity}/bulan`,
             sub: "Target: +0.5",
             color: "text-[#34d399]",
             bg: "bg-[#f0fdf4]",
@@ -190,7 +135,7 @@ export default function StudentDashboard() {
           {
             icon: MessageSquare,
             label: "Depth Refleksi",
-            value: `${mockData.reflectionDepthScore}/10`,
+            value: `${studentData?.reflectionDepthScore}/10`,
             sub: "Target: 7/10",
             color: "text-[#f59e0b]",
             bg: "bg-[#fffbeb]",
@@ -198,7 +143,7 @@ export default function StudentDashboard() {
           {
             icon: Flame,
             label: "Streak Tantangan",
-            value: `${mockData.challengeStreak} minggu`,
+            value: `${studentData?.challengeStreak} minggu`,
             sub: "Pertahankan!",
             color: "text-[#f43f5e]",
             bg: "bg-[#fff1f2]",
@@ -361,7 +306,7 @@ export default function StudentDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {mockData.recentSubmissions.map(({ id, challengeTitle, score, date }) => (
+              {studentData?.recentSubmissions.map(({ id, challengeTitle, score, date }) => (
                 <div key={id} className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[#1f2937] truncate">

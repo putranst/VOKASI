@@ -22,8 +22,18 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     try {
-      await login(email, password);
-      router.push("/student");
+      const userData = await login(email, password);
+      // Redirect based on role
+      const role = userData?.role || "student";
+      if (role === "admin") {
+        router.push("/admin");
+      } else if (role === "instructor") {
+        router.push("/instructor");
+      } else if (role === "mentor") {
+        router.push("/mentor");
+      } else {
+        router.push("/student");
+      }
     } catch {
       setError("Email atau password salah. Silakan coba lagi.");
     }

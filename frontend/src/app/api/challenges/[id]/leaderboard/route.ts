@@ -4,6 +4,18 @@ import { pool } from "@/lib/db";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const authHeader = req.headers.get("authorization");
+    const token = authHeader?.replace("Bearer ", "");
+    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const authResult = await pool.query(
+      `SELECT u.id FROM users u JOIN auth_tokens t ON t.user_id = u.id WHERE t.token = $1`,
+      [token]
+    );
+    if (authResult.rows.length === 0) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id: challengeId } = await params;
     const result = await pool.query(
       `SELECT s.user_id, u.full_name as handle,

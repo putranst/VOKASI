@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     if (!targetUserId || !badgeId) return NextResponse.json({ error: "userId and badgeId required" }, { status: 400 });
     const result = await pool.query(
       `INSERT INTO user_badges (user_id, badge_id, awarded_at) VALUES ($1, $2, NOW())
-       ON CONFLICT DO NOTHING RETURNING *`, [targetUserId, badgeId]
+       ON CONFLICT (user_id, badge_id) DO NOTHING RETURNING *`, [targetUserId, badgeId]
     );
     return NextResponse.json(result.rows[0], { status: 201 });
   } catch (err) {

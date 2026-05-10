@@ -19,6 +19,18 @@ LIMIT 5;
 */
 export async function GET(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization");
+    const token = authHeader?.replace("Bearer ", "");
+    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const authResult = await pool.query(
+      `SELECT u.id FROM users u JOIN auth_tokens t ON t.user_id = u.id WHERE t.token = $1`,
+      [token]
+    );
+    if (authResult.rows.length === 0) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const studentId = searchParams.get("student_id");
 

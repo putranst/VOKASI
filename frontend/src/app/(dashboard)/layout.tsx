@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { href: "/student", label: "Dashboard", icon: "◈" },
   { href: "/student/arena", label: "Arena", icon: "◐" },
   { href: "/student/enrollments", label: "Courses", icon: "◇" },
+  { href: "/student/tutor", label: "AI Tutor", icon: "🤖" },
   { href: "/student/portfolio", label: "Portfolio", icon: "◎" },
   { href: "/student/badges", label: "Badges", icon: "◆" },
   { href: "/student/leaderboard", label: "Leaderboard", icon: "◉" },

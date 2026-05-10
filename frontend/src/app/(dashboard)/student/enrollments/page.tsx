@@ -1,43 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuthStore } from "@/store";
 
-const MOCK_ENROLLMENTS = [
-  {
-    id: "1", course: "AI Fundamentals — Batch 3", instructor: "Sarah Putri",
-    institution: "Universitas Brawijaya", progress: 68, status: "enrolled",
-    modules: 12, completedModules: 8, avgScore: 74.2,
-    competencyBreakdown: [
-      { name: "Prompt Engineering", score: 78 }, { name: "Model Evaluation", score: 71 },
-      { name: "Data Analysis", score: 69 }, { name: "AI Automation", score: 74 },
-      { name: "Critical Thinking", score: 72 },
-    ],
-    lastActivity: "2 hours ago", certificate: true,
-  },
-  {
-    id: "2", course: "Prompt Engineering Mastery", instructor: "Dr. Rina Marlina",
-    institution: "Politeknik Negeri Bandung", progress: 35, status: "enrolled",
-    modules: 8, completedModules: 3, avgScore: 71.8,
-    competencyBreakdown: [
-      { name: "Prompt Engineering", score: 75 }, { name: "Model Evaluation", score: 68 },
-      { name: "Data Analysis", score: 65 }, { name: "AI Automation", score: 70 },
-      { name: "Critical Thinking", score: 72 },
-    ],
-    lastActivity: "1 day ago", certificate: false,
-  },
-  {
-    id: "3", course: "ML Model Evaluation & Benchmarking", instructor: "Ahmad Fauzi",
-    institution: "Institut Teknologi Sepuluh Nopember", progress: 100, status: "completed",
-    modules: 10, completedModules: 10, avgScore: 68.5,
-    competencyBreakdown: [
-      { name: "Prompt Engineering", score: 62 }, { name: "Model Evaluation", score: 75 },
-      { name: "Data Analysis", score: 71 }, { name: "AI Automation", score: 65 },
-      { name: "Critical Thinking", score: 68 },
-    ],
-    lastActivity: "2 weeks ago", certificate: true,
-  },
-];
+interface EnrollmentData {
+  id: string;
+  course: string;
+  instructor: string;
+  institution: string;
+  progress: number;
+  status: string;
+  modules: number;
+  completedModules: number;
+  avgScore: number;
+  competencyBreakdown: { name: string; score: number }[];
+  lastActivity: string;
+  certificate: boolean;
+  // API snake_case fields
+  course_title?: string;
+  instructor_name?: string;
+  institution_name?: string;
+  module_count?: number;
+  completed_modules?: number;
+  course_status?: string;
+  enrolled_at?: string;
+}
+
+function normalizeEnrollment(raw: EnrollmentData): EnrollmentData {
+  const completedModules = raw.completedModules ?? raw.completed_modules ?? 0;
+  const totalModules = raw.modules ?? raw.module_count ?? 0;
+  const progress = raw.progress ?? (totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0);
+  return {
+    id: raw.id,
+    course: raw.course ?? raw.course_title ?? "",
+    instructor: raw.instructor ?? raw.instructor_name ?? "",
+    institution: raw.institution ?? raw.institution_name ?? "",
+    progress,
+    status: raw.status ?? raw.course_status ?? "enrolled",
+    modules: totalModules,
+    completedModules,
+    avgScore: raw.avgScore ?? 0,
+    competencyBreakdown: raw.competencyBreakdown ?? [],
+    lastActivity: raw.lastActivity ?? raw.enrolled_at ?? "",
+    certificate: raw.certificate ?? false,
+  };
+}
 
 const DOMAIN_COLORS: Record<string, string> = {
   "AI Fundamentals — Batch 3": "from-blue-500/20 to-cyan-500/20 border-blue-500/30",
@@ -55,10 +63,38 @@ function ProgressBar({ value }: { value: number }) {
 }
 
 export default function EnrollmentsPage() {
+  const { token } = useAuthStore();
+  const [enrollments, setEnrollments] = useState<EnrollmentData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "enrolled" | "completed">("all");
-  const [selected, setSelected] = useState<typeof MOCK_ENROLLMENTS[0] | null>(null);
+  const [selected, setSelected] = useState<EnrollmentData | null>(null);
 
-  const filtered = MOCK_ENROLLMENTS.filter(e => filter === "all" || e.status === filter);
+  useEffect(() => {
+    if (!token) return;
+    fetch("/api/enrollments", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        setEnrollments(Array.isArray(data) ? data.map(normalizeEnrollment) : []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load enrollments:", err);
+        setEnrollments([]);
+        setLoading(false);
+      });
+  }, [token]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400" />
+      </div>
+    );
+  }
+
+  const filtered = enrollments.filter(e => filter === "all" || e.status === filter);
 
   return (
     <div className="space-y-6">
@@ -75,7 +111,7 @@ export default function EnrollmentsPage() {
             }`}>
             {f.charAt(0).toUpperCase() + f.slice(1)}
             <span className="ml-2 text-xs opacity-70">
-              {f === "all" ? MOCK_ENROLLMENTS.length : MOCK_ENROLLMENTS.filter(e => e.status === f).length}
+              {f === "all" ? enrollments.length : enrollments.filter(e => e.status === f).length}
             </span>
           </button>
         ))}
@@ -138,23 +174,25 @@ export default function EnrollmentsPage() {
                 </div>
 
                 {/* Competency Breakdown */}
-                <div>
-                  <h4 className="text-sm text-slate-400 mb-2">Competency Progress</h4>
-                  <div className="space-y-2">
-                    {selected.competencyBreakdown.map(c => (
-                      <div key={c.name}>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-slate-300">{c.name}</span>
-                          <span className="text-slate-400">{c.score}/100</span>
+                {selected.competencyBreakdown.length > 0 && (
+                  <div>
+                    <h4 className="text-sm text-slate-400 mb-2">Competency Progress</h4>
+                    <div className="space-y-2">
+                      {selected.competencyBreakdown.map(c => (
+                        <div key={c.name}>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-slate-300">{c.name}</span>
+                            <span className="text-slate-400">{c.score}/100</span>
+                          </div>
+                          <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"
+                              style={{ width: `${c.score}%` }} />
+                          </div>
                         </div>
-                        <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"
-                            style={{ width: `${c.score}%` }} />
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="flex flex-col gap-2">
                   <Link href={`/student/arena`}

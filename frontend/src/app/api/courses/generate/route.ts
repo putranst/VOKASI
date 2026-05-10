@@ -1,10 +1,23 @@
 // POST /api/courses/generate — AI course structure generation
 // PRD v2.3 §5.3
 import { NextRequest, NextResponse } from "next/server";
+import { pool } from "@/lib/db";
 import { chat } from "@/lib/openrouter";
 
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization");
+    const token = authHeader?.replace("Bearer ", "");
+    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const userResult = await pool.query(
+      `SELECT u.id FROM users u JOIN auth_tokens t ON t.user_id = u.id WHERE t.token = $1`,
+      [token]
+    );
+    if (userResult.rows.length === 0) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { title, description, domain, targetAudience, courseGoals } = await req.json();
 
     const prompt = `You are an expert vocational curriculum designer. Create a complete course curriculum in JSON format.

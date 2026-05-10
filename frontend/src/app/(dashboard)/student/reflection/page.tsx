@@ -1,33 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuthStore } from "@/store";
 
-const MOCK_ENTRIES = [
-  {
-    id: "1", week: "Week 4 — Nov 25, 2024",
-    challenges: "I struggled with zero-shot vs few-shot prompting concepts. My first attempts at the challenge were too vague.",
-    learnings: "Learned that specificity in prompts dramatically affects output quality. Few-shot examples guide the model toward the right format and reasoning pattern.",
-    growth: "Prompt Engineering: 62 → 71 (+9)",
-    course: "AI Fundamentals — Batch 3",
-    submittedAt: "2024-11-26",
-  },
-  {
-    id: "2", week: "Week 3 — Nov 18, 2024",
-    challenges: "Had difficulty understanding evaluation metrics like ROUGE and BLEU scores for text generation tasks.",
-    learnings: "ROUGE focuses on recall (what reference content appears in the generation) while BLEU focuses on precision. Neither captures semantic quality well — that's why LLM-based evaluation is better.",
-    growth: "Model Evaluation: 58 → 64 (+6)",
-    course: "AI Fundamentals — Batch 3",
-    submittedAt: "2024-11-19",
-  },
-  {
-    id: "3", week: "Week 2 — Nov 11, 2024",
-    challenges: "Time management during the 3-hour challenge window. I panicked when the first approach didn't work.",
-    learnings: "The Socratic Chat tutor helped me break down the problem. I should always start with the rubric criteria before diving into the solution.",
-    growth: "Critical Thinking: 65 → 69 (+4)",
-    course: "AI Fundamentals — Batch 3",
-    submittedAt: "2024-11-12",
-  },
-];
+interface ReflectionEntry {
+  id: string;
+  week: string;
+  challenges: string;
+  learnings: string;
+  growth: string;
+  course: string;
+  submittedAt: string;
+  // API snake_case fields
+  challenge?: string;
+  learning?: string;
+  course_name?: string;
+  submitted_at?: string;
+}
+
+function normalizeEntry(raw: ReflectionEntry): ReflectionEntry {
+  return {
+    id: raw.id,
+    week: raw.week ?? "",
+    challenges: raw.challenges ?? raw.challenge ?? "",
+    learnings: raw.learnings ?? raw.learning ?? "",
+    growth: raw.growth ?? "",
+    course: raw.course ?? raw.course_name ?? "",
+    submittedAt: raw.submittedAt ?? raw.submitted_at ?? "",
+  };
+}
 
 const WEEKLY_PROMPTS = [
   "What was the most challenging concept this week and why?",
@@ -38,14 +39,41 @@ const WEEKLY_PROMPTS = [
 ];
 
 export default function ReflectionJournalPage() {
+  const { token } = useAuthStore();
+  const [entries, setEntries] = useState<ReflectionEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState({ week: "", challenge: "", learning: "", nextWeek: "" });
-  const [entries] = useState(MOCK_ENTRIES);
+
+  useEffect(() => {
+    if (!token) return;
+    fetch("/api/reflections", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        setEntries(Array.isArray(data) ? data.map(normalizeEntry) : []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load reflections:", err);
+        setEntries([]);
+        setLoading(false);
+      });
+  }, [token]);
 
   const handleSubmit = () => {
     setShowNew(false);
     setForm({ week: "", challenge: "", learning: "", nextWeek: "" });
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

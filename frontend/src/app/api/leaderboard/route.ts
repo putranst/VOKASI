@@ -8,33 +8,49 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get("limit") ?? "50"), 100);
     const track = searchParams.get("track");
 
-    // Replace with real query when live:
-    // SELECT u.id, u.anonymous_handle, AVG(s.reasoning_depth_score) as avg_score,
-    //        COUNT(s.id) as submissions, MAX(s.reasoning_depth_score) as best_score
-    // FROM users u JOIN submissions s ON s.user_id = u.id
-    // WHERE ($1::text IS NULL OR u.track = $1)
-    // GROUP BY u.id ORDER BY avg_score DESC NULLS LAST LIMIT $2
+    const query = `
+      SELECT 
+        u.id, 
+        u.anonymous_handle,
+        AVG(s.reasoning_depth_score) as avg_score,
+        COUNT(s.id) as submissions,
+        MAX(s.reasoning_depth_score) as best_score,
+        u.institution_id
+      FROM users u 
+      JOIN submissions s ON s.user_id = u.id
+      WHERE ($1::text IS NULL OR u.track = $1)
+        AND s.reasoning_depth_score IS NOT NULL
+      GROUP BY u.id
+      ORDER BY avg_score DESC NULLS LAST
+      LIMIT $2
+    `;
 
-    const HANDLES = ["Phantom Raven","Cipher Sage","Neon Vertex","Iron Circuit","Quantum Bloom",
-      "Shadow Codex","Crimson Pulse","Silver Thread","Dark Nebula","Nova Arc",
-      "Ghost Kernel","Emerald Flux","Ruby Echo","Atlas Bit","Zero Field",
-      "Hex Core","Prism Edge","Torch Loop","Glitch Orb","Orbit Mind"];
-    const INSTS = ["SMK Negeri 2 Jakarta","Politeknik Negeri Bandung","Universitas Brawijaya",
-      "Institut Teknologi Sepuluh Nopember","PTII Vocational School"];
-    const TRENDS = ["up","down","stable"];
+    const result = await pool.query(query, [track, limit]);
 
-    const MOCK = HANDLES.slice(0, 20).map((handle, i) => ({
-      rank: i + 1, handle,
-      avgScore: Math.round((92 - i * 2.1) * 10) / 10,
-      submissions: 24 + (i * 3) % 30,
-      bestScore: Math.round(94 - i * 1.5),
-      institution: INSTS[i % 5],
-      trend: TRENDS[i % 3],
+    // Get institution names
+    const instIds = [...new Set(result.rows.map(r => r.institution_id).filter(Boolean))];
+    let instMap: Record<string, string> = {};
+    if (instIds.length > 0) {
+      const instResult = await pool.query(
+        `SELECT id, name FROM institutions WHERE id = ANY($1::uuid[])`,
+        [instIds]
+      );
+      instMap = Object.fromEntries(instResult.rows.map(r => [r.id, r.name]));
+    }
+
+    const leaderboard = result.rows.map((row, i) => ({
+      rank: i + 1,
+      handle: row.anonymous_handle,
+      avgScore: parseFloat(row.avg_score) || 0,
+      submissions: parseInt(row.submissions) || 0,
+      bestScore: parseInt(row.best_score) || 0,
+      institution: instMap[row.institution_id] || "Unknown",
+      trend: "stable" // TODO: calculate trend based on recent performance
     }));
 
-    return NextResponse.json(MOCK.slice(0, limit));
+    return NextResponse.json(leaderboard);
   } catch (err) {
-    console.error(err);
+    console.error("Leaderboard error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

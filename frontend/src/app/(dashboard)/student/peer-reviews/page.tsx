@@ -1,33 +1,104 @@
 "use client";
-import { useState } from "react";
 
-const MOCK_ASSIGNED = [
-  { id:"p1", submissionTitle:"Optimize a prompt for e-commerce chatbot — final submission", authorName:"Andi Wijaya", courseTitle:"AI Fundamentals Batch 3", deadlineAt:"2024-12-01", status:"pending" },
-  { id:"p2", submissionTitle:"Red-team analysis: Medical advice bot vulnerabilities", authorName:"Dewi Lestari", courseTitle:"AI Fundamentals Batch 3", deadlineAt:"2024-12-03", status:"pending" },
-];
+import { useState, useEffect } from "react";
+import { useAuthStore } from "@/store";
 
-const MOCK_GIVEN = [
-  { id:"g1", submissionTitle:"CV-screening model bias audit", authorName:"Dewi Lestari", scores:{ relevance:4, reasoning_depth:5, clarity:4, originality:4 }, narrative:"Excellent analysis of the bias sources. The 8-point mitigation framework is particularly well thought out. Minor note: consider adding a legal compliance section for Indonesian employment law.", helpfulRating:5, createdAt:"2024-11-18" },
-  { id:"g2", submissionTitle:"Sentiment analysis model comparison", authorName:"Ahmad Fauzi", scores:{ relevance:5, reasoning_depth:4, clarity:5, originality:4 }, narrative:"Thorough comparison with good visualization of results. The sarcasm detection section in Indonesian slang could be expanded. Overall a strong evaluation.", helpfulRating:4, createdAt:"2024-11-15" },
-];
+interface AssignedReview {
+  id: string;
+  submissionTitle: string;
+  authorName: string;
+  courseTitle: string;
+  deadlineAt: string;
+  status: string;
+  // API snake_case fields
+  submission_title?: string;
+  author_name?: string;
+  course_title?: string;
+  deadline_at?: string;
+}
+
+interface GivenReview {
+  id: string;
+  submissionTitle: string;
+  authorName: string;
+  scores: { relevance: number; reasoning_depth: number; clarity: number; originality: number };
+  narrative: string;
+  helpfulRating: number;
+  createdAt: string;
+  // API snake_case fields
+  submission_title?: string;
+  author_name?: string;
+  helpful_rating?: number;
+  created_at?: string;
+}
+
+function normalizeAssigned(raw: AssignedReview): AssignedReview {
+  return {
+    id: raw.id,
+    submissionTitle: raw.submissionTitle ?? raw.submission_title ?? "",
+    authorName: raw.authorName ?? raw.author_name ?? "",
+    courseTitle: raw.courseTitle ?? raw.course_title ?? "",
+    deadlineAt: raw.deadlineAt ?? raw.deadline_at ?? "",
+    status: raw.status ?? "pending",
+  };
+}
+
+function normalizeGiven(raw: GivenReview): GivenReview {
+  return {
+    id: raw.id,
+    submissionTitle: raw.submissionTitle ?? raw.submission_title ?? "",
+    authorName: raw.authorName ?? raw.author_name ?? "",
+    scores: raw.scores ?? { relevance: 0, reasoning_depth: 0, clarity: 0, originality: 0 },
+    narrative: raw.narrative ?? "",
+    helpfulRating: raw.helpfulRating ?? raw.helpful_rating ?? 0,
+    createdAt: raw.createdAt ?? raw.created_at ?? "",
+  };
+}
 
 export default function PeerReviewsPage() {
+  const { token } = useAuthStore();
+  const [assigned, setAssigned] = useState<AssignedReview[]>([]);
+  const [given, setGiven] = useState<GivenReview[]>([]);
+  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"assigned" | "given">("assigned");
-  const [reviewing, setReviewing] = useState<typeof MOCK_ASSIGNED[0] | null>(null);
-  const [scores, setScores] = useState({ relevance:3, reasoning_depth:3, clarity:3, originality:3 });
+  const [reviewing, setReviewing] = useState<AssignedReview | null>(null);
+  const [scores, setScores] = useState({ relevance: 3, reasoning_depth: 3, clarity: 3, originality: 3 });
   const [narrative, setNarrative] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
+  useEffect(() => {
+    if (!token) return;
+    Promise.all([
+      fetch("/api/peer-reviews?view=assigned", {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json()),
+      fetch("/api/peer-reviews?view=given", {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json()),
+    ])
+      .then(([assignedData, givenData]) => {
+        setAssigned(Array.isArray(assignedData) ? assignedData.map(normalizeAssigned) : []);
+        setGiven(Array.isArray(givenData) ? givenData.map(normalizeGiven) : []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load peer reviews:", err);
+        setAssigned([]);
+        setGiven([]);
+        setLoading(false);
+      });
+  }, [token]);
+
   const handleSubmit = () => {
     setSubmitted(true);
-    setTimeout(() => { setReviewing(null); setSubmitted(false); setNarrative(""); setScores({ relevance:3, reasoning_depth:3, clarity:3, originality:3 }); }, 2000);
+    setTimeout(() => { setReviewing(null); setSubmitted(false); setNarrative(""); setScores({ relevance: 3, reasoning_depth: 3, clarity: 3, originality: 3 }); }, 2000);
   };
 
-  const ScoreBar = ({ label, value, onChange }: { label:string; value:number; onChange: (v:number) => void }) => (
+  const ScoreBar = ({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) => (
     <div className="space-y-1">
       <div className="flex justify-between text-sm"><span className="text-slate-300">{label}</span><span className="text-emerald-400 font-medium">{value}/5</span></div>
       <div className="flex gap-1">
-        {[1,2,3,4,5].map(v => (
+        {[1, 2, 3, 4, 5].map(v => (
           <button key={v} onClick={() => onChange(v)}
             className={`flex-1 h-8 rounded-md text-sm font-medium transition-colors ${v <= value ? "bg-emerald-500/30 text-emerald-300" : "bg-slate-800 text-slate-500 hover:bg-slate-700"}`}>
             {v}
@@ -36,6 +107,14 @@ export default function PeerReviewsPage() {
       </div>
     </div>
   );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -46,18 +125,18 @@ export default function PeerReviewsPage() {
 
       <div className="flex gap-2 border-b border-slate-800">
         <button onClick={() => setTab("assigned")}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab==="assigned"?"border-emerald-500 text-emerald-400":"border-transparent text-slate-400 hover:text-slate-200"}`}>
-          Assigned to Review ({MOCK_ASSIGNED.length})
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === "assigned" ? "border-emerald-500 text-emerald-400" : "border-transparent text-slate-400 hover:text-slate-200"}`}>
+          Assigned to Review ({assigned.length})
         </button>
         <button onClick={() => setTab("given")}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab==="given"?"border-emerald-500 text-emerald-400":"border-transparent text-slate-400 hover:text-slate-200"}`}>
-          My Reviews ({MOCK_GIVEN.length})
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === "given" ? "border-emerald-500 text-emerald-400" : "border-transparent text-slate-400 hover:text-slate-200"}`}>
+          My Reviews ({given.length})
         </button>
       </div>
 
       {tab === "assigned" && (
         <div className="space-y-4">
-          {MOCK_ASSIGNED.map(a => (
+          {assigned.map(a => (
             <div key={a.id} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-amber-500/30 transition-all">
               <div className="px-5 py-4 bg-slate-800/30 border-b border-slate-800 flex items-center justify-between">
                 <div>
@@ -65,14 +144,14 @@ export default function PeerReviewsPage() {
                   <div className="text-slate-500 text-xs mt-0.5">by {a.authorName} · {a.courseTitle}</div>
                 </div>
                 <div className="text-right shrink-0 ml-4">
-                  <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${a.status==="pending"?"bg-amber-900/50 text-amber-300":"bg-slate-700 text-slate-400"}`}>Due {a.deadlineAt}</div>
+                  <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${a.status === "pending" ? "bg-amber-900/50 text-amber-300" : "bg-slate-700 text-slate-400"}`}>Due {a.deadlineAt}</div>
                 </div>
               </div>
               <div className="p-5">
                 <p className="text-slate-400 text-sm mb-4">Review this submission using the 4-dimension rubric. Provide constructive, specific feedback to help your peer improve.</p>
                 <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 mb-4">
                   <div className="text-xs text-slate-500 uppercase tracking-wider mb-2">Submission Content Preview</div>
-                  <p className="text-slate-300 text-sm leading-relaxed italic">"Based on my analysis of the CV-screening model, I identified three primary sources of bias: training data imbalance (78% male in training set), feature selection favoring男性-dominated industries, and label noise in the ground truth data..."</p>
+                  <p className="text-slate-300 text-sm leading-relaxed italic">"Review the submission and provide feedback using the structured rubric below."</p>
                 </div>
                 <button onClick={() => setReviewing(a)}
                   className="w-full px-4 py-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-sm font-medium rounded-lg transition-colors border border-emerald-500/30">
@@ -81,12 +160,19 @@ export default function PeerReviewsPage() {
               </div>
             </div>
           ))}
+          {assigned.length === 0 && (
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center">
+              <div className="text-4xl mb-4">📋</div>
+              <h3 className="text-white font-semibold mb-2">No assigned reviews</h3>
+              <p className="text-slate-400 text-sm">New peer review assignments will appear here</p>
+            </div>
+          )}
         </div>
       )}
 
       {tab === "given" && (
         <div className="space-y-4">
-          {MOCK_GIVEN.map(r => (
+          {given.map(r => (
             <div key={r.id} className="bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-emerald-500/20 transition-all">
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div>
@@ -99,16 +185,23 @@ export default function PeerReviewsPage() {
                 </div>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                {Object.entries(r.scores).map(([k,v]) => (
+                {Object.entries(r.scores).map(([k, v]) => (
                   <div key={k} className="text-center">
                     <div className="text-lg font-bold text-emerald-400">{v}</div>
-                    <div className="text-xs text-slate-500 capitalize">{k.replace("_"," ")}</div>
+                    <div className="text-xs text-slate-500 capitalize">{k.replace("_", " ")}</div>
                   </div>
                 ))}
               </div>
               <p className="text-slate-400 text-sm leading-relaxed italic">"{r.narrative}"</p>
             </div>
           ))}
+          {given.length === 0 && (
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center">
+              <div className="text-4xl mb-4">✍️</div>
+              <h3 className="text-white font-semibold mb-2">No reviews given yet</h3>
+              <p className="text-slate-400 text-sm">Your completed reviews will appear here</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -124,8 +217,8 @@ export default function PeerReviewsPage() {
               <div>
                 <div className="text-sm font-medium text-white mb-3">Evaluation Rubric</div>
                 <div className="space-y-4">
-                  {(["relevance","reasoning_depth","clarity","originality"] as const).map(key => (
-                    <ScoreBar key={key} label={key.replace("_"," ")} value={scores[key]} onChange={v => setScores({...scores, [key]: v})} />
+                  {(["relevance", "reasoning_depth", "clarity", "originality"] as const).map(key => (
+                    <ScoreBar key={key} label={key.replace("_", " ")} value={scores[key]} onChange={v => setScores({ ...scores, [key]: v })} />
                   ))}
                 </div>
               </div>
@@ -137,7 +230,7 @@ export default function PeerReviewsPage() {
               </div>
               <div className="grid grid-cols-5 gap-1">
                 <span className="col-span-1 text-xs text-slate-500 pt-2">Helpful?</span>
-                {[1,2,3,4,5].map(v => (
+                {[1, 2, 3, 4, 5].map(v => (
                   <button key={v} className="h-9 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-slate-400">★</button>
                 ))}
               </div>

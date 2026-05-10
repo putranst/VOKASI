@@ -1,35 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuthStore } from "@/store";
 
-const MOCK_CERTS = [
-  {
-    id: "cert-1", title: "AI Automation — Certificate of Completion",
-    student: "Andi Wijaya", course: "AI Automation with CrewAI",
-    instructor: "Sarah Putri", institution: "Universitas Brawijaya",
-    issuedAt: "2024-11-15", certificateId: "VOKASI2-AI-2024-0892",
-    competencyScore: 77.1, grade: "Meritorious",
-    credentialUrl: "https://vokasi2.ai/verify/vokasi2-ai-2024-0892",
-    expiresAt: null, skills: ["Prompt Engineering", "AI Automation", "CrewAI", "Agentic Pipelines"],
-  },
-  {
-    id: "cert-2", title: "ML Model Evaluation — Certificate of Completion",
-    student: "Andi Wijaya", course: "ML Model Evaluation & Benchmarking",
-    instructor: "Ahmad Fauzi", institution: "Institut Teknologi Sepuluh Nopember",
-    issuedAt: "2024-10-28", certificateId: "VOKASI2-ML-2024-0741",
-    competencyScore: 68.5, grade: "Competent",
-    credentialUrl: "https://vokasi2.ai/verify/vokasi2-ml-2024-0741",
-    expiresAt: null, skills: ["Model Evaluation", "Benchmarking", "Statistical Analysis", "ML Metrics"],
-  },
-];
+interface CertData {
+  id: string;
+  title: string;
+  student: string;
+  course: string;
+  instructor: string;
+  institution: string;
+  issuedAt: string;
+  certificateId: string;
+  competencyScore: number;
+  grade: string;
+  credentialUrl: string;
+  expiresAt: string | null;
+  skills: string[];
+  course_title?: string;
+  instructor_name?: string;
+  institution_name?: string;
+  issued_at?: string;
+  certificate_id?: string;
+  competency_score?: number;
+  credential_url?: string;
+}
 
-const GRADE_COLORS = {
+const GRADE_COLORS: Record<string, string> = {
   "Meritorious": "text-amber-300 bg-amber-500/10 border-amber-500/30",
   "Competent": "text-emerald-300 bg-emerald-500/10 border-emerald-500/30",
   "Proficient": "text-blue-300 bg-blue-500/10 border-blue-500/30",
 };
 
-function CertificateCard({ cert, onShare }: { cert: typeof MOCK_CERTS[0]; onShare: () => void }) {
+function normalizeCert(raw: CertData): CertData {
+  return {
+    id: raw.id,
+    title: raw.title ?? `Certificate of Completion`,
+    student: raw.student ?? "",
+    course: raw.course ?? raw.course_title ?? "",
+    instructor: raw.instructor ?? raw.instructor_name ?? "",
+    institution: raw.institution ?? raw.institution_name ?? "",
+    issuedAt: raw.issuedAt ?? raw.issued_at ?? "",
+    certificateId: raw.certificateId ?? raw.certificate_id ?? "",
+    competencyScore: raw.competencyScore ?? raw.competency_score ?? 0,
+    grade: raw.grade ?? (raw.competency_score ?? raw.competencyScore ?? 0) >= 75 ? "Meritorious" : (raw.competency_score ?? raw.competencyScore ?? 0) >= 65 ? "Competent" : "Proficient",
+    credentialUrl: raw.credentialUrl ?? raw.credential_url ?? "",
+    expiresAt: raw.expiresAt ?? null,
+    skills: raw.skills ?? [],
+  };
+}
+
+function CertificateCard({ cert, onShare }: { cert: CertData; onShare: () => void }) {
   return (
     <div className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden">
       {/* Certificate Header */}
@@ -41,7 +62,7 @@ function CertificateCard({ cert, onShare }: { cert: typeof MOCK_CERTS[0]; onShar
             <div className="text-white font-semibold">{cert.course}</div>
           </div>
         </div>
-        <div className={`px-3 py-1 rounded-full text-xs font-medium border ${GRADE_COLORS[cert.grade as keyof typeof GRADE_COLORS]}`}>
+        <div className={`px-3 py-1 rounded-full text-xs font-medium border ${GRADE_COLORS[cert.grade] ?? "text-slate-300 bg-slate-700 border-slate-600"}`}>
           {cert.grade}
         </div>
       </div>
@@ -66,16 +87,18 @@ function CertificateCard({ cert, onShare }: { cert: typeof MOCK_CERTS[0]; onShar
         </div>
 
         {/* Skills */}
-        <div>
-          <div className="text-xs text-slate-500 mb-2">Verified Competencies</div>
-          <div className="flex flex-wrap gap-2">
-            {cert.skills.map(skill => (
-              <span key={skill} className="px-2.5 py-1 bg-slate-800 text-slate-300 text-xs rounded-full border border-slate-700">
-                {skill}
-              </span>
-            ))}
+        {cert.skills.length > 0 && (
+          <div>
+            <div className="text-xs text-slate-500 mb-2">Verified Competencies</div>
+            <div className="flex flex-wrap gap-2">
+              {cert.skills.map(skill => (
+                <span key={skill} className="px-2.5 py-1 bg-slate-800 text-slate-300 text-xs rounded-full border border-slate-700">
+                  {skill}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Actions */}
         <div className="flex gap-3 pt-2">
@@ -95,7 +118,79 @@ function CertificateCard({ cert, onShare }: { cert: typeof MOCK_CERTS[0]; onShar
 }
 
 export default function CertificatesPage() {
+  const token = useAuthStore((s) => s.token);
+  const [certs, setCerts] = useState<CertData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [shareTarget, setShareTarget] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    fetch("/api/certificates", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        setCerts(Array.isArray(data) ? data.map(normalizeCert) : []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load certificates:", err);
+        setError("Failed to load certificates. Please try again.");
+        setCerts([]);
+        setLoading(false);
+      });
+  }, [token]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">My Certificates</h1>
+          <p className="text-slate-400 text-sm mt-1">Blockchain-verified competency certificates</p>
+        </div>
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-12 text-center">
+          <div className="text-4xl mb-4">⚠</div>
+          <h3 className="text-red-300 font-semibold mb-2">Something went wrong</h3>
+          <p className="text-slate-400 text-sm mb-4">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              setLoading(true);
+              fetch("/api/certificates", {
+                headers: { Authorization: `Bearer ${token}` },
+              })
+                .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+                .then((data) => { setCerts(Array.isArray(data) ? data.map(normalizeCert) : []); setLoading(false); })
+                .catch((err) => { console.error("Retry failed:", err); setError("Failed to load certificates. Please try again."); setLoading(false); });
+            }}
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm rounded-lg transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const avgScore = certs.length > 0 ? Math.round(certs.reduce((a, c) => a + c.competencyScore, 0) / certs.length) : 0;
+  const totalSkills = [...new Set(certs.flatMap(c => c.skills))].length;
 
   return (
     <div className="space-y-6">
@@ -107,9 +202,9 @@ export default function CertificatesPage() {
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total Certificates", value: MOCK_CERTS.length, icon: "🜂" },
-          { label: "Avg Competency Score", value: Math.round(MOCK_CERTS.reduce((a, c) => a + c.competencyScore, 0) / MOCK_CERTS.length), icon: "◈" },
-          { label: "Verified Competencies", value: [...new Set(MOCK_CERTS.flatMap(c => c.skills))].length, icon: "◎" },
+          { label: "Total Certificates", value: certs.length, icon: "🜂" },
+          { label: "Avg Competency Score", value: avgScore, icon: "◈" },
+          { label: "Verified Competencies", value: totalSkills, icon: "◎" },
         ].map(s => (
           <div key={s.label} className="bg-slate-900 border border-slate-800 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -123,12 +218,12 @@ export default function CertificatesPage() {
 
       {/* Certificates */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {MOCK_CERTS.map(cert => (
+        {certs.map(cert => (
           <CertificateCard key={cert.id} cert={cert} onShare={() => setShareTarget(cert.certificateId)} />
         ))}
       </div>
 
-      {MOCK_CERTS.length === 0 && (
+      {certs.length === 0 && (
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center">
           <div className="text-4xl mb-4">🜂</div>
           <h3 className="text-white font-semibold mb-2">No certificates yet</h3>

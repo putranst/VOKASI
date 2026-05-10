@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLM Carousel — Instagram Preview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0a0a0a; color: #fff; }
+  .carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; padding: 40px 20px; }
+  .slide { flex: 0 0 360px; height: 640px; scroll-snap-align: start; border-radius: 16px; padding: 40px 32px; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; }
+  .slide-number { position: absolute; top: 20px; right: 24px; font-size: 12px; color: rgba(255,255,255,0.4); font-weight: 500; }
+  h1 { font-size: 32px; font-weight: 800; line-height: 1.15; margin-bottom: 16px; letter-spacing: -0.5px; }
+  h2 { font-size: 22px; font-weight: 700; line-height: 1.3; margin-bottom: 16px; }
+  p { font-size: 15px; line-height: 1.6; color: rgba(255,255,255,0.8); }
+  .big-number { font-size: 56px; font-weight: 900; line-height: 1; margin-bottom: 12px; }
+  .accent { color: #C7B0FE; }
+  .teal { color: #0D9488; }
+  .red { color: #f87171; }
+  .stat { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
+  .stat-label { font-size: 13px; color: rgba(255,255,255,0.5); }
+  .stat-value { font-size: 20px; font-weight: 700; }
+  .list { list-style: none; }
+  .list li { font-size: 15px; line-height: 1.6; padding: 6px 0; color: rgba(255,255,255,0.85); border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .list li:last-child { border-bottom: none; }
+  .tag { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin: 4px 4px 4px 0; }
+  .tag-purple { background: rgba(199,176,254,0.15); color: #C7B0FE; }
+  .tag-teal { background: rgba(13,148,136,0.15); color: #0D9488; }
+  .divider { width: 48px; height: 3px; background: #C7B0FE; border-radius: 2px; margin: 16px 0; }
+  .cta { display: inline-block; margin-top: 16px; padding: 10px 24px; border-radius: 24px; background: #C7B0FE; color: #18181B; font-weight: 700; font-size: 14px; text-decoration: none; }
+  .author { margin-top: 24px; font-size: 13px; color: rgba(255,255,255,0.4); }
+</style>
+</head>
+<body>
+<div class="carousel">
+
+<!-- SLIDE 1: HOOK -->
+<div class="slide" style="background: linear-gradient(135deg, #18181B 0%, #1a1033 100%);">
+  <div class="slide-number">1/10</div>
+  <h1>70 million businesses in Southeast Asia <span class="red">can't afford AI.</span></h1>
+  <div class="divider"></div>
+  <p>Not "won't."<br><strong style="color:#fff">Can't.</strong></p>
+</div>
+
+<!-- SLIDE 2: THE MATH -->
+<div class="slide" style="background: #18181B;">
+  <div class="slide-number">2/10</div>
+  <h2>The math doesn't work.</h2>
+  <div class="stat"><span class="stat-value">$2.50</span><span class="stat-label">/1M input tokens — GPT-4o</span></div>
+  <div class="stat"><span class="stat-value">$15</span><span class="stat-label">/1M output tokens — Claude Sonnet</span></div>
+  <div class="divider"></div>
+  <p>A mid-size Jakarta company doing 10M tokens/month = <strong style="color:#fff">$125-400/month</strong></p>
+  <p style="margin-top:12px">That's someone's salary in most SEA SMEs.</p>
+</div>
+
+<!-- SLIDE 3: REAL COST -->
+<div class="slide" style="background: #18181B;">
+  <div class="slide-number">3/10</div>
+  <h2>It's not just about money.</h2>
+  <ul class="list">
+    <li>When OpenAI goes down, <strong style="color:#fff">your business stops.</strong></li>
+    <li>Customer data sent to servers in Virginia.</li>
+    <li>Singapore PDPA. Indonesia PDP Law. Vietnam Cybersecurity Law.</li>
+    <li>You can't control where your data goes.</li>
+  </ul>
+</div>
+
+<!-- SLIDE 4: THE ALTERNATIVE -->
+<div class="slide" style="background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);">
+  <div class="slide-number">4/10</div>
+  <h1><span class="teal">Small Language Models.</span></h1>
+  <div class="divider" style="background:#0D9488"></div>
+  <ul class="list">
+    <li>1-9 billion parameters</li>
+    <li>Run on a laptop. Or a phone.</li>
+    <li>No API cost. No data leaving.</li>
+    <li>Fine-tuned for YOUR language.</li>
+  </ul>
+</div>
+
+<!-- SLIDE 5: WHAT THEY CAN DO -->
+<div class="slide" style="background: #18181B;">
+  <div class="slide-number">5/10</div>
+  <h2>They're not worse.<br><span class="accent">They're specialized.</span></h2>
+  <ul class="list">
+    <li><strong style="color:#fff">Phi-3 Mini</strong> (3.8B) — runs on a phone</li>
+    <li><strong style="color:#fff">Llama 3.2</strong> (1B/3B) — open, free</li>
+    <li><strong style="color:#fff">Gemma 2</strong> (2B/9B) — 5x its size performance</li>
+  </ul>
+  <p style="margin-top:16px">A 7B model fine-tuned on Indonesian support data beats GPT-4o at that task.</p>
+</div>
+
+<!-- SLIDE 6: SMEs -->
+<div class="slide" style="background: #18181B;">
+  <div class="slide-number">6/10</div>
+  <h2><span class="teal">AI without the subscription.</span></h2>
+  <div class="divider" style="background:#0D9488"></div>
+  <ul class="list">
+    <li>Warung in Yogyakarta — inventory + WhatsApp</li>
+    <li>Garment factory in HCMC — quality control</li>
+    <li>Logistics in Manila — customs paperwork</li>
+  </ul>
+  <p style="margin-top:16px">All running locally. All affordable.</p>
+</div>
+
+<!-- SLIDE 7: EDUCATION -->
+<div class="slide" style="background: #18181B;">
+  <div class="slide-number">7/10</div>
+  <h2>Tutors that don't <span class="red">spy</span> on students.</h2>
+  <div class="divider"></div>
+  <div class="big-number accent">$125K</div>
+  <p>Frontier API cost for ONE tutoring session with Indonesia's 50M students.</p>
+  <p style="margin-top:12px; color:#0D9488; font-weight:600;">SLM on a school server: effectively free.</p>
+  <p style="margin-top:8px">Student data never leaves the building.</p>
+</div>
+
+<!-- SLIDE 8: REGENERATIVE -->
+<div class="slide" style="background: linear-gradient(135deg, #1a1033 0%, #0f2027 100%);">
+  <div class="slide-number">8/10</div>
+  <h1>This is <span class="accent">regenerative</span> AI.</h1>
+  <div class="divider"></div>
+  <p>Not just efficiency.<br>Not just fewer jobs.</p>
+  <p style="margin-top:16px; color:#fff; font-weight:600;">Ecosystem creation. More jobs. Value stays local.</p>
+  <p style="margin-top:12px">Indonesian devs → local models → local businesses → local jobs.</p>
+</div>
+
+<!-- SLIDE 9: WHAT NEEDS TO HAPPEN -->
+<div class="slide" style="background: #18181B;">
+  <div class="slide-number">9/10</div>
+  <h2>What needs to happen.</h2>
+  <div class="divider"></div>
+  <ul class="list">
+    <li><strong style="color:#fff">Language fine-tuning</strong><br><span style="font-size:13px;color:rgba(255,255,255,0.5)">Bahasa Indonesia, Vietnamese, Thai, Tagalog</span></li>
+    <li><strong style="color:#fff">In-region GPU infrastructure</strong><br><span style="font-size:13px;color:rgba(255,255,255,0.5)">Shared clusters, government compute</span></li>
+    <li><strong style="color:#fff">Education</strong><br><span style="font-size:13px;color:rgba(255,255,255,0.5)">Most leaders think AI = ChatGPT</span></li>
+  </ul>
+</div>
+
+<!-- SLIDE 10: CTA -->
+<div class="slide" style="background: linear-gradient(135deg, #18181B 0%, #1a1033 100%);">
+  <div class="slide-number">10/10</div>
+  <h1>"The age of abundance might come someday."</h1>
+  <div class="divider"></div>
+  <p>In the meantime, let's build AI that actually works for the people who need it most.</p>
+  <p class="author">Putra — 25+ years in tech, 10+ years leading in SEA<br>putra.io</p>
+  <a href="#" class="cta">Read the full article → link in bio</a>
+</div>
+
+</div>
+</body>
+</html>
